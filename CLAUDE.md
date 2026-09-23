@@ -52,11 +52,16 @@
   - `xin-toolkit/skills/app-bootstrap/assets/packs.json`：技能組合清單（改這裡增減技能）。
   - `xin-toolkit/skills/app-bootstrap/assets/CLAUDE.template.md`：給其他 App 的工作守則範本
     （含 PWA + Actions 章節）。改守則時兩邊都要改。
+  - `web/index.html`：技能挑選網頁（GitHub Pages，`pages.yml` 部署）；`web/build_catalog.py` 產生
+    `catalog.json`（部署時才產生，不進 git）；`web/zh.json`：每個技能的中文說明（只給網頁顯示用）。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。
 - 需要的 Secrets：無。
-- 部署在哪：不部署網站；GitHub Actions 只跑 `CI Quality Gate`（push 到 main 時）。
+- 部署在哪：網頁 https://xin7355-collab.github.io/skl/ （`Deploy web page` 工作流）；
+  另有 `CI Quality Gate`。兩者都在 push 到 main 時跑。
 - 特別注意：
   - 上游約 388 個技能照原樣保留，除非必要不改，方便日後同步上游。
+  - 技能本體（SKILL.md）維持英文，不翻譯；中文只放 `web/zh.json`。新增技能後要補 zh.json
+    （`python3 web/build_catalog.py --missing` 會列出缺的）。
   - 新增技能後跑：`python3 scripts/check_frontmatter.py --all`、`python3 scripts/check_paths.py --all`、
     兩支工具的 `selftest`。
   - 不要把上游的 `.claude/settings.json`（會自動載入第三方外掛）或 `.mcp.json` 加回來。

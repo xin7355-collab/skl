@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="skl 技能庫">
+<title>skl 技能庫</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1a1d21; --muted: #5d6670; --line: #e3e6ea;
+  --accent: #0f766e; --accent-soft: #e6f4f2; --accent-text: #ffffff; --warn: #b45309;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --card: #181c20; --text: #e8eaed; --muted: #9aa3ad; --line: #2a3036;
+    --accent: #2dd4bf; --accent-soft: #123330; --accent-text: #06201d; --warn: #f59e0b;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
+  padding: env(safe-area-inset-top) 16px calc(96px + env(safe-area-inset-bottom));
+  max-width: 760px; margin: 0 auto; -webkit-text-size-adjust: 100%;
+}
+header { padding: 20px 0 8px; }
+h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
+.sub { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
+nav.tabs {
+  position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 4px; padding: 8px 0; background: var(--bg);
+}
+nav.tabs button {
+  border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 10px;
+  padding: 9px 4px; font: inherit; font-size: 14px; cursor: pointer;
+}
+nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin: 8px 0 12px; }
+.card h2 { font-size: 17px; margin: 0 0 4px; }
+.hint { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+details { margin: 10px 0 0; }
+details summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+details p, details li { font-size: 14px; color: var(--muted); }
+.pack { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); }
+.pack:first-of-type { border-top: 0; }
+.pack input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.pack b { display: block; }
+.pack small { color: var(--muted); display: block; font-size: 13px; }
+textarea.out {
+  width: 100%; min-height: 120px; border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); background: var(--bg); resize: vertical;
+}
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.btn {
+  appearance: none; border: 0; border-radius: 10px; padding: 11px 14px; font: inherit; font-size: 15px;
+  background: var(--accent); color: var(--accent-text); font-weight: 600; cursor: pointer; flex: 1 1 auto;
+}
+.btn.ghost { background: var(--accent-soft); color: var(--text); font-weight: 500; }
+.btn.small { flex: none; padding: 7px 12px; font-size: 14px; }
+.btn:disabled { opacity: .45; }
+.filters { display: grid; grid-template-columns: 1fr; gap: 8px; }
+input[type="search"], select {
+  width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text);
+}
+label.toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.count { color: var(--muted); font-size: 13px; margin: 8px 2px; }
+.skill { border-top: 1px solid var(--line); padding: 12px 0; }
+.skill:first-child { border-top: 0; }
+.skill .top { display: flex; gap: 10px; align-items: flex-start; }
+.skill input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.skill .main { flex: 1; min-width: 0; }
+.skill .zh { font-size: 15px; }
+.skill .meta { color: var(--muted); font-size: 12px; word-break: break-all; margin-top: 2px; }
+.skill details p { margin: 6px 0 0; }
+.tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--accent-soft); color: var(--text); margin-right: 4px; }
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--card); border-top: 1px solid var(--line); display: none;
+}
+.bar.show { display: block; }
+.bar .inner { max-width: 760px; margin: 0 auto; display: flex; gap: 8px; align-items: center; }
+.bar span { font-size: 14px; flex: 1; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 99px; font-size: 14px;
+  opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20;
+}
+.toast.show { opacity: .95; }
+.error { color: var(--warn); }
+[hidden] { display: none !important; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>skl 技能庫</h1>
+  <p class="sub">挑技能 → 按「複製」→ 貼到其他 App 的 Claude Code 對話</p>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="packs" aria-selected="true">組合安裝</button>
+  <button role="tab" data-tab="browse" aria-selected="false">瀏覽技能</button>
+  <button role="tab" data-tab="ops" aria-selected="false">健檢更新</button>
+  <button role="tab" data-tab="help" aria-selected="false">說明</button>
+</nav>
+
+<main>
+  <section id="tab-packs" class="card">
+    <h2>一次裝一組</h2>
+    <p class="hint">勾選適合的組合，下面的指令會自動更新。防禦健檢技能每次都會一起裝。</p>
+    <div id="packList"></div>
+    <textarea id="packPrompt" class="out" readonly></textarea>
+    <div class="row">
+      <button class="btn" data-copy="packPrompt">複製給 Claude 的指令</button>
+      <button class="btn ghost" id="copyPackCmd">複製終端機指令</button>
+    </div>
+    <details>
+      <summary>怎麼挑？</summary>
+      <ul>
+        <li>core：每個 App 都該裝。</li>
+        <li>pwa：手機網頁、有 manifest.json 或 service worker。</li>
+        <li>actions：有 .github/workflows 資料夾。</li>
+        <li>backend：有資料庫或 API 伺服器。</li>
+        <li>security：有登入、金鑰、使用者資料。</li>
+        <li>不確定就只勾 core，指令裡已經請 Claude 幫你判斷要不要加。</li>
+      </ul>
+    </details>
+  </section>
+
+  <section id="tab-browse" class="card" hidden>
+    <h2>瀏覽全部技能</h2>
+    <p class="hint">可以單個複製，也可以勾選多個後從底部一次複製。</p>
+    <div class="filters">
+      <input id="q" type="search" placeholder="搜尋：中文或英文，例如 資料庫、SEO、測試" autocomplete="off">
+      <select id="domain"><option value="">全部領域</option></select>
+      <label class="toggle"><input id="onlySel" type="checkbox"> 只看已勾選</label>
+    </div>
+    <p class="count" id="count"></p>
+    <div id="skillList"></div>
+    <div class="row"><button class="btn ghost" id="more" hidden>顯示更多</button></div>
+  </section>
+
+  <section id="tab-ops" class="card" hidden>
+    <h2>健檢與更新</h2>
+    <p class="hint">在已經裝過技能的 App 裡使用。</p>
+    <b>防禦準則健檢</b>
+    <textarea id="auditPrompt" class="out" readonly>用 app-guardrails-audit 幫這個 repo 做一次防禦準則健檢。每一條都打開原始碼確認是不是真問題，依「必修／建議修／提醒」分級回報，每條寫檔案與行號、會在什麼情境出事、怎麼修。先不要改程式，等我決定。</textarea>
+    <div class="row"><button class="btn" data-copy="auditPrompt">複製健檢指令</button></div>
+    <br>
+    <b>把技能更新到最新版</b>
+    <textarea id="updatePrompt" class="out" readonly></textarea>
+    <div class="row">
+      <button class="btn" data-copy="updatePrompt">複製更新指令</button>
+      <button class="btn ghost" id="copyUpdateCmd">複製終端機指令</button>
+    </div>
+  </section>
+
+  <section id="tab-help" class="card" hidden>
+    <h2>怎麼用</h2>
+    <ol>
+      <li>在「組合安裝」或「瀏覽技能」挑好，按「複製」。</li>
+      <li>打開你另一個 App 的 Claude Code 對話（claude.ai/code），貼上送出。</li>
+      <li>Claude 會把技能複製進那個 repo 的 <code>.claude/skills/</code> 並 commit，之後每次對話都會自動用到。</li>
+    </ol>
+    <details>
+      <summary>為什麼技能內容是英文？會不會影響效果？</summary>
+      <p>技能本體維持英文：Claude 讀英文指令最精準，也方便日後同步上游更新。回覆語言由各 App 的 CLAUDE.md 決定（例如「一律用繁體中文」），所以你看到的回答仍是中文。這個網頁上的中文說明只是方便你挑選。</p>
+    </details>
+    <details>
+      <summary>「給 Claude 的指令」和「終端機指令」差在哪？</summary>
+      <p>給 Claude 的指令是一段中文，貼到對話裡讓 Claude 幫你做完全部步驟（推薦）。終端機指令是給會自己下指令的人用的。</p>
+    </details>
+    <details>
+      <summary>加到 iPhone 主畫面</summary>
+      <p>在 Safari 按「分享」→「加入主畫面」，之後就像 App 一樣打開。網頁有新版時會自動重新載入。</p>
+    </details>
+    <p class="hint" id="verLine"></p>
+  </section>
+</main>
+
+<div class="bar" id="bar">
+  <div class="inner">
+    <span id="barText"></span>
+    <button class="btn small ghost" id="clearSel">清除</button>
+    <button class="btn small" id="copySel">複製安裝指令</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+// 部署時由工作流換成 git commit；本機直接開檔時維持原字串，自動重載就不啟用。
+const APP_VER = "__APP_VER__";
+const REPO = "https://github.com/xin7355-collab/skl";
+const TOOL = "/tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py";
+// 已有 /tmp/skl 就更新，沒有才 clone：同一個工作階段重複貼指令不會因資料夾已存在而失敗。
+const FETCH_CMD = `(git -C /tmp/skl pull -q 2>/dev/null || git clone -q --depth 1 ${REPO} /tmp/skl)`;
+const PAGE = 60; // 一次只畫 60 張卡：390 個技能全部畫出來，舊 iPhone 捲動會卡。
+
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 無痕模式寫不進去就算了 */ } },
+};
+
+let catalog = null;
+let shown = PAGE;
+const selPacks = new Set(store.get("packs", ["core"]));
+const selSkills = new Set(store.get("skills", []));
+
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), 1600);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // 舊版 Safari 或非 https 時 clipboard API 會失敗，退回選取文字後 execCommand。
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch { ok = false; }
+    ta.remove();
+    if (!ok) { toast("無法自動複製，請長按文字框手動複製"); return; }
+  }
+  toast("已複製 ✓");
+}
+
+function packPrompt(packs) {
+  const list = packs.length ? packs.join(",") : "core";
+  return `從 ${REPO} 用 app-bootstrap 幫這個 repo 安裝技能組合：${list}。\n` +
+    `先看這個 repo 的性質，如果還有明顯該加的組合就告訴我。\n` +
+    `先試跑（--dry-run）確認，再正式安裝；裝完跑一次 app-guardrails-audit 健檢並回報結果，最後 commit。`;
+}
+function packCmd(packs) {
+  const list = packs.length ? packs.join(",") : "core";
+  return `${FETCH_CMD} && python3 ${TOOL} install --target . --packs ${list}`;
+}
+function skillsPrompt(paths) {
+  return `從 ${REPO} 用 app-bootstrap 幫這個 repo 安裝以下技能（bootstrap_app.py install --skills）：\n` +
+    paths.map((p) => `- ${p}`).join("\n") +
+    `\n先試跑（--dry-run）確認，再正式安裝，最後 commit。`;
+}
+const UPDATE_PROMPT = `從 ${REPO} 用 app-bootstrap 把這個 repo 已安裝的技能更新到最新版（bootstrap_app.py update），回報更新了哪些，然後 commit。`;
+const UPDATE_CMD = `${FETCH_CMD} && python3 ${TOOL} update --target .`;
+
+function renderPacks() {
+  const box = $("packList");
+  box.innerHTML = "";
+  for (const [id, p] of Object.entries(catalog.packs)) {
+    const row = document.createElement("label");
+    row.className = "pack";
+    const names = p.skills.map((s) => s.split("/").pop()).join("、");
+    row.innerHTML = `<input type="checkbox"><div><b></b><small class="d"></small><small class="n"></small></div>`;
+    row.querySelector("b").textContent = id;
+    row.querySelector(".d").textContent = p.desc;
+    row.querySelector(".n").textContent = "包含：" + names;
+    const cb = row.querySelector("input");
+    cb.checked = selPacks.has(id);
+    cb.addEventListener("change", () => {
+      cb.checked ? selPacks.add(id) : selPacks.delete(id);
+      store.set("packs", [...selPacks]);
+      updatePackOut();
+    });
+    box.appendChild(row);
+  }
+  updatePackOut();
+}
+function orderedPacks() { return Object.keys(catalog.packs).filter((k) => selPacks.has(k)); }
+function updatePackOut() { $("packPrompt").value = packPrompt(orderedPacks()); }
+
+function matches(s, q, dom, onlySel) {
+  if (dom && s.domain !== dom) return false;
+  if (onlySel && !selSkills.has(s.path)) return false;
+  if (!q) return true;
+  return (s.zh + " " + s.name + " " + s.desc + " " + s.path).toLowerCase().includes(q);
+}
+
+function renderSkills() {
+  const q = $("q").value.trim().toLowerCase();
+  const dom = $("domain").value;
+  const onlySel = $("onlySel").checked;
+  const list = catalog.skills.filter((s) => matches(s, q, dom, onlySel));
+  const zhName = Object.fromEntries(catalog.domains.map((d) => [d.id, d.zh]));
+  $("count").textContent = `找到 ${list.length} 個技能`;
+  const box = $("skillList");
+  box.innerHTML = "";
+  const frag = document.createDocumentFragment();
+  for (const s of list.slice(0, shown)) {
+    const el = document.createElement("div");
+    el.className = "skill";
+    el.innerHTML =
+      `<div class="top"><input type="checkbox" aria-label="勾選">` +
+      `<div class="main"><div class="zh"></div><div class="meta"><span class="tag"></span><span class="nm"></span></div>` +
+      `<details><summary>英文原文與路徑</summary><p class="en"></p><p class="pa"></p></details></div>` +
+      `<button class="btn small ghost">複製</button></div>`;
+    el.querySelector(".zh").textContent = s.zh || s.desc.slice(0, 80);
+    el.querySelector(".tag").textContent = zhName[s.domain] || s.domain;
+    el.querySelector(".nm").textContent = s.name;
+    el.querySelector(".en").textContent = s.desc;
+    el.querySelector(".pa").textContent = s.path;
+    const cb = el.querySelector("input");
+    cb.checked = selSkills.has(s.path);
+    cb.addEventListener("change", () => {
+      cb.checked ? selSkills.add(s.path) : selSkills.delete(s.path);
+      store.set("skills", [...selSkills]);
+      updateBar();
+    });
+    el.querySelector("button").addEventListener("click", () => copyText(skillsPrompt([s.path])));
+    frag.appendChild(el);
+  }
+  box.appendChild(frag);
+  $("more").hidden = list.length <= shown;
+}
+
+function updateBar() {
+  const n = selSkills.size;
+  $("bar").classList.toggle("show", n > 0 && currentTab === "browse");
+  $("barText").textContent = `已勾選 ${n} 個技能`;
+}
+
+let currentTab = "packs";
+function showTab(id) {
+  currentTab = id;
+  for (const b of document.querySelectorAll("nav.tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === id));
+  for (const t of ["packs", "browse", "ops", "help"]) $("tab-" + t).hidden = t !== id;
+  store.set("tab", id);
+  updateBar();
+  window.scrollTo(0, 0);
+}
+
+function wire() {
+  for (const b of document.querySelectorAll("nav.tabs button")) b.addEventListener("click", () => showTab(b.dataset.tab));
+  for (const b of document.querySelectorAll("[data-copy]")) b.addEventListener("click", () => copyText($(b.dataset.copy).value));
+  $("copyPackCmd").addEventListener("click", () => copyText(packCmd(orderedPacks())));
+  $("copyUpdateCmd").addEventListener("click", () => copyText(UPDATE_CMD));
+  $("updatePrompt").value = UPDATE_PROMPT;
+  let t;
+  $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => { shown = PAGE; renderSkills(); }, 150); });
+  $("domain").addEventListener("change", () => { shown = PAGE; renderSkills(); });
+  $("onlySel").addEventListener("change", () => { shown = PAGE; renderSkills(); });
+  $("more").addEventListener("click", () => { shown += PAGE; renderSkills(); });
+  $("copySel").addEventListener("click", () => copyText(skillsPrompt([...selSkills])));
+  $("clearSel").addEventListener("click", () => {
+    selSkills.clear();
+    store.set("skills", []);
+    renderSkills();
+    updateBar();
+  });
+}
+
+// 手機訊號不穩時第一次常失敗：重試 3 次、間隔 1/2/4 秒（指數退避），404 這種不會自己好的就不重試。
+async function fetchJsonRetry(url, tries = 4) {
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(url, { cache: "no-cache" });
+      if (r.ok) return await r.json();
+      last = new Error("HTTP " + r.status);
+      if (r.status < 500 && r.status !== 429) break;
+    } catch (e) { last = e; }
+    if (i < tries - 1) await new Promise((res) => setTimeout(res, 1000 * 2 ** i));
+  }
+  throw last;
+}
+
+async function load() {
+  wire();
+  try {
+    catalog = await fetchJsonRetry("catalog.json");
+  } catch (e) {
+    $("packList").innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "error";
+    p.textContent = "技能清單載入失敗（" + e.message + "）。請確認網路後重新整理；持續失敗的話，到 GitHub 的 Actions 頁看「Deploy web page」是否紅燈。";
+    $("packList").appendChild(p);
+    return;
+  }
+  // 技能被上游移除後，localStorage 裡的舊勾選要清掉，免得複製出不存在的路徑。
+  const valid = new Set(catalog.skills.map((s) => s.path));
+  for (const p of [...selSkills]) if (!valid.has(p)) selSkills.delete(p);
+  for (const p of [...selPacks]) if (!catalog.packs[p]) selPacks.delete(p);
+  const sel = $("domain");
+  for (const d of catalog.domains) {
+    const o = document.createElement("option");
+    o.value = d.id;
+    o.textContent = `${d.zh}（${d.count}）`;
+    sel.appendChild(o);
+  }
+  renderPacks();
+  renderSkills();
+  $("verLine").textContent = `版本：${APP_VER.startsWith("__") ? "本機預覽" : APP_VER}・共 ${catalog.skills.length} 個技能`;
+  showTab(store.get("tab", "packs"));
+}
+
+// 手機常把舊分頁留在背景好幾天；切回前景時檢查版本，不同就自動重載。
+async function checkVersion() {
+  if (APP_VER.startsWith("__")) return;
+  try {
+    const r = await fetch("version.json", { cache: "no-store" });
+    if (!r.ok) return;
+    const v = await r.json();
+    if (v.ver && v.ver !== APP_VER) location.reload();
+  } catch { /* 離線時略過，下次再檢查 */ }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkVersion(); });
+
+load();
+</script>
+</body>
+</html>

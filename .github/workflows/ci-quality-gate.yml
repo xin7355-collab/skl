@@ -73,12 +73,13 @@ jobs:
             business-growth finance project-management \
             productivity marketing research \
             business-operations commercial research-ops \
-            compliance-os markdown-html xin-toolkit scripts
+            compliance-os markdown-html xin-toolkit web scripts
 
       - name: xin-toolkit self-tests (blocking)
         run: |
           python3 xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py selftest
           python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
+          python3 web/build_catalog.py selftest
 
       - name: Validate plugin.json manifests (blocking — guards #539 + #686)
         run: |

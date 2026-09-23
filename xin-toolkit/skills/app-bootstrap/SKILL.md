@@ -34,6 +34,11 @@ description: 把 skl 技能庫裡挑好的技能組合（core／pwa／actions／
 5. 裝完立刻跑一次 `app-guardrails-audit` 做健檢，把結果回報給使用者。
 6. commit：`.claude/skills/` 與 `CLAUDE.md`（commit 訊息寫裝了哪些組合、來源 commit）。
 
+只要個別技能（例如網頁上勾選複製來的路徑）時，用 `--skills`，可與 `--packs` 併用：
+```bash
+python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py install --target . --skills engineering/skills/focused-fix,marketing-skill/skills/seo-audit
+```
+
 ## 更新
 
 ```bash

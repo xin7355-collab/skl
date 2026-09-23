@@ -9,6 +9,7 @@
   git clone --depth 1 https://github.com/xin7355-collab/skl /tmp/skl
   python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py list
   python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py install --target . --packs core,pwa
+  python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py install --target . --skills engineering/skills/focused-fix
   python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py update --target .
   python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
 
@@ -69,7 +70,7 @@ def _read_manifest(skills_root):
 
 
 def install(target, pack_names, force=False, dry_run=False, write_claude_md=True,
-            source_root=REPO_ROOT, packs=None):
+            source_root=REPO_ROOT, packs=None, extra_skills=()):
     """回傳 (結果 dict, 結束碼)。失敗不中斷，逐一記錄，最後一起報。"""
     packs = packs if packs is not None else load_packs()
     unknown = [p for p in pack_names if p not in packs]
@@ -78,7 +79,17 @@ def install(target, pack_names, force=False, dry_run=False, write_claude_md=True
     if not os.path.isdir(target):
         return {"error": f"找不到目標資料夾：{target}"}, 2
 
+    # 單選技能（網頁勾選產生的）：只接受 repo 內的相對路徑，擋掉 .. 與絕對路徑，
+    # 免得貼錯的指令把 repo 外的資料夾複製進目標。
+    bad = [s for s in extra_skills
+           if os.path.isabs(s) or ".." in s.replace("\\", "/").split("/")]
+    if bad:
+        return {"error": f"技能路徑不合法：{', '.join(bad)}。請用網頁複製的路徑，例如 engineering/skills/focused-fix"}, 2
+
     wanted = list(ALWAYS)
+    for s in extra_skills:
+        if s.strip("/") not in wanted:
+            wanted.append(s.strip("/"))
     for p in pack_names:
         for s in packs[p]["skills"]:
             if s not in wanted:
@@ -135,6 +146,7 @@ def install(target, pack_names, force=False, dry_run=False, write_claude_md=True
             "source_commit": _source_commit(source_root),
             "updated_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "packs": sorted(set(manifest.get("packs", [])) | set(pack_names)),
+            "extra_skills": sorted(set(manifest.get("extra_skills", [])) | {s.strip("/") for s in extra_skills}),
             "skills": sorted(owned),
         })
         with open(os.path.join(skills_root, MANIFEST), "w", encoding="utf-8") as f:
@@ -148,7 +160,8 @@ def update(target, dry_run=False, source_root=REPO_ROOT, packs=None):
     if not m:
         return {"error": "這個 repo 還沒用本工具裝過技能（找不到 .claude/skills/.skl-vendor.json），請先 install。"}, 2
     return install(target, m.get("packs", []), force=False, dry_run=dry_run,
-                   write_claude_md=False, source_root=source_root, packs=packs)
+                   write_claude_md=False, source_root=source_root, packs=packs,
+                   extra_skills=m.get("extra_skills", []))
 
 
 def _print(res, dry_run):
@@ -230,6 +243,15 @@ def selftest():
         r, code = install(tgt, ["bad"], source_root=src, packs=fake)
         check(code == 1 and r["failed"] and r["failed"][0][0] == "ghost", "來源缺失時結束碼 1 並列出是哪個")
 
+        r, code = install(tgt, [], source_root=src, packs=fake, extra_skills=["../evil"])
+        check(code == 2 and "不合法" in r["error"], "--skills 擋掉 .. 路徑")
+        tgt2 = os.path.join(d, "app2")
+        os.makedirs(tgt2)
+        r, code = install(tgt2, [], source_root=src, packs=fake, extra_skills=["a/skills/alpha/"])
+        check(code == 0 and r["installed"] == ["app-guardrails-audit", "alpha"], "--skills 單選技能可安裝")
+        r, code = update(tgt2, source_root=src, packs=fake)
+        check(code == 0 and "alpha" in r["updated"], "update 會帶上單選技能")
+
         r, code = update(os.path.join(d, "src"), source_root=src, packs=fake)
         check(code == 2, "沒裝過就 update 會提示先 install")
 
@@ -243,7 +265,8 @@ def main(argv=None):
     sub.add_parser("list", help="列出技能組合")
     i = sub.add_parser("install", help="安裝技能組合")
     i.add_argument("--target", default=".", help="目標 App 的 repo 根目錄（預設目前資料夾）")
-    i.add_argument("--packs", default="core", help="逗號分隔，例如 core,pwa,actions")
+    i.add_argument("--packs", default=None, help="逗號分隔，例如 core,pwa,actions（沒給 --skills 時預設 core）")
+    i.add_argument("--skills", default="", help="逗號分隔的技能路徑，例如 engineering/skills/focused-fix")
     i.add_argument("--force", action="store_true", help="覆蓋目標裡同名、但不是本工具裝的技能")
     i.add_argument("--dry-run", action="store_true", help="只列出會做什麼，不寫入")
     i.add_argument("--no-claude-md", action="store_true", help="不建立 CLAUDE.md 範本")
@@ -263,9 +286,11 @@ def main(argv=None):
         print("（app-guardrails-audit 每次都會裝）")
         return 0
     if args.cmd == "install":
-        packs = [p.strip() for p in args.packs.split(",") if p.strip()]
+        skills = [x.strip() for x in args.skills.split(",") if x.strip()]
+        packs_arg = args.packs if args.packs is not None else ("" if skills else "core")
+        packs = [p.strip() for p in packs_arg.split(",") if p.strip()]
         res, code = install(os.path.abspath(args.target), packs, args.force, args.dry_run,
-                            not args.no_claude_md)
+                            not args.no_claude_md, extra_skills=skills)
     elif args.cmd == "update":
         res, code = update(os.path.abspath(args.target), args.dry_run)
     else:

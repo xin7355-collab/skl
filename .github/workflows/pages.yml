@@ -1,0 +1,79 @@
+---
+name: Deploy web page
+
+'on':
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 連續推送時只保留最後一次部署；進行中的部署不中斷，避免網站停在半套狀態。
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      enabled: ${{ steps.pages.outputs.enabled }}
+    steps:
+      # 「還沒開 Pages」是還沒設定，不是壞掉：只留提示、跳過部署，不讓工作流變紅燈。
+      - name: Check GitHub Pages is enabled
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GitHub Pages 尚未開啟，略過部署。到 https://github.com/${GITHUB_REPOSITORY}/settings/pages 把 Source 設為 GitHub Actions。"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Self-test catalog builder
+        run: python3 web/build_catalog.py selftest
+
+      - name: Build site
+        run: |
+          mkdir -p _site
+          python3 web/build_catalog.py
+          cp web/index.html web/catalog.json _site/
+          ver="${GITHUB_SHA::7}"
+          # APP_VER 換成 commit，前端切回前景時比對 version.json，不同就自動重載。
+          sed -i "s/__APP_VER__/${ver}/" _site/index.html
+          printf '{"ver":"%s"}\n' "$ver" > _site/version.json
+          printf 'User-agent: *\nDisallow: /\n' > _site/robots.txt
+          grep -q 'noindex' _site/index.html
+
+      - name: Upload artifact
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
