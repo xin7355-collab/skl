@@ -1,0 +1,147 @@
+---
+name: CI Quality Gate
+
+'on':
+  # 本 repo 不走 PR，直接合併到 main，所以 push 時就要跑。
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch to run quality gate against
+        required: false
+
+concurrency:
+  group: quality-gate-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, Tests, Docs, Security
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 25
+    steps:
+      - name: Resolve ref
+        id: ref
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.ref }}" ]]; then
+            echo "target_ref=${{ github.event.inputs.ref }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Use commit SHA for PRs — branch names from forks don't exist in the base repo
+            echo "target_ref=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "target_ref=${{ github.head_ref || github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.ref.outputs.target_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install yamllint==1.35.1 check-jsonschema==0.28.4 safety==3.2.4
+          pip install -r requirements-dev.txt
+
+      - name: YAML lint (.github/workflows)
+        run: |
+          find .github/workflows -name "*.yml" -exec yamllint -d '{extends: default, rules: {line-length: {max: 160}}}' {} +
+
+      - name: Validate GitHub workflow schemas
+        run: |
+          find .github/workflows -name "*.yml" -exec check-jsonschema --builtin-schema github-workflows {} +
+
+      - name: Python syntax check (blocking)
+        run: |
+          # Covers every top-level skill domain + scripts/. When adding a new
+          # domain folder, add it here (audit gate G9: this list previously
+          # skipped 8 post-v2.7 domains).
+          python -m compileall \
+            marketing-skill product-team c-level-advisor \
+            engineering-team ra-qm-team engineering \
+            business-growth finance project-management \
+            productivity marketing research \
+            business-operations commercial research-ops \
+            compliance-os markdown-html xin-toolkit scripts
+
+      - name: xin-toolkit self-tests (blocking)
+        run: |
+          python3 xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py selftest
+          python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
+
+      - name: Validate plugin.json manifests (blocking — guards #539 + #686)
+        run: |
+          python scripts/check_plugin_json.py --all
+
+      - name: Built-in-shadowing skill names (blocking — guards #885)
+        run: |
+          python3 scripts/check_skill_names.py --all
+
+      # ---- Audit guardrails (newgen-2026-06 gates) ----------------------
+      # BLOCKING since PR-2 (flipped ahead of the 2026-07-01 SLA — every
+      # advisory run was green through PR #835). If a gate misfires on a
+      # legitimate edge case, extend its in-repo allowlist
+      # (scripts/check_paths_allowlist.txt, scripts/smoke_exceptions.txt)
+      # rather than re-adding continue-on-error.
+      - name: Path-existence linter (gate G1 — blocking)
+        run: |
+          python3 scripts/check_paths.py --all
+
+      # Every other gate reads frontmatter with a regex, so malformed YAML used
+      # to pass CI while Claude Code silently loaded the skill with no
+      # description. G10 parses it properly.
+      - name: Frontmatter YAML validator (gate G10 — blocking)
+        run: |
+          python3 scripts/check_frontmatter.py --all
+
+      - name: Dual-publish drift guard (gate G4 — blocking)
+        run: |
+          python3 scripts/check_dual_publish.py
+
+      # Proposed by audit/newgen-2026-06 and never built, which is why retired
+      # model IDs survived two later audits. The tree is now clean, so this is
+      # blocking. A deliberate reference needs an entry with a reason in
+      # scripts/check_model_freshness_allowlist.txt.
+      - name: Retired model identifier lint (gate G7 — blocking)
+        run: |
+          python3 scripts/check_model_freshness.py --all
+
+      - name: Script --help smoke gate (gate G8 — blocking)
+        run: |
+          python3 scripts/smoke_scripts.py
+
+      - name: JSON-output sample gate (gate G9 — advisory)
+        continue-on-error: true
+        run: |
+          python3 scripts/smoke_json_output.py
+
+      - name: Safety dependency audit (requirements*.txt)
+        run: |
+          set -e
+          files=$(find . -name "requirements*.txt" 2>/dev/null || true)
+          if [[ -z "$files" ]]; then
+            echo "No requirements files found; skipping safety scan."
+            exit 0
+          fi
+          for f in $files; do
+            echo "Auditing $f"
+            if ! safety check --full-report --file "$f"; then
+              echo "::warning file=$f::safety found vulnerabilities in $f (advisory)"
+            fi
+          done
+
+      - name: Summarize results
+        if: always()
+        run: |
+          echo "Quality gate completed with status: ${{ job.status }}"

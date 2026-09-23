@@ -1,0 +1,16 @@
+{
+  "name": "xin-app-toolkit",
+  "description": "給免費主機／iPhone／GitHub Actions 上的小型 App 用的工具包：app-guardrails-audit 依低資源防禦準則（OOM、SQLite WAL、限流重試、金鑰外洩、iOS 分享、Actions 逾時）靜態掃描專案；app-bootstrap 把 skl 技能庫挑好的技能組合與 CLAUDE.md 工作守則一鍵複製進其他 App 的 repo。",
+  "version": "0.1.0",
+  "author": {
+    "name": "xin7355-collab",
+    "url": "https://github.com/xin7355-collab"
+  },
+  "homepage": "https://github.com/xin7355-collab/skl/tree/main/xin-toolkit",
+  "repository": "https://github.com/xin7355-collab/skl",
+  "license": "MIT",
+  "skills": [
+    "./skills/app-guardrails-audit",
+    "./skills/app-bootstrap"
+  ]
+}

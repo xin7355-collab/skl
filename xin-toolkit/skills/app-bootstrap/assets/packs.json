@@ -1,0 +1,44 @@
+{
+  "_說明": "技能組合。路徑都相對於 skl repo 根目錄。app-guardrails-audit 一律會裝，不用列。",
+  "core": {
+    "desc": "每個 App 都該有：架構審查、程式碼審查、精準修 bug、上線前檢查、套件漏洞",
+    "skills": [
+      "engineering-team/skills/senior-architect",
+      "engineering-team/skills/code-reviewer",
+      "engineering/skills/focused-fix",
+      "engineering/skills/ship-gate",
+      "engineering/skills/dependency-auditor"
+    ]
+  },
+  "pwa": {
+    "desc": "手機網頁／PWA：前端、Playwright 瀏覽器自動化、效能分析",
+    "skills": [
+      "engineering-team/skills/senior-frontend",
+      "engineering/skills/browser-automation",
+      "engineering/skills/performance-profiler"
+    ]
+  },
+  "actions": {
+    "desc": "GitHub Actions 自動化：CI/CD、DevOps、金鑰管理",
+    "skills": [
+      "engineering/skills/ci-cd-pipeline-builder",
+      "engineering-team/skills/senior-devops",
+      "engineering/skills/env-secrets-manager"
+    ]
+  },
+  "backend": {
+    "desc": "後端／資料庫／API：SQLite 與 SQL、API 設計審查",
+    "skills": [
+      "engineering-team/skills/senior-backend",
+      "engineering/skills/sql-database-assistant",
+      "engineering/skills/api-design-reviewer"
+    ]
+  },
+  "security": {
+    "desc": "資安：安全審查、第三方技能安全掃描",
+    "skills": [
+      "engineering-team/skills/senior-security",
+      "engineering/skills/skill-security-auditor"
+    ]
+  }
+}
