@@ -1,0 +1,20 @@
+{
+  "_說明": "每週維護報告要健檢的 App repo。private 的 repo 需要在 skl 的 Secrets 設 SKL_READ_TOKEN（唯讀權限）才會掃，沒設定就只標示「未設定權限」，不算失敗。",
+  "apps": [
+    {"repo": "xin7355-collab/GALEPOST"},
+    {"repo": "xin7355-collab/tool"},
+    {"repo": "xin7355-collab/StockAI-DB"},
+    {"repo": "xin7355-collab/PriceHub"},
+    {"repo": "xin7355-collab/twns", "private": true},
+    {"repo": "xin7355-collab/www"},
+    {"repo": "xin7355-collab/Capy"},
+    {"repo": "xin7355-collab/xin7355-collab-project-argus-pwa"},
+    {"repo": "xin7355-collab/Dashboard"},
+    {"repo": "xin7355-collab/prompt"},
+    {"repo": "xin7355-collab/Antenna-Tower"},
+    {"repo": "xin7355-collab/Camera"},
+    {"repo": "xin7355-collab/argus-pwa"},
+    {"repo": "xin7355-collab/Tower-Sight"},
+    {"repo": "xin7355-collab/pro-terminal-v4"}
+  ]
+}

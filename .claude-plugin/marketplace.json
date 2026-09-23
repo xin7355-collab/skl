@@ -15,8 +15,8 @@
     {
       "name": "xin-app-toolkit",
       "source": "./xin-toolkit",
-      "description": "給免費主機／iPhone／GitHub Actions 上的小型 App 用：app-guardrails-audit 依低資源防禦準則靜態掃描（OOM、SQLite WAL、限流重試、金鑰外洩、iOS 分享、Actions 逾時）；app-bootstrap 把挑好的技能組合與 CLAUDE.md 工作守則一鍵複製進其他 App 的 repo；tw-stock 收集台股官方資料並做有出處的分析。",
-      "version": "0.2.0",
+      "description": "給免費主機／iPhone／GitHub Actions 上的小型 App 用：app-guardrails-audit 依低資源防禦準則靜態掃描（OOM、SQLite WAL、限流重試、金鑰外洩、iOS 分享、Actions 逾時）；app-bootstrap 把挑好的技能組合與 CLAUDE.md 工作守則一鍵複製進其他 App 的 repo；tw-stock 收集台股官方資料並做有出處的分析；file-intake 把使用者的檔案做成技能或 App。",
+      "version": "0.3.0",
       "author": {
         "name": "xin7355-collab"
       },

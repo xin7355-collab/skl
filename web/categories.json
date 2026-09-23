@@ -276,6 +276,7 @@
   "xin-toolkit/skills/app-guardrails-audit": "dev",
   "xin-toolkit/skills/app-bootstrap": "ai",
   "engineering/skills/interview-system-designer": "leadership",
-  "product-team/skills/experiment-designer": "product"
+  "product-team/skills/experiment-designer": "product",
+  "xin-toolkit/skills/file-intake": "ai"
  }
 }

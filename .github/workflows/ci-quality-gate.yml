@@ -38,7 +38,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ steps.ref.outputs.target_ref }}
@@ -73,7 +73,7 @@ jobs:
             business-growth finance project-management \
             productivity marketing research \
             business-operations commercial research-ops \
-            compliance-os markdown-html xin-toolkit web scripts
+            compliance-os markdown-html xin-toolkit web ops scripts
 
       - name: xin-toolkit self-tests (blocking)
         run: |
@@ -81,6 +81,8 @@ jobs:
           python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
           python3 web/build_catalog.py selftest
           python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py selftest
+          python3 web/build_stock.py selftest
+          python3 ops/weekly_report.py selftest
 
       - name: Validate plugin.json manifests (blocking — guards #539 + #686)
         run: |

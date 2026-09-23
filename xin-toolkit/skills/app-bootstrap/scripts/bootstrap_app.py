@@ -33,6 +33,35 @@ CLAUDE_TEMPLATE = os.path.join(SKILL_DIR, "assets", "CLAUDE.template.md")
 ALWAYS = ["xin-toolkit/skills/app-guardrails-audit"]
 MANIFEST = ".skl-vendor.json"
 MAX_FILE_BYTES = 2 * 1024 * 1024  # 技能裡不該有大檔；有的話多半是誤放的資料，不複製。
+AUDITOR_REL = "engineering/skills/skill-security-auditor/scripts/skill_security_auditor.py"
+HOOK_REL = os.path.join(".claude", "hooks", "skl-session-start.sh")
+HOOK_CMD = '"$CLAUDE_PROJECT_DIR"/.claude/hooks/skl-session-start.sh'
+
+# 每次開 Claude Code 工作階段時自動執行：離線快速健檢＋技能太久沒更新就提醒。
+# 一律 exit 0：健檢失敗不能擋住使用者開工。
+HOOK_SCRIPT = r"""#!/bin/bash
+# 由 skl 的 app-bootstrap 安裝。開工作階段時做一次離線健檢，並提醒技能是否太久沒更新。
+set -u
+cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null || exit 0
+command -v python3 >/dev/null 2>&1 || exit 0
+A=.claude/skills/app-guardrails-audit/scripts/guardrails_audit.py
+if [ -f "$A" ]; then
+  out=$(timeout 60 python3 "$A" audit . 2>/dev/null | grep '^掃描' | tail -1)
+  [ -n "$out" ] && echo "[skl 健檢] $out 要看細節請說「跑一次防禦健檢」。"
+fi
+M=.claude/skills/.skl-vendor.json
+if [ -f "$M" ]; then
+  python3 - "$M" <<'PY' 2>/dev/null
+import datetime, json, sys
+m = json.load(open(sys.argv[1], encoding="utf-8"))
+t = datetime.datetime.strptime(m.get("updated_at", ""), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+days = (datetime.datetime.now(datetime.timezone.utc) - t).days
+if days >= 14:
+    print(f"[skl] 技能已 {days} 天沒更新，可以說「把技能更新到最新版」。")
+PY
+fi
+exit 0
+"""
 
 
 def load_packs(path=PACKS_FILE):
@@ -69,8 +98,55 @@ def _read_manifest(skills_root):
         return json.load(f)
 
 
+def security_scan(src, source_root=REPO_ROOT, auditor=None):
+    """用技能庫內建的 skill-security-auditor 掃描一個技能。
+    回傳 (verdict, 說明)；verdict 為 PASS／WARN／FAIL／ERROR。
+    掃描工具壞掉時回 ERROR，由呼叫端「不安裝」——寧可少裝，也不在沒掃描的情況下裝。"""
+    auditor = auditor or os.path.join(source_root, AUDITOR_REL)
+    if not os.path.isfile(auditor):
+        return "ERROR", "找不到安全掃描工具（skill-security-auditor）"
+    try:
+        out = subprocess.run([sys.executable, auditor, src, "--json"],
+                             capture_output=True, text=True, timeout=120)
+        rep = json.loads(out.stdout)
+    except subprocess.TimeoutExpired:
+        return "ERROR", "安全掃描逾時"
+    except (OSError, json.JSONDecodeError, ValueError):
+        return "ERROR", "安全掃描工具輸出無法解讀"
+    verdict = rep.get("verdict", "ERROR")
+    cats = sorted({f.get("category", "?") for f in rep.get("findings", [])})
+    return verdict, ("、".join(cats) if cats else "")
+
+
+def install_hook(target, res):
+    """安裝 SessionStart hook；合併既有 .claude/settings.json，不覆蓋使用者原本的設定。"""
+    settings_path = os.path.join(target, ".claude", "settings.json")
+    settings = {}
+    if os.path.exists(settings_path):
+        try:
+            with open(settings_path, encoding="utf-8") as f:
+                settings = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            res["notes"].append("既有 .claude/settings.json 不是合法 JSON，沒有加上開工自動健檢；修好後重跑 install。")
+            return
+    hook_path = os.path.join(target, HOOK_REL)
+    os.makedirs(os.path.dirname(hook_path), exist_ok=True)
+    with open(hook_path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(HOOK_SCRIPT)
+    os.chmod(hook_path, 0o755)
+    groups = settings.setdefault("hooks", {}).setdefault("SessionStart", [])
+    already = any(h.get("command") == HOOK_CMD for g in groups for h in g.get("hooks", []))
+    if not already:
+        groups.append({"hooks": [{"type": "command", "command": HOOK_CMD}]})
+        with open(settings_path, "w", encoding="utf-8") as f:
+            json.dump(settings, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        res["notes"].append("已加上開工自動健檢（.claude/hooks/skl-session-start.sh）：每次開對話會先回報問題數量。")
+
+
 def install(target, pack_names, force=False, dry_run=False, write_claude_md=True,
-            source_root=REPO_ROOT, packs=None, extra_skills=()):
+            source_root=REPO_ROOT, packs=None, extra_skills=(), scan=True, auditor=None,
+            with_hook=True):
     """回傳 (結果 dict, 結束碼)。失敗不中斷，逐一記錄，最後一起報。"""
     packs = packs if packs is not None else load_packs()
     unknown = [p for p in pack_names if p not in packs]
@@ -98,7 +174,7 @@ def install(target, pack_names, force=False, dry_run=False, write_claude_md=True
     skills_root = os.path.join(target, ".claude", "skills")
     manifest = _read_manifest(skills_root) or {"skills": []}
     owned = set(manifest.get("skills", []))
-    res = {"installed": [], "updated": [], "skipped": [], "failed": [], "notes": []}
+    res = {"installed": [], "updated": [], "skipped": [], "failed": [], "notes": [], "warnings": []}
 
     for rel in wanted:
         src = os.path.join(source_root, rel)
@@ -112,6 +188,14 @@ def install(target, pack_names, force=False, dry_run=False, write_claude_md=True
         if exists and name not in owned and not force:
             res["skipped"].append((name, "目標已有同名技能且不是本工具安裝的；要覆蓋請加 --force"))
             continue
+        if scan:
+            verdict, detail = security_scan(src, source_root, auditor)
+            if verdict in ("FAIL", "ERROR"):
+                res["failed"].append((name, f"安全掃描未通過（{verdict}：{detail}），沒有安裝。"
+                                            "確認安全後可加 --no-security-scan 強制安裝"))
+                continue
+            if verdict == "WARN":
+                res["warnings"].append((name, detail))
         if dry_run:
             (res["updated"] if exists else res["installed"]).append(name)
             continue
@@ -140,6 +224,9 @@ def install(target, pack_names, force=False, dry_run=False, write_claude_md=True
             res["notes"].append("已建立 CLAUDE.md（工作守則範本）。記得填第 7 節「本專案資訊」；"
                                 "不是 PWA + GitHub Actions 架構就刪掉第 6 節。")
 
+    if with_hook and not dry_run and (res["installed"] or res["updated"]):
+        install_hook(target, res)
+
     if not dry_run and (res["installed"] or res["updated"]):
         manifest.update({
             "source_repo": "https://github.com/xin7355-collab/skl",
@@ -155,13 +242,15 @@ def install(target, pack_names, force=False, dry_run=False, write_claude_md=True
     return res, (1 if res["failed"] else 0)
 
 
-def update(target, dry_run=False, source_root=REPO_ROOT, packs=None):
+def update(target, dry_run=False, source_root=REPO_ROOT, packs=None, scan=True, auditor=None,
+           with_hook=True):
     m = _read_manifest(os.path.join(target, ".claude", "skills"))
     if not m:
         return {"error": "這個 repo 還沒用本工具裝過技能（找不到 .claude/skills/.skl-vendor.json），請先 install。"}, 2
     return install(target, m.get("packs", []), force=False, dry_run=dry_run,
                    write_claude_md=False, source_root=source_root, packs=packs,
-                   extra_skills=m.get("extra_skills", []))
+                   extra_skills=m.get("extra_skills", []), scan=scan, auditor=auditor,
+                   with_hook=with_hook)
 
 
 def _print(res, dry_run):
@@ -178,6 +267,8 @@ def _print(res, dry_run):
         print(f"  – {n}：{why}")
     for n, why in res["failed"]:
         print(f"  ✗ {n}：{why}")
+    for n, why in res.get("warnings", []):
+        print(f"  ⚠ {n}：安全掃描提醒（{why}）。有連網或讀寫檔案的技能常見，已安裝，建議看一下用途是否合理")
     for note in res["notes"]:
         print(f"※ {note}")
     if res["installed"] or res["updated"]:
@@ -208,6 +299,20 @@ def selftest():
             open(os.path.join(src, rel, "scripts", "__pycache__", "junk.pyc"), "w").close()
         with open(os.path.join(src, "a/skills/beta/big.bin"), "wb") as f:
             f.write(b"0" * (MAX_FILE_BYTES + 1))
+        # hook 測試要真的跑健檢，所以放入真正的掃描腳本。
+        shutil.copyfile(os.path.join(REPO_ROOT, "xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py"),
+                        os.path.join(src, "xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py"))
+        # 假的安全掃描工具：名稱含 evil 判 FAIL、含 beta 判 WARN，其餘 PASS。
+        fa = os.path.join(src, AUDITOR_REL)
+        os.makedirs(os.path.dirname(fa), exist_ok=True)
+        with open(fa, "w") as f:
+            f.write("import json,sys,os\nn=os.path.basename(sys.argv[1].rstrip('/'))\n"
+                    "v='FAIL' if 'evil' in n else ('WARN' if 'beta' in n else 'PASS')\n"
+                    "print(json.dumps({'verdict':v,'findings':[{'category':'NET-EXFIL'}] if v!='PASS' else []}))\n")
+        for rel in ["a/skills/evil"]:
+            os.makedirs(os.path.join(src, rel))
+            with open(os.path.join(src, rel, "SKILL.md"), "w") as f:
+                f.write("---\nname: evil\ndescription: y\n---\n")
         fake = {"one": {"desc": "", "skills": ["a/skills/alpha", "a/skills/beta"]},
                 "bad": {"desc": "", "skills": ["a/skills/ghost"]}}
         tgt = os.path.join(d, "app")
@@ -255,6 +360,44 @@ def selftest():
         r, code = update(os.path.join(d, "src"), source_root=src, packs=fake)
         check(code == 2, "沒裝過就 update 會提示先 install")
 
+        # 安全掃描
+        tgt3 = os.path.join(d, "app3")
+        os.makedirs(os.path.join(tgt3, ".claude"))
+        with open(os.path.join(tgt3, ".claude", "settings.json"), "w") as f:
+            json.dump({"permissions": {"allow": ["Bash(ls)"]}}, f)
+        r, code = install(tgt3, ["one"], source_root=src, packs=fake, extra_skills=["a/skills/evil"])
+        check(code == 1 and any(n == "evil" and "FAIL" in w for n, w in r["failed"]), "安全掃描 FAIL 的技能不安裝")
+        check(not os.path.exists(os.path.join(tgt3, ".claude/skills/evil")), "FAIL 的技能確實沒有被複製")
+        check(any(n == "beta" for n, _ in r["warnings"]) and "beta" in r["installed"], "WARN 的技能照裝但列出提醒")
+        r2, _ = install(tgt3, [], source_root=src, packs=fake, extra_skills=["a/skills/evil"], scan=False)
+        check("evil" in r2["installed"], "--no-security-scan 可強制安裝")
+        r3, code3 = install(os.path.join(d, "app2"), ["one"], source_root=src, packs=fake,
+                            auditor=os.path.join(d, "nope.py"))
+        check(code3 == 1 and all("ERROR" in w for _, w in r3["failed"]), "找不到掃描工具時一律不安裝（fail closed）")
+
+        # 開工自動健檢 hook
+        with open(os.path.join(tgt3, ".claude", "settings.json")) as f:
+            st = json.load(f)
+        cmds = [h["command"] for g in st["hooks"]["SessionStart"] for h in g["hooks"]]
+        check(st["permissions"]["allow"] == ["Bash(ls)"] and cmds == [HOOK_CMD], "hook 合併進既有 settings.json，原設定保留")
+        check(os.access(os.path.join(tgt3, HOOK_REL), os.X_OK), "hook 腳本可執行")
+        install(tgt3, ["one"], source_root=src, packs=fake)
+        with open(os.path.join(tgt3, ".claude", "settings.json")) as f:
+            st = json.load(f)
+        check(len(st["hooks"]["SessionStart"]) == 1, "重複安裝不會重複加 hook")
+        tgt4 = os.path.join(d, "app4")
+        os.makedirs(os.path.join(tgt4, ".claude"))
+        with open(os.path.join(tgt4, ".claude", "settings.json"), "w") as f:
+            f.write("{壞掉")
+        r, _ = install(tgt4, ["one"], source_root=src, packs=fake)
+        with open(os.path.join(tgt4, ".claude", "settings.json")) as f:
+            check(f.read() == "{壞掉" and any("不是合法 JSON" in n for n in r["notes"]),
+                  "settings.json 壞掉時不覆蓋並提示")
+        hp = os.path.join(tgt3, HOOK_REL)
+        out = subprocess.run(["bash", hp], capture_output=True, text=True, timeout=120,
+                             env={**os.environ, "CLAUDE_PROJECT_DIR": tgt3})
+        check(out.returncode == 0 and "[skl 健檢]" in out.stdout, "hook 實際執行會輸出健檢摘要且不擋開工")
+
     print("\n自我測試" + ("全部通過" if ok else "有失敗"))
     return 0 if ok else 1
 
@@ -270,9 +413,13 @@ def main(argv=None):
     i.add_argument("--force", action="store_true", help="覆蓋目標裡同名、但不是本工具裝的技能")
     i.add_argument("--dry-run", action="store_true", help="只列出會做什麼，不寫入")
     i.add_argument("--no-claude-md", action="store_true", help="不建立 CLAUDE.md 範本")
+    i.add_argument("--no-security-scan", action="store_true", help="跳過安裝前的安全掃描（確認來源可信才用）")
+    i.add_argument("--no-hook", action="store_true", help="不加開工自動健檢")
     u = sub.add_parser("update", help="把已裝的技能更新成 skl 最新版")
     u.add_argument("--target", default=".")
     u.add_argument("--dry-run", action="store_true")
+    u.add_argument("--no-security-scan", action="store_true")
+    u.add_argument("--no-hook", action="store_true")
     sub.add_parser("selftest", help="離線自我測試")
     args = ap.parse_args(argv)
 
@@ -290,9 +437,11 @@ def main(argv=None):
         packs_arg = args.packs if args.packs is not None else ("" if skills else "core")
         packs = [p.strip() for p in packs_arg.split(",") if p.strip()]
         res, code = install(os.path.abspath(args.target), packs, args.force, args.dry_run,
-                            not args.no_claude_md, extra_skills=skills)
+                            not args.no_claude_md, extra_skills=skills,
+                            scan=not args.no_security_scan, with_hook=not args.no_hook)
     elif args.cmd == "update":
-        res, code = update(os.path.abspath(args.target), args.dry_run)
+        res, code = update(os.path.abspath(args.target), args.dry_run,
+                           scan=not args.no_security_scan, with_hook=not args.no_hook)
     else:
         ap.print_help()
         return 2

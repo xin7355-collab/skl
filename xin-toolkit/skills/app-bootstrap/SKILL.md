@@ -29,6 +29,10 @@ description: 把 skl 技能庫裡挑好的技能組合（core／pwa／actions／
    python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py install --target . --packs core,pwa
    ```
    - 目標已有同名技能且不是本工具裝的 → 預設略過（不覆蓋使用者自己的技能）。
+   - **安裝前自動安全掃描**（skill-security-auditor）：FAIL 不安裝、WARN 照裝但列出；
+     掃描工具壞掉時一律不裝（確認來源可信才用 `--no-security-scan`）。
+   - **開工自動健檢**：加上 SessionStart hook（`.claude/hooks/skl-session-start.sh`），每次開對話先回報
+     問題數量，技能超過 14 天沒更新會提醒；合併進既有 `.claude/settings.json`，不覆蓋原設定（`--no-hook` 可關）。
    - 目標沒有 `CLAUDE.md` → 建立工作守則範本；已有 → 不覆蓋，提示合併。
 4. 若新建了 `CLAUDE.md`：依專案實際情況填第 7 節；不是 PWA + Actions 架構就刪掉第 6 節。
 5. 裝完立刻跑一次 `app-guardrails-audit` 做健檢，把結果回報給使用者。

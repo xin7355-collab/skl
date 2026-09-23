@@ -170,7 +170,9 @@ def audit(root, max_kb=1024):
                     flags["busy_timeout"] = True
                 if re.search(r"retry|retries|backoff|tenacity|attempt", low):
                     flags["retry"] = True
-                if re.search(r"sqlite3\.connect\(|new\s+Database\(|better-sqlite3", line):
+                # 唯讀連線（mode=ro）不會寫入，不需要 WAL 與等鎖設定；標了 ignore 的測試範例也不算。
+                if (not ignored and "mode=ro" not in line
+                        and re.search(r"sqlite3\.connect\(|new\s+Database\(|better-sqlite3", line)):
                     sqlite_lines.append((no, line))
                 if http_line is None and re.search(r"requests\.(get|post|put|delete)\(|urlopen\(|httpx\.|\bfetch\(|axios\.", line):
                     http_line = (no, line)
@@ -295,6 +297,7 @@ def selftest():
         check(res["scanned_files"] == 0 and not res["findings"], "空資料夾不報錯")
 
         w("bad/db.py", "import sqlite3\nconn = sqlite3.connect('a.db')\n")
+        w("ok/ro.py", "import sqlite3\nc = sqlite3.connect(f'file:{p}?mode=ro', uri=True)\n")
         w("good/db.py", "import sqlite3\nc = sqlite3.connect('a.db', timeout=30)\nc.execute('PRAGMA journal_mode=WAL')\n")
         w("bad/api.py", "import requests\nr = requests.get('https://x.io/v1?api_key=' + k)\nprint('token', token)\n")  # guardrails: ignore
         w("good/api.py", "import requests\n# retry with backoff\nr = requests.get(url, headers={'x-api-key': k})\n")
@@ -328,6 +331,7 @@ def selftest():
 
         check({"sqlite-no-wal", "sqlite-no-timeout"} <= rules_by_file("bad/db.py"), "SQLite 沒 WAL／沒 timeout 會被抓")
         check(not rules_by_file("good/db.py"), "SQLite 有 WAL + timeout 不誤報")
+        check(not rules_by_file("ok/ro.py"), "SQLite 唯讀連線不報 WAL")
         check({"secret-in-url", "log-secret", "http-no-retry"} <= rules_by_file("bad/api.py"), "金鑰在網址／印金鑰／沒重試會被抓")
         check(not rules_by_file("good/api.py"), "金鑰放標頭且有重試不誤報")
         check({"unbounded-promise-all", "file-to-arraybuffer", "ios-share-title"} <= rules_by_file("bad/app.js"),

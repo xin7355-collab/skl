@@ -1,0 +1,65 @@
+---
+# 每週一台灣時間 08:00：App 健檢、上游技能庫更新、網頁目錄覆蓋率 → 一個 Issue（只寫數量）。
+# 全部正常時關閉 Issue，不發通知；有要處理的才開／更新。
+name: Weekly maintenance report
+
+'on':
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: weekly-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SKL_READ_TOKEN: ${{ secrets.SKL_READ_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Self-test
+        run: python3 ops/weekly_report.py selftest
+
+      # 各段獨立：某段壞掉時其他段照出，報告會註明缺哪一段。
+      - name: Audit apps
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/wr
+          python3 ops/weekly_report.py apps --out /tmp/wr/apps.json --budget-sec 600
+
+      - name: Check upstream
+        continue-on-error: true
+        run: python3 ops/weekly_report.py upstream --out /tmp/wr/upstream.json
+
+      - name: Check catalog coverage
+        continue-on-error: true
+        run: python3 ops/weekly_report.py coverage --out /tmp/wr/coverage.json
+
+      - name: Publish issue
+        if: always()
+        run: |
+          mkdir -p /tmp/wr
+          python3 ops/weekly_report.py compose /tmp/wr/apps.json /tmp/wr/upstream.json /tmp/wr/coverage.json \
+            --out /tmp/wr/body.md | tee /tmp/wr/compose.log
+          action=$(grep -o 'ACTION=[0-9]*' /tmp/wr/compose.log | cut -d= -f2)
+          gh label create weekly-report --color 0f766e --description "每週維護報告" --force >/dev/null
+          num=$(gh issue list --label weekly-report --state open --json number --jq '.[0].number // empty')
+          if [ "${action:-0}" -gt 0 ]; then
+            title="每週維護報告：待處理 ${action} 項"
+            if [ -n "$num" ]; then
+              gh issue edit "$num" --title "$title" --body-file /tmp/wr/body.md
+            else
+              gh issue create --title "$title" --label weekly-report --body-file /tmp/wr/body.md
+            fi
+          elif [ -n "$num" ]; then
+            gh issue close "$num" --comment "本週全部正常，自動關閉。"
+          fi

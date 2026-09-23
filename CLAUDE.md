@@ -58,8 +58,14 @@
   - `web/index.html`：技能挑選網頁（GitHub Pages，`pages.yml` 部署）；`web/build_catalog.py` 產生
     `catalog.json`（部署時才產生，不進 git）；`web/zh.json`：每個技能的中文說明（只給網頁顯示用）；
     `web/categories.json`：技能用途分類規則（由上而下比對，可用 overrides 指定）。
+  - `web/stock.html`＋`web/build_stock.py`：台股看板（資料來自 Release 附件 `tw-stock-data` 的 SQLite，
+    由 `TW stock daily` 工作流每個交易日 15:30 更新後觸發重新部署）。
+  - `ops/weekly_report.py`＋`Weekly maintenance report` 工作流：每週一 08:00 健檢 `.github/apps.json` 列的 App、
+    比對上游（基準在 `.github/upstream-sync.json`）、檢查中文說明覆蓋率 → 只寫數量的 Issue。
+    同步上游後要更新 upstream-sync.json 的 commit。
+  - `xin-toolkit/skills/file-intake`：使用者上傳檔案要「做出來」時的標準流程。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。
-- 需要的 Secrets：無。
+- 需要的 Secrets：無（選用 `SKL_READ_TOKEN`：唯讀 Token，讓每週報告能掃私人 repo）。
 - 部署在哪：網頁 https://xin7355-collab.github.io/skl/ （`Deploy web page` 工作流）；
   另有 `CI Quality Gate`。兩者都在 push 到 main 時跑。
 - 特別注意：
