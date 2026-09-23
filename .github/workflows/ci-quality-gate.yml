@@ -80,6 +80,7 @@ jobs:
           python3 xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py selftest
           python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
           python3 web/build_catalog.py selftest
+          python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py selftest
 
       - name: Validate plugin.json manifests (blocking — guards #539 + #686)
         run: |

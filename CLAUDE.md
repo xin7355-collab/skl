@@ -50,10 +50,14 @@
   - `xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py`：低資源防禦準則掃描。
   - `xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py`：把技能複製進其他 repo。
   - `xin-toolkit/skills/app-bootstrap/assets/packs.json`：技能組合清單（改這裡增減技能）。
+  - `xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py`：台股官方 OpenAPI 快照抓取（存 SQLite）；
+    `assets/tw-stock-daily.yml` 是給其他 App 的每日排程範本。真實 API 驗證用 `TW stock API smoke test`
+    工作流（手動執行）。
   - `xin-toolkit/skills/app-bootstrap/assets/CLAUDE.template.md`：給其他 App 的工作守則範本
     （含 PWA + Actions 章節）。改守則時兩邊都要改。
   - `web/index.html`：技能挑選網頁（GitHub Pages，`pages.yml` 部署）；`web/build_catalog.py` 產生
-    `catalog.json`（部署時才產生，不進 git）；`web/zh.json`：每個技能的中文說明（只給網頁顯示用）。
+    `catalog.json`（部署時才產生，不進 git）；`web/zh.json`：每個技能的中文說明（只給網頁顯示用）；
+    `web/categories.json`：技能用途分類規則（由上而下比對，可用 overrides 指定）。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。
 - 需要的 Secrets：無。
 - 部署在哪：網頁 https://xin7355-collab.github.io/skl/ （`Deploy web page` 工作流）；

@@ -129,6 +129,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
         <li>actions：有 .github/workflows 資料夾。</li>
         <li>backend：有資料庫或 API 伺服器。</li>
         <li>security：有登入、金鑰、使用者資料。</li>
+        <li>stock：股票相關 App 或要分析個股（含台股資料收集工具）。</li>
         <li>不確定就只勾 core，指令裡已經請 Claude 幫你判斷要不要加。</li>
       </ul>
     </details>
@@ -139,7 +140,8 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
     <p class="hint">可以單個複製，也可以勾選多個後從底部一次複製。</p>
     <div class="filters">
       <input id="q" type="search" placeholder="搜尋：中文或英文，例如 資料庫、SEO、測試" autocomplete="off">
-      <select id="domain"><option value="">全部領域</option></select>
+      <select id="cat" aria-label="類別"><option value="">全部類別</option></select>
+      <select id="domain" aria-label="來源領域"><option value="">全部來源領域</option></select>
       <label class="toggle"><input id="onlySel" type="checkbox"> 只看已勾選</label>
     </div>
     <p class="count" id="count"></p>
@@ -287,7 +289,8 @@ function renderPacks() {
 function orderedPacks() { return Object.keys(catalog.packs).filter((k) => selPacks.has(k)); }
 function updatePackOut() { $("packPrompt").value = packPrompt(orderedPacks()); }
 
-function matches(s, q, dom, onlySel) {
+function matches(s, q, dom, onlySel, cat) {
+  if (cat && s.cat !== cat) return false;
   if (dom && s.domain !== dom) return false;
   if (onlySel && !selSkills.has(s.path)) return false;
   if (!q) return true;
@@ -297,9 +300,11 @@ function matches(s, q, dom, onlySel) {
 function renderSkills() {
   const q = $("q").value.trim().toLowerCase();
   const dom = $("domain").value;
+  const cat = $("cat").value;
+  store.set("cat", cat);
   const onlySel = $("onlySel").checked;
-  const list = catalog.skills.filter((s) => matches(s, q, dom, onlySel));
-  const zhName = Object.fromEntries(catalog.domains.map((d) => [d.id, d.zh]));
+  const list = catalog.skills.filter((s) => matches(s, q, dom, onlySel, cat));
+  const catName = Object.fromEntries(catalog.categories.map((c) => [c.id, c.zh]));
   $("count").textContent = `找到 ${list.length} 個技能`;
   const box = $("skillList");
   box.innerHTML = "";
@@ -313,7 +318,7 @@ function renderSkills() {
       `<details><summary>英文原文與路徑</summary><p class="en"></p><p class="pa"></p></details></div>` +
       `<button class="btn small ghost">複製</button></div>`;
     el.querySelector(".zh").textContent = s.zh || s.desc.slice(0, 80);
-    el.querySelector(".tag").textContent = zhName[s.domain] || s.domain;
+    el.querySelector(".tag").textContent = catName[s.cat] || "其他";
     el.querySelector(".nm").textContent = s.name;
     el.querySelector(".en").textContent = s.desc;
     el.querySelector(".pa").textContent = s.path;
@@ -356,6 +361,7 @@ function wire() {
   let t;
   $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => { shown = PAGE; renderSkills(); }, 150); });
   $("domain").addEventListener("change", () => { shown = PAGE; renderSkills(); });
+  $("cat").addEventListener("change", () => { shown = PAGE; renderSkills(); });
   $("onlySel").addEventListener("change", () => { shown = PAGE; renderSkills(); });
   $("more").addEventListener("click", () => { shown += PAGE; renderSkills(); });
   $("copySel").addEventListener("click", () => copyText(skillsPrompt([...selSkills])));
@@ -398,6 +404,16 @@ async function load() {
   const valid = new Set(catalog.skills.map((s) => s.path));
   for (const p of [...selSkills]) if (!valid.has(p)) selSkills.delete(p);
   for (const p of [...selPacks]) if (!catalog.packs[p]) selPacks.delete(p);
+  const csel = $("cat");
+  for (const c of catalog.categories) {
+    const o = document.createElement("option");
+    o.value = c.id;
+    o.textContent = `${c.zh}（${c.count}）`;
+    csel.appendChild(o);
+  }
+  // 記住上次選的類別；類別被移除時退回「全部」，避免清單莫名變空。
+  const lastCat = store.get("cat", "");
+  csel.value = catalog.categories.some((c) => c.id === lastCat) ? lastCat : "";
   const sel = $("domain");
   for (const d of catalog.domains) {
     const o = document.createElement("option");

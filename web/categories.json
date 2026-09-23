@@ -1,0 +1,281 @@
+{
+ "_說明": "技能用途分類（給網頁篩選用，不影響技能本身）。由上而下比對，第一個符合的類別勝出。path：路徑含有其中任一字串；name：技能名稱含有其中任一字串；exclude_path：路徑含有就跳過這個類別；overrides：直接指定個別技能路徑的類別。",
+ "categories": [
+  {
+   "id": "stock",
+   "zh": "股票投資",
+   "name": [
+    "tw-stock",
+    "stock-analysis",
+    "financial-analyst"
+   ]
+  },
+  {
+   "id": "security",
+   "zh": "資安與隱私",
+   "name": [
+    "security",
+    "pen-testing",
+    "red-team",
+    "threat",
+    "secops",
+    "secrets",
+    "vault",
+    "incident-response",
+    "soc2",
+    "gdpr",
+    "privacy",
+    "iso27001",
+    "infosec",
+    "ciso"
+   ]
+  },
+  {
+   "id": "ai",
+   "zh": "AI 與代理人",
+   "path": [
+    "agent-launcher/",
+    "agent-memory",
+    "skillopt",
+    "loop-library/"
+   ],
+   "name": [
+    "agent",
+    "rag-",
+    "prompt",
+    "-ml-",
+    "ml-engineer",
+    "mcp",
+    "skill-",
+    "llm",
+    "ai-",
+    "caio",
+    "chief-ai",
+    "computer-vision",
+    "data-scientist",
+    "self-eval",
+    "hivemind",
+    "fable",
+    "workflow-builder",
+    "karpathy"
+   ],
+   "exclude_path": [
+    "c-level-advisor/",
+    "c-level-agents/",
+    "compliance-os/",
+    "ra-qm-team/"
+   ]
+  },
+  {
+   "id": "devops",
+   "zh": "雲端與維運",
+   "name": [
+    "aws",
+    "azure",
+    "gcp",
+    "cloud",
+    "devops",
+    "ci-cd",
+    "kubernetes",
+    "terraform",
+    "helm",
+    "docker",
+    "observability",
+    "slo",
+    "incident",
+    "runbook",
+    "chaos",
+    "git-",
+    "monorepo",
+    "release",
+    "changelog",
+    "feature-flag",
+    "ms365"
+   ]
+  },
+  {
+   "id": "backend",
+   "zh": "後端與資料庫",
+   "name": [
+    "backend",
+    "database",
+    "sql",
+    "api-",
+    "data-engineer",
+    "migration",
+    "stripe",
+    "strict-api",
+    "boost-asio",
+    "embedded",
+    "iot"
+   ]
+  },
+  {
+   "id": "web",
+   "zh": "前端與設計",
+   "path": [
+    "markdown-html/"
+   ],
+   "name": [
+    "frontend",
+    "design",
+    "ui-",
+    "ux-",
+    "a11y",
+    "epic",
+    "screenshot",
+    "browser",
+    "playwright",
+    "email-template",
+    "apple-hig",
+    "landing",
+    "fullstack"
+   ]
+  },
+  {
+   "id": "finance",
+   "zh": "財務會計",
+   "path": [
+    "finance/",
+    "research-finance"
+   ],
+   "name": [
+    "cfo",
+    "saas-metrics",
+    "procurement",
+    "pricing"
+   ]
+  },
+  {
+   "id": "compliance",
+   "zh": "法規與品質",
+   "path": [
+    "ra-qm-team/",
+    "compliance-os/"
+   ],
+   "name": [
+    "counsel",
+    "legal",
+    "gc-",
+    "iso13485",
+    "iso42001",
+    "iso27001",
+    "fda",
+    "mdr-",
+    "compliance",
+    "regulatory",
+    "qms",
+    "capa-"
+   ]
+  },
+  {
+   "id": "marketing",
+   "zh": "行銷與銷售",
+   "path": [
+    "marketing-skill/",
+    "marketing/",
+    "business-growth/",
+    "commercial/"
+   ],
+   "name": [
+    "seo",
+    "aeo",
+    "sales",
+    "cmo",
+    "cro",
+    "growth",
+    "brand",
+    "content"
+   ]
+  },
+  {
+   "id": "product",
+   "zh": "產品與專案",
+   "path": [
+    "product-team/",
+    "project-management/"
+   ],
+   "name": [
+    "product",
+    "cpo",
+    "roadmap",
+    "scrum",
+    "jira",
+    "confluence",
+    "pm-"
+   ]
+  },
+  {
+   "id": "research",
+   "zh": "研究與學習",
+   "path": [
+    "research/",
+    "research-ops/"
+   ],
+   "name": [
+    "research",
+    "litreview",
+    "grants",
+    "patent",
+    "syllabus",
+    "notebooklm"
+   ]
+  },
+  {
+   "id": "leadership",
+   "zh": "經營與管理",
+   "path": [
+    "c-level-advisor/",
+    "c-level-agents/",
+    "business-operations/"
+   ],
+   "name": [
+    "ceo",
+    "coo",
+    "chro",
+    "board-",
+    "founder",
+    "executive",
+    "okr"
+   ]
+  },
+  {
+   "id": "productivity",
+   "zh": "個人生產力",
+   "path": [
+    "productivity/"
+   ],
+   "name": [
+    "meeting",
+    "email",
+    "inbox",
+    "weekly",
+    "reflect",
+    "capture",
+    "deep-work"
+   ]
+  },
+  {
+   "id": "dev",
+   "zh": "程式開發與測試",
+   "path": [
+    "engineering-team/",
+    "engineering/",
+    "xin-toolkit/"
+   ]
+  },
+  {
+   "id": "other",
+   "zh": "其他",
+   "path": [
+    ""
+   ]
+  }
+ ],
+ "overrides": {
+  "xin-toolkit/skills/app-guardrails-audit": "dev",
+  "xin-toolkit/skills/app-bootstrap": "ai",
+  "engineering/skills/interview-system-designer": "leadership",
+  "product-team/skills/experiment-designer": "product"
+ }
+}

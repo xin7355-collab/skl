@@ -1,0 +1,52 @@
+---
+# 放到你的 App repo：.github/workflows/tw-stock-daily.yml
+# 交易日收盤後抓台股快照，資料庫存在 Release 附件（不進 git 歷史，單檔上限 2 GiB）。
+# 需要先把 tw_stock_fetch.py 放在 scripts/（用 app-bootstrap 安裝 stock 組合就會有，
+# 路徑在 .claude/skills/tw-stock/scripts/tw_stock_fetch.py）。
+name: TW stock daily
+
+'on':
+  schedule:
+    # 台灣時間週一到週五 15:30（UTC 07:30），收盤後資料通常已更新。
+    - cron: '30 7 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tw-stock-daily
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: tw-stock-data
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download previous database
+        run: |
+          mkdir -p data
+          # 第一次跑還沒有 Release 是「還沒設定」，不是錯誤：建立空的 Release 繼續。
+          if ! gh release download "$TAG" -p tw_stock.db -D data 2>/dev/null; then
+            echo "::notice::還沒有資料庫，這次從頭開始。"
+            gh release view "$TAG" >/dev/null 2>&1 || \
+              gh release create "$TAG" --title "tw-stock data" --notes "自動產生的台股資料庫" --latest=false
+          fi
+
+      - name: Fetch snapshots
+        run: python3 .claude/skills/tw-stock/scripts/tw_stock_fetch.py fetch --db data/tw_stock.db
+
+      # 全部失敗時資料庫仍保有舊資料與這次的失敗紀錄（runs 表），照樣上傳，下次接著抓。
+      - name: Upload database
+        if: always()
+        run: |
+          if [ -f data/tw_stock.db ]; then
+            gh release upload "$TAG" data/tw_stock.db --clobber
+          else
+            echo "::warning::沒有產生資料庫，略過上傳。"
+          fi

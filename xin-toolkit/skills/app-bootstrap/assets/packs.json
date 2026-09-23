@@ -40,5 +40,13 @@
       "engineering-team/skills/senior-security",
       "engineering/skills/skill-security-auditor"
     ]
+  },
+  "stock": {
+    "desc": "股票投資：台股資料收集與分析、美股／印度股基本面分析、財務報表與估值",
+    "skills": [
+      "xin-toolkit/skills/tw-stock",
+      "finance/skills/stock-analysis",
+      "finance/skills/financial-analyst"
+    ]
   }
 }

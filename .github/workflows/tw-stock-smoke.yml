@@ -1,0 +1,38 @@
+---
+# 手動執行：在 GitHub 的網路上實際呼叫證交所／櫃買 API，確認 tw-stock 抓得到資料、
+# 欄位名稱仍能辨識。只做驗證，不保存資料。
+name: TW stock API smoke test
+
+'on':
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch all datasets
+        run: |
+          mkdir -p /tmp/tw
+          python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py fetch --db /tmp/tw/t.db
+
+      - name: Show row counts and sample fields
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json, sqlite3, os
+          if not os.path.exists("/tmp/tw/t.db"):
+              raise SystemExit("沒有產生資料庫")
+          c = sqlite3.connect("/tmp/tw/t.db")
+          for ds, n, d in c.execute("SELECT dataset, COUNT(*), MAX(data_date) FROM snapshots GROUP BY dataset"):
+              keys = list(json.loads(c.execute("SELECT payload FROM snapshots WHERE dataset=? LIMIT 1", (ds,)).fetchone()[0]))
+              print(f"{ds}: {n} 筆, 資料日期 {d}, 欄位 {keys[:12]}")
+          for row in c.execute("SELECT dataset, ok, rows, message FROM runs"):
+              print("run:", row)
+          PY
+          python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py latest --db /tmp/tw/t.db --code 2330 | head -40

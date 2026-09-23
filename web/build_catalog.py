@@ -24,6 +24,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(ROOT, "web", "catalog.json")
 ZH = os.path.join(ROOT, "web", "zh.json")
 PACKS = os.path.join(ROOT, "xin-toolkit", "skills", "app-bootstrap", "assets", "packs.json")
+CATS = os.path.join(ROOT, "web", "categories.json")
 
 # 這些是給其他 AI 工具用的鏡像副本或文件，不是技能本體，列進來會重複。
 SKIP_TOP = {".git", ".gemini", ".codex", ".vibe", ".hermes", "docs", "audit", "node_modules", "site"}
@@ -100,7 +101,26 @@ def collect(root=ROOT):
     return skills, problems
 
 
-def build(root=ROOT, zh_path=ZH, packs_path=PACKS):
+def load_categories(path):
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return data["categories"], data.get("overrides", {})
+
+
+def classify(skill, categories, overrides):
+    """由上而下比對，第一個符合的類別勝出；都不符合就歸「其他」。"""
+    if skill["path"] in overrides:
+        return overrides[skill["path"]]
+    path, name = skill["path"] + "/", skill["name"].lower()
+    for c in categories:
+        if any(x in path for x in c.get("exclude_path", [])):
+            continue
+        if any(x in path for x in c.get("path", [])) or any(x in name for x in c.get("name", [])):
+            return c["id"]
+    return "other"
+
+
+def build(root=ROOT, zh_path=ZH, packs_path=PACKS, cats_path=CATS):
     skills, problems = collect(root)
     zh = {}
     if os.path.isfile(zh_path):
@@ -108,8 +128,18 @@ def build(root=ROOT, zh_path=ZH, packs_path=PACKS):
             zh = json.load(f)
     with open(packs_path, encoding="utf-8") as f:
         packs = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    categories, overrides = load_categories(cats_path)
+    known = {c["id"] for c in categories} | {"other"}
+    paths = {s["path"] for s in skills}
+    # 覆寫指到不存在的技能或類別，多半是上游改名；列出來而不是默默失效。
+    for p, cid in overrides.items():
+        if p not in paths:
+            problems.append((p, "categories.json 的 overrides 指到不存在的技能"))
+        if cid not in known:
+            problems.append((p, f"categories.json 的 overrides 用了不存在的類別 {cid}"))
     for s in skills:
         s["zh"] = zh.get(s["path"], "")
+        s["cat"] = classify(s, categories, overrides)
     missing = [s["path"] for s in skills if not s["zh"]]
     domains = sorted({s["domain"] for s in skills})
     catalog = {
@@ -117,6 +147,9 @@ def build(root=ROOT, zh_path=ZH, packs_path=PACKS):
         "packs": packs,
         "domains": [{"id": d, "zh": DOMAIN_ZH.get(d, d),
                      "count": sum(1 for s in skills if s["domain"] == d)} for d in domains],
+        "categories": [{"id": c["id"], "zh": c["zh"],
+                        "count": sum(1 for s in skills if s["cat"] == c["id"])}
+                       for c in categories if any(s["cat"] == c["id"] for s in skills)],
     }
     return catalog, problems, missing
 
@@ -144,10 +177,23 @@ def selftest():
         w("docs/skills/z/SKILL.md", "---\nname: z\ndescription: doc\n---\n")
         w("packs.json", json.dumps({"_說明": "x", "core": {"desc": "d", "skills": ["eng/skills/a"]}}))
         w("zh.json", json.dumps({"eng/skills/a": "中文一"}))
+        w("cats.json", json.dumps({"categories": [
+            {"id": "sec", "zh": "資安", "name": ["b"], "exclude_path": ["nosec/"]},
+            {"id": "eng", "zh": "工程", "path": ["eng/"]}],
+            "overrides": {"eng/skills/d": "sec", "gone/skills/x": "eng"}}))
+        w("nosec/skills/b/SKILL.md", "---\nname: b\ndescription: x\n---\n")
 
-        cat, problems, missing = build(d, os.path.join(d, "zh.json"), os.path.join(d, "packs.json"))
+        cat, problems, missing = build(d, os.path.join(d, "zh.json"), os.path.join(d, "packs.json"),
+                                       os.path.join(d, "cats.json"))
         by = {s["path"]: s for s in cat["skills"]}
-        check(set(by) == {"eng/skills/a", "eng/skills/b", "eng/skills/c", "eng/skills/d"}, "略過鏡像與 docs，只收技能本體")
+        check(set(by) == {"eng/skills/a", "eng/skills/b", "eng/skills/c", "eng/skills/d", "nosec/skills/b"},
+              "略過鏡像與 docs，只收技能本體")
+        check(by["eng/skills/b"]["cat"] == "sec", "名稱規則比路徑規則先比對（由上而下）")
+        check(by["eng/skills/a"]["cat"] == "eng", "路徑規則")
+        check(by["eng/skills/d"]["cat"] == "sec", "overrides 優先")
+        check(by["nosec/skills/b"]["cat"] == "other", "exclude_path 跳過該類別，都不符合歸其他")
+        check(any(p == "gone/skills/x" for p, _ in problems), "overrides 指到不存在的技能會列出")
+        check([c["id"] for c in cat["categories"]] == ["sec", "eng"], "類別清單照設定順序且只列有技能的")
         check(by["eng/skills/a"]["desc"] == "plain one", "引號包住的 description 會去掉引號")
         check(by["eng/skills/b"]["desc"] == "folded text here", "> 摺疊區塊會接成一行")
         check(by["eng/skills/a"]["zh"] == "中文一" and "eng/skills/b" in missing, "中文對照有就帶入、沒有就列入缺少清單")
