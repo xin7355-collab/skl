@@ -253,6 +253,24 @@ def update(target, dry_run=False, source_root=REPO_ROOT, packs=None, scan=True, 
                    with_hook=with_hook)
 
 
+def catalog_lines(source_root=REPO_ROOT):
+    """全部技能的精簡清單（依類別分組），給目標 App 的 Claude 自己挑選用。
+    直接讀 skl 的網頁目錄產生器，確保和網頁看到的中文說明、分類一致。"""
+    sys.path.insert(0, os.path.join(source_root, "web"))
+    import build_catalog  # noqa: E402
+    cat, _, _ = build_catalog.build(source_root,
+                                    os.path.join(source_root, "web", "zh.json"),
+                                    os.path.join(source_root, "xin-toolkit", "skills", "app-bootstrap", "assets", "packs.json"),
+                                    os.path.join(source_root, "web", "categories.json"))
+    names = {c["id"]: c["zh"] for c in cat["categories"]}
+    out = [f"# skl 技能目錄：{len(cat['skills'])} 個。格式：路徑｜中文說明。安裝用 install --skills 路徑1,路徑2"]
+    for cid, zh in names.items():
+        items = [s for s in cat["skills"] if s["cat"] == cid]
+        out.append(f"\n## {zh}（{len(items)}）")
+        out += [f"{s['path']}｜{s['zh'] or s['desc'][:80]}" for s in items]
+    return out
+
+
 def _print(res, dry_run):
     if "error" in res:
         print(res["error"], file=sys.stderr)
@@ -360,6 +378,7 @@ def selftest():
         r, code = update(os.path.join(d, "src"), source_root=src, packs=fake)
         check(code == 2, "沒裝過就 update 會提示先 install")
 
+
         # 安全掃描
         tgt3 = os.path.join(d, "app3")
         os.makedirs(os.path.join(tgt3, ".claude"))
@@ -398,6 +417,11 @@ def selftest():
                              env={**os.environ, "CLAUDE_PROJECT_DIR": tgt3})
         check(out.returncode == 0 and "[skl 健檢]" in out.stdout, "hook 實際執行會輸出健檢摘要且不擋開工")
 
+    lines = catalog_lines()
+    paths = [ln.split("｜")[0] for ln in lines if "｜" in ln and not ln.startswith("#")]
+    check(len(paths) > 300 and all(os.path.isfile(os.path.join(REPO_ROOT, p, "SKILL.md")) for p in paths),
+          "catalog 列出全部技能，且每個路徑都能直接拿去 install --skills")
+
     print("\n自我測試" + ("全部通過" if ok else "有失敗"))
     return 0 if ok else 1
 
@@ -406,6 +430,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="把 skl 技能複製進其他 App 的 repo")
     sub = ap.add_subparsers(dest="cmd")
     sub.add_parser("list", help="列出技能組合")
+    sub.add_parser("catalog", help="列出全部技能（依類別分組），給 App 自己挑選")
     i = sub.add_parser("install", help="安裝技能組合")
     i.add_argument("--target", default=".", help="目標 App 的 repo 根目錄（預設目前資料夾）")
     i.add_argument("--packs", default=None, help="逗號分隔，例如 core,pwa,actions（沒給 --skills 時預設 core）")
@@ -425,6 +450,9 @@ def main(argv=None):
 
     if args.cmd == "selftest":
         return selftest()
+    if args.cmd == "catalog":
+        print("\n".join(catalog_lines()))
+        return 0
     if args.cmd == "list":
         for name, p in load_packs().items():
             print(f"{name:9} {p['desc']}")

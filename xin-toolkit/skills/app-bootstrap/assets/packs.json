@@ -48,5 +48,11 @@
       "finance/skills/stock-analysis",
       "finance/skills/financial-analyst"
     ]
+  },
+  "video": {
+    "desc": "影片：全自動剪輯（去空白、精華、直式短影音）",
+    "skills": [
+      "xin-toolkit/skills/auto-video-edit"
+    ]
   }
 }

@@ -111,6 +111,16 @@
    ]
   },
   {
+   "id": "media",
+   "zh": "影音與內容製作",
+   "name": [
+    "video",
+    "youtube",
+    "demo-video",
+    "podcast"
+   ]
+  },
+  {
    "id": "web",
    "zh": "前端與設計",
    "path": [

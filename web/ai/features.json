@@ -1,0 +1,523 @@
+{
+ "checked_at": "2026-09-23",
+ "products": [
+  {
+   "product": "Claude Code",
+   "note": "「怎麼用」以手機上的 claude.ai/code 為主；標 📱 的可在手機完成。",
+   "features": [
+    {
+     "name": "Claude Code on the web / mobile",
+     "icon": "🌐",
+     "zh": "在雲端電腦上幫你寫程式、改檔案、推上 GitHub；手機關掉它也會繼續做。",
+     "how": "打開 claude.ai/code（或 Claude App 的 Code）→ 選 repo → 用中文說要做什麼。",
+     "when": "任何要改程式、做網頁、整理 repo 的事",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/claude-code-on-the-web"
+    },
+    {
+     "name": "CLAUDE.md",
+     "icon": "📜",
+     "zh": "放在 repo 裡的「工作守則」，Claude 每次開工都會先讀，例如「一律用繁體中文」「做完直接推 main」。",
+     "how": "跟 Claude 說「把這些規則寫進 CLAUDE.md」，它會幫你建立或修改。",
+     "when": "有固定習慣、不想每次重講時",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/memory"
+    },
+    {
+     "name": "Permission modes（權限模式）",
+     "icon": "🛡️",
+     "zh": "決定 Claude 做事前要不要先問你：每步都問、自動做（auto）、或先提計畫給你看（plan）。",
+     "how": "在對話輸入框附近的模式選單切換；或直接說「先給我計畫，不要動手」。",
+     "when": "重要的 repo 用 plan；日常小事用 auto",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/permission-modes"
+    },
+    {
+     "name": "Plan mode（計畫模式）",
+     "icon": "🗺️",
+     "zh": "Claude 先只讀不改，寫出完整計畫給你批准後才動手。",
+     "how": "切換到 plan 模式，或說「先規劃，等我同意再做」。",
+     "when": "大改動、不確定方向時",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/permission-modes"
+    },
+    {
+     "name": "Model 選擇",
+     "icon": "🎚️",
+     "zh": "切換用哪個 AI 模型：Opus（主力）、Fable（最強最貴）、Sonnet（平衡）、Haiku（最快最省）。",
+     "how": "在輸入框旁的模型選單切換；電腦版輸入 /model。",
+     "when": "一般用預設；很難的題目換最強的",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/model-config"
+    },
+    {
+     "name": "Effort（思考強度）",
+     "icon": "🧠",
+     "zh": "調整 Claude 想多深：low 快、high／max 更仔細但更慢更耗額度。",
+     "how": "在模型選單裡選 effort；或說「這題請用最高思考強度」。",
+     "when": "卡關或需要嚴謹推理時調高",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/model-config"
+    },
+    {
+     "name": "Skills（技能）",
+     "icon": "🧩",
+     "zh": "可重複使用的「做事說明書」，例如本技能庫的健檢、剪影片；Claude 判斷需要時自動使用，也能用 /技能名 呼叫。",
+     "how": "用 skl 網頁複製指令貼給 App 安裝；之後直接說要做的事即可。",
+     "when": "想讓 Claude 每次都照同一套方法做事",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/skills"
+    },
+    {
+     "name": "Plugins & marketplaces（外掛）",
+     "icon": "🔌",
+     "zh": "把技能、指令、代理人打包成一組，一次安裝。skl 本身就是一個外掛市集。",
+     "how": "電腦版：/plugin marketplace add xin7355-collab/skl；手機建議用 skl 網頁的複製指令。",
+     "when": "想一次裝一整套功能時",
+     "level": "進階",
+     "mobile": false,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/discover-plugins"
+    },
+    {
+     "name": "Hooks（自動觸發）",
+     "icon": "🪝",
+     "zh": "在特定時機自動跑指令，例如「每次開對話先做健檢」（skl 安裝時已幫你加）。",
+     "how": "跟 Claude 說「每次開對話時自動做 X」，它會幫你設定。",
+     "when": "想要某件事每次都自動發生",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/hooks-guide"
+    },
+    {
+     "name": "Subagents（分身）",
+     "icon": "👥",
+     "zh": "Claude 派出分身同時做好幾件事（例如同時查 4 個資料），做完再彙整。",
+     "how": "直接說「分頭去查 A、B、C，最後整理給我」。",
+     "when": "要查很多資料或同時做多件事",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/sub-agents"
+    },
+    {
+     "name": "MCP / Connectors（連接外部服務）",
+     "icon": "🔗",
+     "zh": "讓 Claude 連 Gmail、GitHub、Google 日曆等服務，直接讀寫資料。",
+     "how": "到 claude.ai 的「設定 → 連接器」加入服務；之後在對話裡直接叫它用。",
+     "when": "要 Claude 幫你處理信件、行事曆、GitHub",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/mcp"
+    },
+    {
+     "name": "Routines（排程任務）",
+     "icon": "⏰",
+     "zh": "設定固定時間自動做事，例如每週一早上健檢所有 App、每週更新 AI 模型資料。",
+     "how": "直接說「每週一早上 9 點幫我做 X」。",
+     "when": "重複性的檢查、報告、更新",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/routines"
+    },
+    {
+     "name": "PR 自動看顧（autofix）",
+     "icon": "🩺",
+     "zh": "開了 Pull Request 後，Claude 會自動盯著 CI 和審查留言，壞了就修。",
+     "how": "說「幫我看顧這個 PR，有錯就自動修」。",
+     "when": "有用 PR 流程、CI 常紅燈時",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/claude-code-on-the-web"
+    },
+    {
+     "name": "Artifacts（互動網頁）",
+     "icon": "🖼️",
+     "zh": "Claude 直接做出一個可以打開、分享的網頁（報表、小工具、儀表板），不用自己部署。",
+     "how": "說「把結果做成一個網頁給我」。",
+     "when": "要看圖表、做小工具、分享給別人",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/artifacts"
+    },
+    {
+     "name": "/loop（定時重複）",
+     "icon": "🔁",
+     "zh": "在同一個對話裡每隔一段時間重做一件事，例如每 10 分鐘檢查部署狀態。",
+     "how": "輸入 /loop 10m 要做的事，或說「每 10 分鐘檢查一次」。",
+     "when": "短時間內要持續盯著某件事",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/commands"
+    },
+    {
+     "name": "/code-review、/security-review",
+     "icon": "🔍",
+     "zh": "自動審查程式的 bug 與資安問題，列出嚴重程度。",
+     "how": "輸入 /code-review 或說「幫我審查這次修改有沒有 bug」。",
+     "when": "推上去之前、合併之前",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/commands"
+    },
+    {
+     "name": "/init",
+     "icon": "🚀",
+     "zh": "自動看過 repo 後產生第一版 CLAUDE.md。",
+     "how": "在新 repo 的對話輸入 /init。",
+     "when": "新專案第一次用 Claude 時",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/commands"
+    },
+    {
+     "name": "Compact（壓縮對話）",
+     "icon": "🗜️",
+     "zh": "對話太長時把前面內容濃縮，騰出空間繼續做；通常會自動發生。",
+     "how": "電腦版輸入 /compact；雲端會自動處理。",
+     "when": "對話很長、Claude 開始忘東西時",
+     "level": "進階",
+     "mobile": true,
+     "new": false,
+     "url": "https://code.claude.com/docs/en/commands"
+    },
+    {
+     "name": "Fast mode（快速模式）",
+     "icon": "🏎️",
+     "zh": "用同一個模型但回得更快，費用較高。",
+     "how": "電腦版輸入 /fast 切換。",
+     "when": "趕時間、互動很多的時候",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/fast-mode"
+    },
+    {
+     "name": "Remote Control（遠端控制）",
+     "icon": "📱",
+     "zh": "用手機遙控你電腦上正在跑的 Claude Code。需要一台開著的電腦。",
+     "how": "電腦上開啟 Remote Control，手機登入同一帳號即可接手。",
+     "when": "有電腦但人在外面時（你目前用雲端版即可）",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/remote-control"
+    },
+    {
+     "name": "Workflow（多代理人工作流）",
+     "icon": "🏭",
+     "zh": "一次派出一整組代理人分工合作（例如同時審查、驗證），適合大工程；很耗額度，要你明確要求才會用。",
+     "how": "說「用 workflow 幫我…」。",
+     "when": "大型重構、全面審查",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/sub-agents"
+    }
+   ]
+  },
+  {
+   "product": "Codex",
+   "note": "資料來自 OpenAI 文件的搜尋摘要；按鈕名稱可能與實際畫面略有不同。",
+   "features": [
+    {
+     "name": "Codex cloud",
+     "icon": "☁️",
+     "zh": "把寫程式的工作丟給 Codex 在雲端的隔離環境裡做，它會自己讀你的 repo、改程式、跑測試，不用你開電腦。可以同時丟好幾個工作。",
+     "how": "用 Safari 開 chatgpt.com/codex → 登入 ChatGPT → 選 repo 與分支 → 輸入要做的事 → 送出，做完再看結果。",
+     "when": "想修 bug、加小功能、補測試，但手邊只有手機時。",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://learn.chatgpt.com/docs/cloud"
+    },
+    {
+     "name": "Codex in the ChatGPT mobile app",
+     "icon": "📱",
+     "zh": "ChatGPT 的 iPhone／Android App 裡就能用 Codex（預覽版，所有方案含免費版都有）。可以看工作進度、看改了什麼、開新工作。",
+     "how": "把 ChatGPT App 更新到最新 → 在 App 裡找到 Codex → 選對話或專案繼續，或直接傳訊息開新工作。",
+     "when": "通勤、外出時想盯進度或派新工作。",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://openai.com/index/work-with-codex-from-anywhere/"
+    },
+    {
+     "name": "Remote connections (Set up Codex mobile)",
+     "icon": "🛠️",
+     "zh": "讓手機連到一台正在跑 Codex 的電腦（Mac 或 Windows），手機看到的就是那台電腦上的即時狀態。需要一台開著、連網、登入同帳號的電腦。",
+     "how": "電腦開 Codex → 側邊欄點「Set up Codex mobile」→ 用 iPhone 掃 QR code → 在 ChatGPT App 裡完成連線。",
+     "when": "有一台放家裡或遠端的電腦在跑 Codex，想用手機遙控它時。沒有電腦就改用 Codex cloud。",
+     "level": "進階",
+     "mobile": true,
+     "new": false,
+     "url": "https://developers.openai.com/codex/remote-connections"
+    },
+    {
+     "name": "Approvals",
+     "icon": "✅",
+     "zh": "Codex 要執行有風險的動作（例如跑指令、連網）時會停下來問你。手機會收到通知，按 Approve（同意）或 Reject（拒絕）就好。",
+     "how": "收到 Codex 通知 → 點開看它要做什麼 → 按 Approve 或 Reject。",
+     "when": "Codex 卡住等你同意時；不確定就先按 Reject 再問它為什麼要這樣做。",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://openai.com/index/work-with-codex-from-anywhere/"
+    },
+    {
+     "name": "Diff review",
+     "icon": "🧾",
+     "zh": "看 Codex 改了哪些檔案、哪幾行（綠色是新增、紅色是刪除），確認沒亂改再收下。",
+     "how": "在 Codex 工作結果頁（chatgpt.com/codex 或 ChatGPT App）點開變更內容逐檔瀏覽。",
+     "when": "每次要把 Codex 的修改收進 repo 之前。",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://openai.com/index/work-with-codex-from-anywhere/"
+    },
+    {
+     "name": "Connect GitHub",
+     "icon": "🔗",
+     "zh": "把 GitHub 帳號連到 Codex，它才能讀你的 repo、開分支、送 PR。GitLab 也可連（測試版）。",
+     "how": "開 chatgpt.com/codex → 依提示連接 GitHub → 授權要讓 Codex 使用的 repo。",
+     "when": "第一次使用 Codex cloud 前一定要做一次。",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan"
+    },
+    {
+     "name": "Create PR",
+     "icon": "📤",
+     "zh": "Codex 做完雲端工作後，可以幫你建分支、commit、推上 GitHub 並開 Pull Request，讓你在 GitHub 上確認再合併。",
+     "how": "雲端工作完成 → 在結果頁檢查修改 → 點建立 PR（或在指令裡直接叫它開 PR）→ 到 GitHub App 合併。",
+     "when": "確認修改沒問題、要正式收進 repo 時。",
+     "level": "入門",
+     "mobile": true,
+     "new": false,
+     "url": "https://learn.chatgpt.com/docs/cloud"
+    },
+    {
+     "name": "@codex review",
+     "icon": "🔍",
+     "zh": "在 GitHub 的 Pull Request 留言打「@codex review」，Codex 會看這次修改，只挑出重大問題（P0／P1）留審查意見。",
+     "how": "用 GitHub App 或網頁打開 PR → 留言輸入 @codex review → 看到 👀 表情代表它開始看 → 等它貼出審查結果。",
+     "when": "合併任何 PR 前想多一雙眼睛檢查時。",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://developers.openai.com/codex/integrations/github"
+    },
+    {
+     "name": "@codex (fix on a pull request)",
+     "icon": "🛠️",
+     "zh": "在 PR 留言標記 @codex 並寫要它做什麼，它會以該 PR 為背景開雲端工作，還能把修正推回同一個分支。",
+     "how": "在 PR 留言寫「@codex 請修正上面審查提到的問題」→ 等它回覆並推上修正。",
+     "when": "審查發現問題，想直接叫它修，不想自己動手時。",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://learn.chatgpt.com/docs/cloud"
+    },
+    {
+     "name": "Automatic reviews",
+     "icon": "🤖",
+     "zh": "開啟後，每次有人開新的 PR，Codex 都會自動審查，不用每次打 @codex review。",
+     "how": "到 Codex 設定（chatgpt.com/codex 的設定頁）→ 找到 Code review → 打開 Automatic reviews。",
+     "when": "repo 常常有 PR（包括 AI 開的），希望每個都被自動檢查時。",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://developers.openai.com/codex/integrations/github"
+    },
+    {
+     "name": "AGENTS.md",
+     "icon": "📜",
+     "zh": "放在 repo 裡的一份「給 AI 看的工作守則」，Codex 每次都會自動讀。可寫怎麼測試、程式風格，還能寫「Review guidelines」讓審查照你的規矩來。",
+     "how": "在 GitHub App／網頁的 repo 根目錄新增 AGENTS.md → 用條列寫規則 → commit。電腦版可用 /init 自動產生草稿。",
+     "when": "發現 Codex 一再犯同樣的錯、或想讓每次工作都守同一套規則時。",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://developers.openai.com/codex/learn/best-practices"
+    },
+    {
+     "name": "Environments (Cloud environments)",
+     "icon": "🛠️",
+     "zh": "設定雲端工作的執行環境：要裝哪些套件、要跑的 setup script、環境變數與 Secrets。Codex 每次會照這個設定建立容器再開工。",
+     "how": "chatgpt.com/codex → 設定 → Environments → 選 repo → 填 setup script（例如安裝套件的指令）→ 儲存。",
+     "when": "Codex 回報「缺套件、測試跑不起來」時。",
+     "level": "進階",
+     "mobile": null,
+     "new": false,
+     "url": "https://learn.chatgpt.com/docs/environments/cloud-environment"
+    },
+    {
+     "name": "Agent internet access",
+     "icon": "🛠️",
+     "zh": "雲端工作執行時預設不能上網（防止被網頁上的惡意指示騙）。可以改成只允許特定網站（白名單）或全開。setup script 階段則一律可上網。",
+     "how": "在 Environment 設定裡找到 Agent internet access → 選 Off／有限（白名單）／全開 → 可加允許的網域與 HTTP 方法。",
+     "when": "工作需要下載資料或查官方 API 時才開，且盡量用白名單。",
+     "level": "進階",
+     "mobile": null,
+     "new": false,
+     "url": "https://learn.chatgpt.com/docs/cloud/internet-access"
+    },
+    {
+     "name": "Model selection (/model)",
+     "icon": "🎚️",
+     "zh": "可以切換 Codex 用的 AI 模型；可選的模型依你的 ChatGPT 方案而定，名稱常更新。",
+     "how": "手機 App 裡在對話中切換模型；電腦的 CLI 打 /model 選擇。",
+     "when": "工作很難想換更強的模型，或想省額度換較輕的模型時。",
+     "level": "進階",
+     "mobile": true,
+     "new": false,
+     "url": "https://openai.com/index/work-with-codex-from-anywhere/"
+    },
+    {
+     "name": "Reasoning effort",
+     "icon": "🧠",
+     "zh": "設定 AI「想多久」：low、medium、high、xhigh 等。想越久越仔細，但越慢、越耗額度。這是設定值，不是另一個模型。",
+     "how": "CLI 用 /model 選模型時一併選思考強度，或在 config.toml 設 model_reasoning_effort。",
+     "when": "難解的 bug 用 high；簡單修改用 low 省額度。",
+     "level": "進階",
+     "mobile": null,
+     "new": false,
+     "url": "https://codex.danielvaughan.com/2026/03/27/reasoning-effort-tuning/"
+    },
+    {
+     "name": "Sandbox & approval modes (Read Only / Auto / Full Access)",
+     "icon": "🛠️",
+     "zh": "決定 Codex 在電腦上能動什麼、什麼時候要問你。Read Only 只能看；Auto 可在專案資料夾內改檔跑指令、超出範圍或要上網才問；Full Access 什麼都能做，風險最高。",
+     "how": "CLI 打 /approvals（或 /permissions）選模式；或在 config.toml 設 sandbox_mode 與 approval_policy。",
+     "when": "平常用 Auto；只想問問題用 Read Only；Full Access 只在隔離環境使用。",
+     "level": "進階",
+     "mobile": false,
+     "new": false,
+     "url": "https://developers.openai.com/codex/agent-approvals-security"
+    },
+    {
+     "name": "Slash commands",
+     "icon": "🛠️",
+     "zh": "在 Codex CLI／App 輸入框打「/」開頭的快捷指令，例如 /init 產生 AGENTS.md、/review 檢查目前修改、/diff 看變更、/model 換模型、/status 看目前狀態、/usage 看剩餘額度。",
+     "how": "在 Codex 輸入框打 / → 從清單挑指令 → Enter。",
+     "when": "想快速做固定動作、不想打一長串說明時。",
+     "level": "入門",
+     "mobile": false,
+     "new": false,
+     "url": "https://developers.openai.com/codex/cli/slash-commands"
+    },
+    {
+     "name": "Usage limits (/usage)",
+     "icon": "📊",
+     "zh": "Codex 的用量算在你的 ChatGPT 方案裡，以每 5 小時滾動計算，另有每週上限；產生圖片會更快用完。",
+     "how": "CLI 打 /usage 看額度，/status 看目前工作；也可到用量頁看剩多少與何時重置。",
+     "when": "Codex 突然說額度用完、或要排大工作前。",
+     "level": "入門",
+     "mobile": null,
+     "new": false,
+     "url": "https://developers.openai.com/codex/cli/features"
+    },
+    {
+     "name": "Codex in Slack (@Codex)",
+     "icon": "💬",
+     "zh": "在 Slack 頻道或討論串標記 @Codex 交代工作，它會讀對話內容、開雲端工作，做完把連結貼回討論串。",
+     "how": "安裝 Slack 的 OpenAI Codex App 並連好帳號 → 在頻道打「@Codex 幫我…」→ 等回覆連結。",
+     "when": "團隊在 Slack 討論到要改程式時，直接交辦不用另開單。",
+     "level": "進階",
+     "mobile": true,
+     "new": false,
+     "url": "https://developers.openai.com/codex/integrations/slack"
+    },
+    {
+     "name": "MCP servers",
+     "icon": "🔌",
+     "zh": "讓 Codex 接上外部工具（例如操作瀏覽器的 Playwright、Linear 等），能力就不只寫程式。",
+     "how": "電腦上執行 codex mcp add <名稱> …，或在 ~/.codex/config.toml 加 [mcp_servers.<名稱>]。",
+     "when": "需要 Codex 操作瀏覽器、查專案管理工具等外部系統時。",
+     "level": "進階",
+     "mobile": false,
+     "new": false,
+     "url": "https://developers.openai.com/codex/mcp"
+    },
+    {
+     "name": "Skills",
+     "icon": "🧩",
+     "zh": "可重複使用的「做事說明書」，含步驟、參考資料或小工具程式。Codex 需要時會自動載入，照固定流程做事。",
+     "how": "在 Codex App 的技能管理介面建立，或在 repo 放技能資料夾（SKILL.md）。",
+     "when": "某種工作常常要做、希望每次步驟都一樣時。",
+     "level": "進階",
+     "mobile": null,
+     "new": true,
+     "url": "https://developers.openai.com/codex/skills"
+    },
+    {
+     "name": "Plugins",
+     "icon": "🧰",
+     "zh": "把技能、App 連線（GitHub、Slack、Google Drive 等）和 MCP 伺服器打包成一組，一次安裝就能用。",
+     "how": "在 Codex 的 Plugins 頁挑選並安裝（可裝在個人或整個工作區）。",
+     "when": "想一次得到一整套工作流程，不想逐項設定時。",
+     "level": "進階",
+     "mobile": null,
+     "new": true,
+     "url": "https://developers.openai.com/codex/plugins"
+    },
+    {
+     "name": "Automations",
+     "icon": "⏰",
+     "zh": "讓 Codex 照排程在背景自動做事（例如每天檢查一次），結果放進審閱佇列等你看。",
+     "how": "在 Codex App 建立 Automation → 寫指令、可選搭配技能 → 設定排程。",
+     "when": "有固定週期的例行檢查或整理工作時。",
+     "level": "進階",
+     "mobile": null,
+     "new": true,
+     "url": "https://openai.com/index/introducing-the-codex-app/"
+    },
+    {
+     "name": "Worktrees",
+     "icon": "🌿",
+     "zh": "在同一個 repo 開出多個互不干擾的工作副本，讓好幾個 Codex 同時做不同事，不會改到彼此的檔案。",
+     "how": "在 Codex App 側邊欄建立 worktree → 在各 worktree 裡開對話。",
+     "when": "想同時讓 Codex 平行處理兩件以上的事時。",
+     "level": "進階",
+     "mobile": false,
+     "new": false,
+     "url": "https://openai.com/index/introducing-the-codex-app/"
+    },
+    {
+     "name": "Codex IDE extension",
+     "icon": "🛠️",
+     "zh": "裝在 VS Code、Cursor、Windsurf 等編輯器裡的 Codex，可邊看程式邊叫它改，也能把大工作丟到雲端。",
+     "how": "在編輯器的擴充套件市集搜尋 Codex 安裝 → 點側邊欄的 Codex 圖示登入 ChatGPT。",
+     "when": "在電腦上寫程式時（iPhone 上用不到）。",
+     "level": "進階",
+     "mobile": false,
+     "new": false,
+     "url": "https://developers.openai.com/codex/ide"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,568 @@
+{
+ "checked_at": "2026-09-23",
+ "vendors": [
+  {
+   "vendor": "Anthropic",
+   "product": "Claude（Claude Code）",
+   "models": [
+    {
+     "name": "Claude Opus 5.5",
+     "id": "claude-opus-5-5",
+     "released": "2026-09-22",
+     "context": "1M tokens（最大輸出 128K）",
+     "price": "$4 / $20 每百萬 tokens（輸入/輸出）；cache read $0.20；fast mode $8 / $40",
+     "tier": "daily",
+     "legacy": false,
+     "best_for": [
+      "代理式寫程式、終端機任務",
+      "大型程式碼遷移與稽核",
+      "程式碼審查、抓 bug",
+      "財務分析、商務流程自動化"
+     ],
+     "strengths": [
+      "官方建議大多數工作先用它",
+      "長時間代理式寫程式與知識工作",
+      "價格約 Fable 5.1 的四成，多項代理基準反超 Fable 5.1",
+      "預設 effort 為 medium，思考無法關閉"
+     ],
+     "benchmarks": [
+      {
+       "name": "Terminal-Bench 4.0",
+       "score": "66.4%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "FrontierCode v1.1",
+       "score": "54.4%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "CursorBench 4.0",
+       "score": "57.8%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "GDPval-AA v2.1",
+       "score": "1846 (Elo)",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "AutomationBench",
+       "score": "40.0%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Humanity's Last Exam",
+       "score": "67.7%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Terminal-Bench-Science 0.1",
+       "score": "58.7%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "OSWorld 2.0",
+       "score": "81.8%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Chartography",
+       "score": "89.0%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "官方"
+      }
+     ]
+    },
+    {
+     "name": "Claude Fable 5.1",
+     "id": "claude-fable-5-1",
+     "released": "2026-09-01",
+     "context": "1M tokens（最大輸出 128K）",
+     "price": "$10 / $50 每百萬 tokens；cache read $0.25",
+     "tier": "hardest",
+     "legacy": false,
+     "best_for": [
+      "Opus 5.5 高 effort 仍不夠時再升級",
+      "長時程多步驟研究",
+      "文件、試算表、簡報產出",
+      "科學計算、法務與財務分析"
+     ],
+     "strengths": [
+      "廣泛開放模型中能力最強（官方定位）",
+      "高難度推理與長時程代理任務",
+      "科學研究類代理任務大幅進步",
+      "思考恆開，延遲較慢"
+     ],
+     "benchmarks": [
+      {
+       "name": "Terminal-Bench-Science 0.1",
+       "score": "52.6%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "Terminal-Bench 4.0",
+       "score": "55.8%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "GDPval-AA v2",
+       "score": "1853 (Elo)",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "OSWorld 2.0 (Partial)",
+       "score": "77.9%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "OSWorld 2.0 (Strict)",
+       "score": "41.7%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "Humanity's Last Exam (no tools)",
+       "score": "60.9%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "Humanity's Last Exam (with tools)",
+       "score": "65.0%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "AutomationBench",
+       "score": "31.4%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "CursorBench 3.2.0",
+       "score": "73.4%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      }
+     ]
+    },
+    {
+     "name": "Claude Sonnet 5",
+     "id": "claude-sonnet-5",
+     "released": "2026-06-30",
+     "context": "1M tokens（最大輸出 128K）",
+     "price": "$2 / $10 每百萬 tokens；cache read $0.20（官方文件；原為推出優惠價，官方公告稱已轉為常態）",
+     "tier": "balanced",
+     "legacy": false,
+     "best_for": [
+      "多步驟軟體工程",
+      "企業自動化流程",
+      "電腦操作代理",
+      "代理式搜尋與工具呼叫"
+     ],
+     "strengths": [
+      "速度與智慧的最佳平衡（官方描述）",
+      "延遲快",
+      "Sonnet 4.6 的直接升級版"
+     ],
+     "benchmarks": [
+      {
+       "name": "SWE-bench Pro",
+       "score": "63.2%",
+       "source": "https://www.buildfastwithai.com/blogs/claude-sonnet-5-review-benchmarks-pricing-2026",
+       "kind": "第三方"
+      },
+      {
+       "name": "Terminal-Bench 2.1",
+       "score": "80.4%",
+       "source": "https://www.buildfastwithai.com/blogs/claude-sonnet-5-review-benchmarks-pricing-2026",
+       "kind": "第三方"
+      },
+      {
+       "name": "OSWorld-Verified",
+       "score": "81.2%",
+       "source": "https://www.buildfastwithai.com/blogs/claude-sonnet-5-review-benchmarks-pricing-2026",
+       "kind": "第三方"
+      },
+      {
+       "name": "BrowseComp",
+       "score": "84.7%",
+       "source": "https://www.buildfastwithai.com/blogs/claude-sonnet-5-review-benchmarks-pricing-2026",
+       "kind": "第三方"
+      },
+      {
+       "name": "GDPval-AA v2",
+       "score": "1618 (Elo)",
+       "source": "https://www.buildfastwithai.com/blogs/claude-sonnet-5-review-benchmarks-pricing-2026",
+       "kind": "第三方"
+      }
+     ]
+    },
+    {
+     "name": "Claude Haiku 4.5",
+     "id": "claude-haiku-4-5-20251001",
+     "released": "2025-10-15",
+     "context": "200K tokens（最大輸出 64K）",
+     "price": "$1 / $5 每百萬 tokens",
+     "tier": "cheap",
+     "legacy": false,
+     "best_for": [
+      "即時低延遲任務（客服、聊天）",
+      "多代理架構中的子代理",
+      "大量、簡單的處理工作"
+     ],
+     "strengths": [
+      "目前陣容中最快",
+      "接近前沿的寫程式能力、成本低",
+      "不支援 effort 參數，用 extended thinking"
+     ],
+     "benchmarks": [
+      {
+       "name": "SWE-bench Verified",
+       "score": "73.3%",
+       "source": "https://www.anthropic.com/news/claude-haiku-4-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Terminal-Bench",
+       "score": "約 41%（with thinking）",
+       "source": "https://www.anthropic.com/news/claude-haiku-4-5",
+       "kind": "官方"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "vendor": "OpenAI",
+   "product": "Codex（ChatGPT）",
+   "models": [
+    {
+     "name": "GPT-6 Astra",
+     "id": "gpt-6-astra",
+     "released": "2026-09-03",
+     "context": "API：約 1.05M tokens（最大輸出 128K，第三方整理）；Codex 內建目錄：context_window 272K、max_context_window 872K",
+     "price": "$10 / $50 每百萬 tokens（第三方整理 OpenAI 公告；>272K 提示另有加價）",
+     "tier": "hardest",
+     "legacy": false,
+     "best_for": [
+      "最困難的寫程式與代理任務",
+      "電腦操作自動化",
+      "資安研究"
+     ],
+     "strengths": [
+      "OpenAI 最強旗艦（Codex 描述：Frontier intelligence for the most demanding work）",
+      "電腦操作、瀏覽、軟體工程、資安",
+      "Codex CLI 未指定模型時的預設（第三方報導）"
+     ],
+     "benchmarks": [
+      {
+       "name": "Terminal-Bench 4.0",
+       "score": "57.9%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "FrontierCode v1.1",
+       "score": "53.3%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "GDPval-AA v2.1",
+       "score": "1542 (Elo)",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "AutomationBench",
+       "score": "41.4%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "Humanity's Last Exam",
+       "score": "57.2%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "Terminal-Bench-Science 0.1",
+       "score": "64.6%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "DeepSWE v1.1",
+       "score": "74.1%",
+       "source": "https://officechai.com/ai/gpt-6-astra-benchmarks/",
+       "kind": "第三方"
+      },
+      {
+       "name": "OSWorld 2.0 (offline)",
+       "score": "72.6%",
+       "source": "https://thenewstack.io/openai-gpt6-astra-benchmarks/",
+       "kind": "第三方"
+      },
+      {
+       "name": "GPQA Diamond",
+       "score": "96.0%",
+       "source": "https://www.mindstudio.ai/blog/gpt-6-astra-benchmarks-analysis",
+       "kind": "第三方"
+      }
+     ]
+    },
+    {
+     "name": "GPT-6 Sol",
+     "id": "gpt-6-sol",
+     "released": "2026-09-22",
+     "context": "API：約 1.05M tokens（最大輸出 128K，第三方整理）；Codex 內建目錄：272K / 最大 872K",
+     "price": "$2 / $10 每百萬 tokens（第三方整理 OpenAI 公告）",
+     "tier": "daily",
+     "legacy": false,
+     "best_for": [
+      "日常寫程式主力",
+      "複雜寫程式與代理流程（OpenAI 建議）"
+     ],
+     "strengths": [
+      "Codex 描述：Workhorse model for coding and everyday work",
+      "價格為 GPT-5.6 Sol 的一半",
+      "預設推理 effort medium"
+     ],
+     "benchmarks": [
+      {
+       "name": "DeepSWE v1.1",
+       "score": "68.8%（max effort）",
+       "source": "https://pasqualepillitteri.it/en/news/17608/gpt-6-sol-luna-launch",
+       "kind": "第三方"
+      },
+      {
+       "name": "AutomationBench 1.0.6",
+       "score": "33.2%",
+       "source": "https://pasqualepillitteri.it/en/news/17608/gpt-6-sol-luna-launch",
+       "kind": "第三方"
+      },
+      {
+       "name": "OSWorld 2.0 (offline)",
+       "score": "60.5%（xhigh）",
+       "source": "https://pasqualepillitteri.it/en/news/17608/gpt-6-sol-luna-launch",
+       "kind": "第三方"
+      }
+     ]
+    },
+    {
+     "name": "GPT-6 Luna",
+     "id": "gpt-6-luna",
+     "released": "2026-09-22",
+     "context": "API：約 1.05M tokens（最大輸出 128K，第三方整理）；Codex 內建目錄：272K / 最大 872K",
+     "price": "$0.10 / $0.50 每百萬 tokens（第三方整理 OpenAI 公告）",
+     "tier": "cheap",
+     "legacy": false,
+     "best_for": [
+      "大量、單純的任務",
+      "分類、聊天、輕量代理"
+     ],
+     "strengths": [
+      "Codex 描述：Fast and affordable model for easier tasks",
+      "極低價格、低延遲",
+      "高 effort 下可處理部分複雜工程任務"
+     ],
+     "benchmarks": [
+      {
+       "name": "DeepSWE v1.1",
+       "score": "66.6%（max effort）",
+       "source": "https://pasqualepillitteri.it/en/news/17608/gpt-6-sol-luna-launch",
+       "kind": "第三方"
+      }
+     ]
+    },
+    {
+     "name": "GPT-5.6 Sol / Terra / Luna（舊款）",
+     "id": "gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna",
+     "released": "",
+     "context": "Codex 內建目錄：272K / 最大 872K",
+     "price": "",
+     "tier": "legacy",
+     "legacy": true,
+     "best_for": [
+      "已固定使用舊模型的流程，過渡用"
+     ],
+     "strengths": [
+      "Codex 標為 Older；目錄內建議升級到 GPT-6 Sol / Luna"
+     ],
+     "benchmarks": [
+      {
+       "name": "Terminal-Bench 4.0 (GPT-5.6 Sol)",
+       "score": "37.3%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "AutomationBench (GPT-5.6 Sol)",
+       "score": "28.8%",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "GDPval-AA v2.1 (GPT-5.6 Sol)",
+       "score": "1588 (Elo)",
+       "source": "https://www.anthropic.com/news/claude-opus-5-5",
+       "kind": "Anthropic 對照表"
+      }
+     ]
+    },
+    {
+     "name": "GPT-5.5（舊款，即將退役）",
+     "id": "gpt-5.5",
+     "released": "",
+     "context": "Codex 內建目錄：272K",
+     "price": "",
+     "tier": "legacy",
+     "legacy": true,
+     "best_for": [
+      "不建議新用；第三方報導 2026-10-14 自 Codex 退役"
+     ],
+     "strengths": [
+      "Codex 描述：Legacy coding model"
+     ],
+     "benchmarks": []
+    }
+   ]
+  }
+ ],
+ "pick": [
+  {
+   "need": "日常大部分工作",
+   "icon": "🧰",
+   "claude": "Claude Opus 5.5",
+   "codex": "GPT-6 Sol",
+   "why": "官方都定位為主力：能力強、價格適中"
+  },
+  {
+   "need": "最難、最長的任務",
+   "icon": "🧠",
+   "claude": "Claude Fable 5.1",
+   "codex": "GPT-6 Astra",
+   "why": "各家最強旗艦，慢、貴，主力不夠時再升級"
+  },
+  {
+   "need": "又快又便宜、大量簡單工作",
+   "icon": "⚡",
+   "claude": "Claude Haiku 4.5",
+   "codex": "GPT-6 Luna",
+   "why": "延遲低、價格最低，適合分類、聊天、子任務"
+  },
+  {
+   "need": "速度和能力平衡",
+   "icon": "⚖️",
+   "claude": "Claude Sonnet 5",
+   "codex": "GPT-6 Sol",
+   "why": "比旗艦便宜很多、速度快"
+  }
+ ],
+ "charts": [
+  {
+   "title": "Terminal-Bench 4.0：在終端機裡寫程式完成任務",
+   "unit": "%",
+   "higher_better": true,
+   "note": "同一張表：Anthropic 在 Opus 5.5 公告中的對照（OpenAI 分數由 Anthropic 測得）；Fable 5.1 來自其官方公告。",
+   "rows": [
+    [
+     "Claude Opus 5.5",
+     "Anthropic",
+     66.4
+    ],
+    [
+     "GPT-6 Astra",
+     "OpenAI",
+     57.9
+    ],
+    [
+     "Claude Fable 5.1",
+     "Anthropic",
+     55.8
+    ],
+    [
+     "GPT-5.6 Sol（舊款）",
+     "OpenAI",
+     37.3
+    ]
+   ]
+  },
+  {
+   "title": "AutomationBench：商務流程自動化",
+   "unit": "%",
+   "higher_better": true,
+   "note": "Anthropic 公告對照表；Fable 5.1 來自其官方公告。",
+   "rows": [
+    [
+     "GPT-6 Astra",
+     "OpenAI",
+     41.4
+    ],
+    [
+     "Claude Opus 5.5",
+     "Anthropic",
+     40.0
+    ],
+    [
+     "Claude Fable 5.1",
+     "Anthropic",
+     31.4
+    ],
+    [
+     "GPT-5.6 Sol（舊款）",
+     "OpenAI",
+     28.8
+    ]
+   ]
+  },
+  {
+   "title": "GDPval-AA v2.1：真實職場知識工作（Elo 分數）",
+   "unit": "",
+   "higher_better": true,
+   "note": "只列同一版本（v2.1）的分數，來源為 Anthropic 公告對照表。",
+   "rows": [
+    [
+     "Claude Opus 5.5",
+     "Anthropic",
+     1846
+    ],
+    [
+     "GPT-5.6 Sol（舊款）",
+     "OpenAI",
+     1588
+    ],
+    [
+     "GPT-6 Astra",
+     "OpenAI",
+     1542
+    ]
+   ]
+  }
+ ],
+ "notes": [
+  "Anthropic 四款現行模型的 ID、上市日、context、價格皆取自 platform.claude.com 官方文件（2026-09-23 可直接讀取）。",
+  "Claude Sonnet 5 價格：官方文件與 Anthropic 公告皆為 $2/$10（公告稱推出優惠價轉為常態）；部分第三方仍寫 9 月起 $3/$15，以官方為準。",
+  "Claude Sonnet 5 的基準分數官方公告是圖片、系統卡 PDF 被 egress 擋住，現列數字只來自第三方（buildfastwithai），未經官方原文核對。",
+  "Anthropic 近期公告多不公布 SWE-bench Verified，改用 Terminal-Bench 4.0、CursorBench、FrontierCode 等；故 Opus 5.5 / Fable 5.1 無 SWE-bench Verified 數字。第三方稱 Opus 5.5 SWE-bench Pro 89.9%，未在官方表格找到，未收錄。",
+  "Opus 5.5 表中 GPT-6 Astra、GPT-5.6 Sol 的分數是 Anthropic 公告裡的對比數據（非 OpenAI 自己公布）；DeepSWE、OSWorld 2.0、GPQA Diamond 等 OpenAI 數字來自第三方轉述，openai.com 與 developers.openai.com 被 egress 擋住無法直接核對。",
+  "OpenAI 模型的 ID 與 Codex 內建清單取自 openai/codex GitHub repo 的 codex-rs/models-manager/models.json（commit 4b3b569，2026-09-23）；其中 GPT-5.4 已於 2026-08-31 退役並改導 GPT-6 Sol。另有隱藏的資安專用模型 Daybreak Blue / Red（gpt-daybreak-*-latest）與 codex-auto-review，未列入主表。",
+  "OpenAI API 價格與 1.05M context 來自第三方（Yotta Labs、liteLLM 等）轉述，未能讀取 OpenAI 官方定價頁。Codex 內的 context 設定（272K / 872K）與 API 上限不同。",
+  "GPT-5.3-Codex-Spark 據第三方（releasebot）已於 2026-09-14 停用；GPT-5.5 將於 2026-10-14 自 ChatGPT/Codex 退役——皆未經 OpenAI 原文核對。",
+  "GPT-6 Astra 的 ARC-AGI-3 99.9% 是 OpenAI 自家 harness 結果（標準 harness 約 62.7%），爭議大，未收錄。"
+ ]
+}

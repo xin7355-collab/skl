@@ -102,7 +102,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 <header>
   <h1>skl 技能庫</h1>
   <p class="sub">挑技能 → 按「複製」→ 貼到其他 App 的 Claude Code 對話</p>
-  <p class="sub"><a href="stock.html" style="color:var(--accent);text-decoration:none">📈 台股看板 →</a></p>
+  <p class="sub"><a href="ai.html" style="color:var(--accent);text-decoration:none">🤖 AI 模型與功能指南（Claude／Codex）→</a></p>
 </header>
 
 <nav class="tabs" role="tablist">
@@ -114,6 +114,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 
 <main>
   <section id="tab-packs" class="card">
+    <h2>🤖 讓 App 自己挑（最省事）</h2>
+    <p class="hint">把這段貼到你 App 的 Claude Code 對話，它會看過全部技能和你的程式，自己挑用得到的裝好。</p>
+    <textarea id="autoPrompt" class="out" readonly></textarea>
+    <div class="row"><button class="btn" data-copy="autoPrompt">複製「自己挑」指令</button></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
     <h2>一次裝一組</h2>
     <p class="hint">勾選適合的組合，下面的指令會自動更新。防禦健檢技能每次都會一起裝。</p>
     <div id="packList"></div>
@@ -146,6 +151,10 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
       <label class="toggle"><input id="onlySel" type="checkbox"> 只看已勾選</label>
     </div>
     <p class="count" id="count"></p>
+    <div class="row" style="margin-top:0">
+      <button class="btn small ghost" id="selAll">全選目前清單</button>
+      <button class="btn small ghost" id="selNone">取消目前清單</button>
+    </div>
     <div id="skillList"></div>
     <div class="row"><button class="btn ghost" id="more" hidden>顯示更多</button></div>
   </section>
@@ -192,7 +201,8 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   <div class="inner">
     <span id="barText"></span>
     <button class="btn small ghost" id="clearSel">清除</button>
-    <button class="btn small" id="copySel">複製安裝指令</button>
+    <button class="btn small ghost" id="copyPick">讓 App 挑</button>
+    <button class="btn small" id="copySel">全部安裝</button>
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -262,6 +272,18 @@ function skillsPrompt(paths) {
     paths.map((p) => `- ${p}`).join("\n") +
     `\n先試跑（--dry-run）確認，再正式安裝，最後 commit。`;
 }
+// 候選清單：使用者全選一大批，由目標 App 的 Claude 依 repo 實際情況篩選，只裝用得到的。
+function candidatesPrompt(paths) {
+  return `從 ${REPO} 取得技能庫（${FETCH_CMD}）。以下 ${paths.length} 個是候選技能：\n` +
+    paths.map((p) => `- ${p}`).join("\n") +
+    `\n請先讀這個 repo 的 CLAUDE.md、README 與程式結構，判斷用途和技術，從候選中只挑真正用得到的（寧缺勿濫），` +
+    `每個寫一句理由；用 bootstrap_app.py install --skills 先試跑（--dry-run）再正式安裝，最後 commit，並回報裝了哪些、跳過哪些。`;
+}
+const AUTO_PROMPT = `從 ${REPO} 取得技能庫：${FETCH_CMD}\n` +
+  `再執行 python3 ${TOOL} catalog 看全部技能清單（依類別分組、附中文說明）。\n` +
+  `請先讀這個 repo 的 CLAUDE.md、README 與程式結構，判斷這個 App 的用途和技術，從清單挑出真正用得到的技能` +
+  `（建議 5～15 個，寧缺勿濫），每個寫一句理由；用 install --target . --skills 路徑1,路徑2 先試跑（--dry-run）再正式安裝，` +
+  `最後 commit，並回報裝了哪些、為什麼。`;
 const UPDATE_PROMPT = `從 ${REPO} 用 app-bootstrap 把這個 repo 已安裝的技能更新到最新版（bootstrap_app.py update），回報更新了哪些，然後 commit。`;
 const UPDATE_CMD = `${FETCH_CMD} && python3 ${TOOL} update --target .`;
 
@@ -305,6 +327,8 @@ function renderSkills() {
   store.set("cat", cat);
   const onlySel = $("onlySel").checked;
   const list = catalog.skills.filter((s) => matches(s, q, dom, onlySel, cat));
+  lastList = list;
+  $("selAll").textContent = `全選目前清單（${list.length}）`;
   const catName = Object.fromEntries(catalog.categories.map((c) => [c.id, c.zh]));
   $("count").textContent = `找到 ${list.length} 個技能`;
   const box = $("skillList");
@@ -337,10 +361,17 @@ function renderSkills() {
   $("more").hidden = list.length <= shown;
 }
 
+let lastList = [];
 function updateBar() {
   const n = selSkills.size;
   $("bar").classList.toggle("show", n > 0 && currentTab === "browse");
-  $("barText").textContent = `已勾選 ${n} 個技能`;
+  $("barText").textContent = `已選 ${n} 個`;
+}
+function bulkSelect(on) {
+  for (const s of lastList) on ? selSkills.add(s.path) : selSkills.delete(s.path);
+  store.set("skills", [...selSkills]);
+  renderSkills();
+  updateBar();
 }
 
 let currentTab = "packs";
@@ -366,6 +397,10 @@ function wire() {
   $("onlySel").addEventListener("change", () => { shown = PAGE; renderSkills(); });
   $("more").addEventListener("click", () => { shown += PAGE; renderSkills(); });
   $("copySel").addEventListener("click", () => copyText(skillsPrompt([...selSkills])));
+  $("copyPick").addEventListener("click", () => copyText(candidatesPrompt([...selSkills])));
+  $("selAll").addEventListener("click", () => bulkSelect(true));
+  $("selNone").addEventListener("click", () => bulkSelect(false));
+  $("autoPrompt").value = AUTO_PROMPT;
   $("clearSel").addEventListener("click", () => {
     selSkills.clear();
     store.set("skills", []);

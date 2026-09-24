@@ -77,12 +77,16 @@ jobs:
 
       - name: xin-toolkit self-tests (blocking)
         run: |
+          # 影片剪輯的自我測試要真的轉檔一次；runner 沒有 ffmpeg 時先裝。
+          command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
           python3 xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py selftest
           python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
           python3 web/build_catalog.py selftest
           python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py selftest
-          python3 web/build_stock.py selftest
           python3 ops/weekly_report.py selftest
+          python3 web/ai/check_ai_data.py selftest
+          python3 xin-toolkit/skills/auto-video-edit/scripts/video_auto_edit.py selftest
+          python3 xin-toolkit/skills/auto-video-edit/scripts/video_release_runner.py selftest
 
       - name: Validate plugin.json manifests (blocking — guards #539 + #686)
         run: |

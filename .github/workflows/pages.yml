@@ -47,30 +47,22 @@ jobs:
       - name: Self-test builders
         run: |
           python3 web/build_catalog.py selftest
-          python3 web/build_stock.py selftest
+          python3 web/ai/check_ai_data.py selftest
 
       - name: Build site
         run: |
           mkdir -p _site
           python3 web/build_catalog.py
-          cp web/index.html web/stock.html web/catalog.json _site/
-          # 每日排程重新部署時 commit 不變，所以版本號加上執行編號，手機才會重載到新資料。
+          cp web/index.html web/ai.html web/catalog.json _site/
+          mkdir -p _site/ai && cp web/ai/models.json web/ai/features.json _site/ai/
+          # 手動重新部署時 commit 不變，版本號加上執行編號，手機才會重載到新版。
           ver="${GITHUB_SHA::7}.${GITHUB_RUN_NUMBER}"
           # APP_VER 換成版本號，前端切回前景時比對 version.json，不同就自動重載。
-          sed -i "s/__APP_VER__/${ver}/" _site/index.html _site/stock.html
+          sed -i "s/__APP_VER__/${ver}/" _site/index.html _site/ai.html
           printf '{"ver":"%s"}\n' "$ver" > _site/version.json
           printf 'User-agent: *\nDisallow: /\n' > _site/robots.txt
           grep -q 'noindex' _site/index.html
-          grep -q 'noindex' _site/stock.html
-
-      - name: Build stock dashboard data
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p data
-          # 還沒收集過台股資料時，看板會顯示「還沒開始收集」，不算失敗。
-          gh release download tw-stock-data -p tw_stock.db -D data 2>/dev/null || echo "::notice::還沒有台股資料庫。"
-          python3 web/build_stock.py --db data/tw_stock.db --out _site/stock.json
+          grep -q 'noindex' _site/ai.html
 
       - name: Upload artifact
         if: steps.pages.outputs.enabled == 'true'

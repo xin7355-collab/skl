@@ -389,6 +389,7 @@
  "research/syllabus/skills/syllabus": "依課程大綱自動搜尋學術文獻，產生符合課程程度的補充閱讀清單",
  "xin-toolkit/skills/app-bootstrap": "把 skl 技能庫挑好的技能組合與工作守則一鍵複製進另一個 App 的 repo，方便新專案快速套用",
  "xin-toolkit/skills/app-guardrails-audit": "依低資源 App 防禦準則審計專案，檢查記憶體、資料庫鎖、金鑰外洩、逾時等常見風險",
+ "xin-toolkit/skills/auto-video-edit": "全自動剪影片：去掉沒講話的空白、挑精華剪成指定長度、做直式短影音；手機上傳到 GitHub 草稿就會自動剪好傳回",
  "xin-toolkit/skills/file-intake": "把你上傳的檔案（zip、規格、程式）做成新技能、可用的網頁 App，或整合進既有 App，含安全掃描與驗證",
  "xin-toolkit/skills/tw-stock": "用證交所與櫃買中心官方資料，每天收集台股行情、估值、月營收，並做有出處的個股分析（非投資建議）"
 }

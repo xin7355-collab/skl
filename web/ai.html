@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AI 指南">
+<title>AI 模型與功能指南</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1a1d21; --muted: #5d6670; --line: #e3e6ea; --grid: #eceef1;
+  --accent: #0f766e; --accent-soft: #e6f4f2; --accent-text: #ffffff; --warn: #b45309;
+  --anth: #2a78d6; --oai: #eb6834; --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --card: #181c20; --text: #e8eaed; --muted: #9aa3ad; --line: #2a3036; --grid: #23282d;
+    --accent: #2dd4bf; --accent-soft: #123330; --accent-text: #06201d; --warn: #f59e0b;
+    --anth: #3987e5; --oai: #d95926; --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
+  padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));
+  max-width: 760px; margin: 0 auto; -webkit-text-size-adjust: 100%;
+}
+header { padding: 18px 0 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+h1 { font-size: 22px; margin: 0; }
+header a { color: var(--accent); text-decoration: none; font-size: 14px; white-space: nowrap; }
+.sub { color: var(--muted); font-size: 13px; margin: 2px 0 6px; }
+nav.tabs { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px 0; background: var(--bg); }
+nav.tabs button { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 10px; padding: 9px 2px; font: inherit; font-size: 13px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; margin: 8px 0 12px; }
+h2 { font-size: 17px; margin: 0 0 4px; }
+.hint { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+.pick { display: grid; grid-template-columns: 40px 1fr; gap: 4px 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.pick:first-of-type { border-top: 0; }
+.pick .ic { font-size: 28px; grid-row: span 3; text-align: center; }
+.pick b { font-size: 15px; }
+.who { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 10px; border-radius: 99px; background: var(--accent-soft); }
+.dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
+.pick small { color: var(--muted); font-size: 13px; }
+.model { padding: 12px 0; border-top: 1px solid var(--line); }
+.model:first-child { border-top: 0; }
+.model .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.model .top b { font-size: 16px; }
+.badge { font-size: 11px; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.model .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.model ul { margin: 6px 0 0; padding-left: 20px; font-size: 14px; }
+details summary { cursor: pointer; color: var(--muted); font-size: 14px; margin-top: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+td, th { text-align: left; padding: 5px 4px; border-top: 1px solid var(--line); vertical-align: top; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+a { color: var(--accent); }
+.kind { font-size: 11px; white-space: nowrap; }
+.chart { margin: 4px 0 18px; }
+.chart h3 { font-size: 15px; margin: 0 0 2px; }
+.legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); margin: 6px 0; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+svg text { fill: var(--text); font-size: 12px; }
+svg .lab { fill: var(--muted); }
+.note { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+select { width: 100%; font: inherit; font-size: 16px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); margin-bottom: 8px; }
+.feat { padding: 14px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 40px 1fr; gap: 2px 10px; }
+.feat:first-child { border-top: 0; }
+.feat .ic { font-size: 26px; grid-row: 1 / span 6; text-align: center; }
+.feat > :not(.ic), .pick > :not(.ic) { grid-column: 2; }
+.feat .nm { font-weight: 600; }
+.feat .tags { font-size: 12px; color: var(--muted); }
+.feat p { margin: 4px 0 0; font-size: 14px; }
+.feat p span { color: var(--muted); }
+.feat .acts { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.btn { appearance: none; border: 0; border-radius: 10px; padding: 7px 12px; font: inherit; font-size: 13px; background: var(--accent-soft); color: var(--text); cursor: pointer; }
+.error { color: var(--warn); }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 99px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; }
+.toast.show { opacity: .95; }
+.flow { width: 100%; height: auto; margin: 4px 0 8px; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header><h1>AI 模型與功能指南</h1><a href="./">← 技能庫</a></header>
+<p class="sub" id="sub">載入中…</p>
+
+<nav class="tabs" role="tablist">
+  <button data-tab="pick" aria-selected="true">怎麼選</button>
+  <button data-tab="bench" aria-selected="false">跑分</button>
+  <button data-tab="claude" aria-selected="false">Claude Code</button>
+  <button data-tab="codex" aria-selected="false">Codex</button>
+</nav>
+
+<main>
+  <section id="tab-pick" class="card">
+    <h2>一張圖看懂怎麼選</h2>
+    <svg class="flow" viewBox="0 0 340 150" role="img" aria-label="依工作難度選模型：簡單大量選最便宜的，日常選主力，最難選旗艦">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="currentColor"/></marker></defs>
+      <g style="color:var(--muted)">
+        <line x1="20" y1="120" x2="320" y2="120" stroke="currentColor" stroke-width="2" marker-end="url(#ar)"/>
+        <text x="20" y="142" class="lab">簡單、大量</text><text x="320" y="142" text-anchor="end" class="lab">困難、長時間</text>
+      </g>
+      <g font-size="12">
+        <rect x="14" y="62" width="92" height="44" rx="10" fill="var(--accent-soft)"/>
+        <text x="60" y="80" text-anchor="middle">⚡ 快又省</text><text x="60" y="98" text-anchor="middle" class="lab">Haiku／Luna</text>
+        <rect x="124" y="38" width="92" height="68" rx="10" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+        <text x="170" y="60" text-anchor="middle">🧰 日常主力</text><text x="170" y="78" text-anchor="middle" class="lab">Opus 5.5</text><text x="170" y="94" text-anchor="middle" class="lab">GPT-6 Sol</text>
+        <rect x="234" y="14" width="92" height="92" rx="10" fill="var(--accent-soft)"/>
+        <text x="280" y="40" text-anchor="middle">🧠 最強</text><text x="280" y="60" text-anchor="middle" class="lab">Fable 5.1</text><text x="280" y="78" text-anchor="middle" class="lab">GPT-6 Astra</text><text x="280" y="96" text-anchor="middle" class="lab">慢、貴</text>
+      </g>
+    </svg>
+    <div id="picks"></div>
+    <div class="legend"><span><i class="dot" style="background:var(--anth)"></i>Claude（Anthropic）</span><span><i class="dot" style="background:var(--oai)"></i>Codex（OpenAI）</span></div>
+    <h2 style="margin-top:14px">全部模型</h2>
+    <select id="vendor" aria-label="廠商"><option value="">兩家都看</option></select>
+    <div id="models"></div>
+  </section>
+
+  <section id="tab-bench" class="card" hidden>
+    <h2>跑分比較</h2>
+    <p class="hint">只放「同一個測驗、同一個版本」的分數才能比。點長條看數字與出處。</p>
+    <div id="charts"></div>
+    <details><summary>跑分的注意事項</summary><ul id="notes" class="note"></ul></details>
+  </section>
+
+  <section id="tab-claude" class="card" hidden>
+    <h2>Claude Code 功能（中文說明）</h2>
+    <p class="hint" id="claudeNote"></p>
+    <select class="ff" data-for="claude" aria-label="篩選"></select>
+    <div id="claudeList"></div>
+  </section>
+
+  <section id="tab-codex" class="card" hidden>
+    <h2>Codex 功能（中文說明）</h2>
+    <p class="hint" id="codexNote"></p>
+    <select class="ff" data-for="codex" aria-label="篩選"></select>
+    <div id="codexList"></div>
+  </section>
+  <p class="note">🔄 每週一自動更新：有新模型、新功能時會自動加上去。跑分一律附出處；「第三方」與「對照表」的數字僅供參考。</p>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const APP_VER = "__APP_VER__";
+const $ = (id) => document.getElementById(id);
+const COLOR = { Anthropic: "var(--anth)", OpenAI: "var(--oai)" };
+const TIER = { daily: "日常主力", hardest: "最強旗艦", balanced: "平衡", cheap: "快又省", legacy: "舊款" };
+const FILTERS = [["", "全部"], ["new", "⭐ 你可能還沒用過"], ["mobile", "📱 手機可用"], ["入門", "入門"], ["進階", "進階"]];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 無痕模式 */ } },
+};
+let M = null, F = null;
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1800); }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch { ok = false; }
+    ta.remove(); if (!ok) { toast("無法自動複製，請長按選取"); return; }
+  }
+  toast("已複製 ✓");
+}
+async function fetchJsonRetry(url, tries = 4) {
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try { const r = await fetch(url, { cache: "no-cache" }); if (r.ok) return await r.json();
+      last = new Error("HTTP " + r.status); if (r.status < 500 && r.status !== 429) break; } catch (e) { last = e; }
+    if (i < tries - 1) await new Promise((res) => setTimeout(res, 1000 * 2 ** i));
+  }
+  throw last;
+}
+
+function renderPicks() {
+  const box = $("picks");
+  for (const p of M.pick) {
+    const d = el("div", "pick");
+    d.appendChild(el("div", "ic", p.icon));
+    d.appendChild(el("b", "", p.need));
+    const who = el("div", "who");
+    for (const [v, name] of [["Anthropic", p.claude], ["OpenAI", p.codex]]) {
+      const c = el("span", "chip"); const dot = el("i", "dot"); dot.style.background = COLOR[v];
+      c.appendChild(dot); c.appendChild(document.createTextNode(name)); who.appendChild(c);
+    }
+    d.appendChild(who);
+    d.appendChild(el("small", "", p.why));
+    box.appendChild(d);
+  }
+}
+
+function renderModels() {
+  const sel = $("vendor"), box = $("models");
+  box.innerHTML = "";
+  for (const v of M.vendors) {
+    if (sel.value && sel.value !== v.vendor) continue;
+    for (const m of v.models) {
+      const d = el("div", "model");
+      const top = el("div", "top");
+      const dot = el("i", "dot"); dot.style.background = COLOR[v.vendor]; top.appendChild(dot);
+      top.appendChild(el("b", "", m.name));
+      top.appendChild(el("span", "badge", TIER[m.tier] || m.tier));
+      d.appendChild(top);
+      d.appendChild(el("div", "meta", [m.id, m.released && `發布 ${m.released}`, m.context && `可讀 ${m.context}`].filter(Boolean).join("・")));
+      if (m.price) d.appendChild(el("div", "meta", "價格：" + m.price));
+      const ul = el("ul");
+      for (const x of [...m.best_for, ...m.strengths.slice(0, 2)]) ul.appendChild(el("li", "", x));
+      d.appendChild(ul);
+      if (m.benchmarks.length) {
+        const det = el("details"); det.appendChild(el("summary", "", `跑分（${m.benchmarks.length} 項，附出處）`));
+        const t = el("table");
+        for (const b of m.benchmarks) {
+          const tr = el("tr"); tr.appendChild(el("td", "", b.name)); tr.appendChild(el("td", "num", b.score));
+          const td = el("td", "kind"); const a = el("a", "", b.kind); a.href = b.source; a.rel = "noopener"; a.target = "_blank"; td.appendChild(a);
+          tr.appendChild(td); t.appendChild(tr);
+        }
+        det.appendChild(t); d.appendChild(det);
+      }
+      box.appendChild(d);
+    }
+  }
+}
+
+// 水平長條圖：單一數值比較；顏色代表廠商（身分），數值直接標在長條尾端。
+function renderCharts() {
+  const box = $("charts");
+  const NS = "http://www.w3.org/2000/svg";
+  for (const c of M.charts) {
+    const wrap = el("div", "chart");
+    wrap.appendChild(el("h3", "", c.title));
+    const lg = el("div", "legend");
+    for (const v of ["Anthropic", "OpenAI"]) { const s = el("span"); const d = el("i", "dot"); d.style.background = COLOR[v]; s.appendChild(d); s.appendChild(document.createTextNode(v === "Anthropic" ? "Claude" : "OpenAI")); lg.appendChild(s); }
+    wrap.appendChild(lg);
+    const rows = [...c.rows].sort((a, b) => b[2] - a[2]);
+    const W = 340, labelW = 128, barMax = W - labelW - 56, rowH = 30;
+    const max = Math.max(...rows.map((r) => r[2]));
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${rows.length * rowH + 6}`); svg.setAttribute("width", "100%");
+    svg.setAttribute("role", "img"); svg.setAttribute("aria-label", c.title);
+    rows.forEach(([name, vendor, val], i) => {
+      const y = i * rowH + 4;
+      const t = document.createElementNS(NS, "text"); t.setAttribute("x", labelW - 8); t.setAttribute("y", y + 16);
+      t.setAttribute("text-anchor", "end"); t.textContent = name; svg.appendChild(t);
+      const w = Math.max(4, (val / max) * barMax);
+      const r = document.createElementNS(NS, "rect");
+      r.setAttribute("x", labelW); r.setAttribute("y", y + 4); r.setAttribute("height", 16); r.setAttribute("width", w);
+      r.setAttribute("rx", 4); r.setAttribute("fill", COLOR[vendor]);
+      const tip = document.createElementNS(NS, "title"); tip.textContent = `${name}：${val}${c.unit}`; r.appendChild(tip);
+      r.style.cursor = "pointer"; r.addEventListener("click", () => toast(`${name}：${val}${c.unit}`));
+      svg.appendChild(r);
+      const v = document.createElementNS(NS, "text"); v.setAttribute("x", labelW + w + 6); v.setAttribute("y", y + 16);
+      v.textContent = `${val}${c.unit}`; svg.appendChild(v);
+    });
+    wrap.appendChild(svg);
+    wrap.appendChild(el("p", "note", c.note));
+    const det = el("details"); det.appendChild(el("summary", "", "表格檢視"));
+    const t = el("table");
+    for (const [n, v, val] of rows) { const tr = el("tr"); tr.appendChild(el("td", "", n)); tr.appendChild(el("td", "", v)); tr.appendChild(el("td", "num", `${val}${c.unit}`)); t.appendChild(tr); }
+    det.appendChild(t); wrap.appendChild(det);
+    box.appendChild(wrap);
+  }
+  for (const n of M.notes || []) $("notes").appendChild(el("li", "", n));
+}
+
+function renderFeatures(key) {
+  const prod = F.products.find((p) => (key === "claude" ? p.product === "Claude Code" : p.product === "Codex"));
+  $(key + "Note").textContent = prod.note || "";
+  const sel = document.querySelector(`.ff[data-for="${key}"]`);
+  const box = $(key + "List");
+  box.innerHTML = "";
+  const f = sel.value;
+  const list = prod.features.filter((x) => !f || (f === "new" ? x.new : f === "mobile" ? x.mobile === true : x.level === f));
+  if (!list.length) { box.appendChild(el("p", "hint", "沒有符合的功能。")); return; }
+  for (const x of list) {
+    const d = el("div", "feat");
+    d.appendChild(el("div", "ic", x.icon || "🛠️"));
+    d.appendChild(el("div", "nm", x.name));
+    d.appendChild(el("div", "tags", [x.level, x.mobile === true ? "📱 手機可用" : x.mobile === false ? "💻 需要電腦" : "手機未確認", x.new ? "⭐ 可能還沒用過" : ""].filter(Boolean).join("・")));
+    d.appendChild(el("p", "", x.zh));
+    const how = el("p"); how.appendChild(el("span", "", "怎麼用：")); how.appendChild(document.createTextNode(x.how)); d.appendChild(how);
+    const when = el("p"); when.appendChild(el("span", "", "什麼時候用：")); when.appendChild(document.createTextNode(x.when)); d.appendChild(when);
+    const acts = el("div", "acts");
+    const b = el("button", "btn", "複製「教我用」");
+    b.addEventListener("click", () => copyText(`我用 iPhone 操作、沒有電腦。請一步一步教我使用 ${prod.product} 的「${x.name}」功能：先用一句話說它能幫我做什麼，再給我在手機上能完成的操作步驟，最後舉一個我現在就能試的例子。`));
+    acts.appendChild(b);
+    const a = el("a", "", "官方說明 ↗"); a.href = x.url; a.target = "_blank"; a.rel = "noopener"; a.style.fontSize = "13px";
+    acts.appendChild(a);
+    d.appendChild(acts);
+    box.appendChild(d);
+  }
+}
+
+function showTab(id) {
+  for (const b of document.querySelectorAll("nav.tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === id));
+  for (const t of ["pick", "bench", "claude", "codex"]) $("tab-" + t).hidden = t !== id;
+  store.set("ai-tab", id);
+}
+
+async function load() {
+  for (const b of document.querySelectorAll("nav.tabs button")) b.addEventListener("click", () => showTab(b.dataset.tab));
+  try {
+    [M, F] = await Promise.all([fetchJsonRetry("ai/models.json"), fetchJsonRetry("ai/features.json")]);
+  } catch (e) {
+    $("sub").innerHTML = "";
+    const p = el("p", "error", "資料載入失敗（" + e.message + "）。請確認網路後重新整理；持續失敗的話到 GitHub Actions 看「Deploy web page」是否紅燈。");
+    $("tab-pick").prepend(p);
+    return;
+  }
+  $("sub").textContent = `資料檢查日期 ${M.checked_at}・每週自動更新` + (APP_VER.startsWith("__") ? "" : `・版本 ${APP_VER}`);
+  for (const v of M.vendors) { const o = el("option", "", v.product); o.value = v.vendor; $("vendor").appendChild(o); }
+  $("vendor").addEventListener("change", renderModels);
+  renderPicks(); renderModels(); renderCharts();
+  for (const sel of document.querySelectorAll(".ff")) {
+    for (const [v, t] of FILTERS) { const o = el("option", "", t); o.value = v; sel.appendChild(o); }
+    sel.addEventListener("change", () => renderFeatures(sel.dataset.for));
+    renderFeatures(sel.dataset.for);
+  }
+  showTab(store.get("ai-tab", "pick"));
+}
+
+async function checkVersion() {
+  if (APP_VER.startsWith("__")) return;
+  try { const r = await fetch("version.json", { cache: "no-store" }); if (!r.ok) return;
+    const v = await r.json(); if (v.ver && v.ver !== APP_VER) location.reload(); } catch { /* 離線略過 */ }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkVersion(); });
+load();
+</script>
+</body>
+</html>
