@@ -77,3 +77,6 @@
   - 新增技能後跑：`python3 scripts/check_frontmatter.py --all`、`python3 scripts/check_paths.py --all`、
     兩支工具的 `selftest`。
   - 不要把上游的 `.claude/settings.json`（會自動載入第三方外掛）或 `.mcp.json` 加回來。
+  - `.claude/skills/` 是用 app-bootstrap 從本 repo 複製給「skl 自己的工作階段」用的 6 個技能（清單在
+    `.claude/skills/.skl-vendor.json`）；原始檔改了之後跑
+    `python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py update --target . --no-hook` 同步。
