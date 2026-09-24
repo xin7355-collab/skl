@@ -66,6 +66,8 @@
     以 video 開頭的「草稿 Release」裡的影片，成品傳回同一個草稿（草稿不公開）。
   - `web/ai.html`＋`web/ai/models.json`、`web/ai/features.json`：AI 模型與功能指南。資料由每週 Routine 自動
     研究更新（自我進化）；改資料後必須跑 `python3 web/ai/check_ai_data.py`，通過才能推。跑分一律附出處網址。
+  - `web/xray.html`：Repo X-Ray（使用者提供的單檔工具，GitHub 專案透視）。合併搜尋器（網址直接掃、關鍵字搜尋）、
+    上一步／瀏覽器返回不重查、搜尋結果顯示檔案大小與排序、localStorage 快取 1 小時（超過 200KB 不存）省 API 額度。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。
 - 需要的 Secrets：無（選用 `SKL_READ_TOKEN`：唯讀 Token，讓每週報告能掃私人 repo）。
 - 部署在哪：網頁 https://xin7355-collab.github.io/skl/ （`Deploy web page` 工作流）；

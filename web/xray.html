@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Repo X-Ray · GitHub 專案透視儀</title>
+<style>
+/* ─────────── 儀表板色票（graphite / signal amber / probe cyan） ─────────── */
+:root{
+  --ink:#0E1117;
+  --panel:#151A22;
+  --panel-2:#1B212B;
+  --line:#28313F;
+  --text:#D9E0EA;
+  --muted:#7B8798;
+  --amber:#F2A93B;
+  --cyan:#48D3C0;
+  --red:#E0685F;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,"Noto Sans Mono CJK TC",monospace;
+  --body:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ink);color:var(--text);font-family:var(--body);
+  font-size:15px;line-height:1.6;
+  background-image:linear-gradient(var(--panel-2) 1px,transparent 1px),linear-gradient(90deg,var(--panel-2) 1px,transparent 1px);
+  background-size:64px 64px;background-position:-1px -1px;
+}
+.wrap{max-width:940px;margin:0 auto;padding:20px 16px 72px}
+
+/* ─────────── header ─────────── */
+header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.logo{font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:.04em;color:var(--text)}
+.logo b{color:var(--amber);font-weight:700}
+.tag{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.gauge{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted);
+  border:1px solid var(--line);border-radius:3px;padding:3px 8px;white-space:nowrap}
+.gauge span{color:var(--cyan)}
+.gauge.low span{color:var(--amber)}
+.gauge.out span{color:var(--red)}
+
+/* ─────────── 輸入列 ─────────── */
+.bar{display:flex;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:6px}
+.bar input{
+  flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--text);
+  font-family:var(--mono);font-size:13px;padding:8px 8px;
+}
+.bar input::placeholder{color:#55606F}
+button{
+  font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;
+  background:var(--amber);color:#12151B;border:0;border-radius:3px;padding:9px 16px;
+  transition:filter .15s ease;
+}
+button:hover{filter:brightness(1.1)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+.subbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.subbar details{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.subbar summary{cursor:pointer;list-style:none}
+.subbar summary::-webkit-details-marker{display:none}
+.subbar summary::before{content:"⌗ ";color:var(--line)}
+.tokenbox{margin-top:8px;display:flex;gap:6px}
+.tokenbox input{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:3px;
+  color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 9px;outline:0}
+.tokenbox button{background:var(--panel-2);color:var(--text);border:1px solid var(--line)}
+.hint{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7}
+.samples{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.samples a{color:var(--cyan);text-decoration:none;border-bottom:1px dotted var(--line);margin-right:10px;cursor:pointer}
+
+/* ─────────── 掃描狀態 ─────────── */
+#status{margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--muted);min-height:18px}
+#status .step{color:var(--cyan)}
+#status.err{color:var(--red)}
+.scanline{height:2px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:8px;display:none}
+.scanline.on{display:block}
+.scanline i{display:block;height:100%;width:34%;background:var(--amber);animation:sweep 1.1s ease-in-out infinite}
+@keyframes sweep{0%{transform:translateX(-110%)}100%{transform:translateX(330%)}}
+
+/* ─────────── 判讀卡（signature element） ─────────── */
+#out{margin-top:26px;display:none}
+#out.on{display:block}
+.verdict{
+  border:1px solid var(--line);border-left:3px solid var(--amber);
+  background:linear-gradient(180deg,var(--panel) 0%,var(--ink) 100%);
+  border-radius:4px;padding:20px 20px 18px;
+}
+.verdict .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.verdict h1{
+  margin:8px 0 0;font-size:26px;line-height:1.35;font-weight:650;letter-spacing:-.01em;
+}
+.verdict h1 em{font-style:normal;color:var(--amber)}
+.verdict .desc{color:var(--muted);font-size:14px;margin-top:10px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.chip{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line);
+  border-radius:3px;padding:3px 7px}
+.chip b{color:var(--text);font-weight:600}
+.live{display:flex;flex-direction:column;gap:7px;margin-top:16px}
+.live a{display:inline-flex;align-items:baseline;gap:8px;font-family:var(--mono);font-size:12px;
+  color:var(--cyan);text-decoration:none;word-break:break-all}
+.live a:hover{text-decoration:underline}
+.live a s{text-decoration:none;color:#5D6877;font-size:10px;flex:none}
+
+/* 實機預覽 */
+.preview{border:1px solid var(--line);border-radius:3px;background:var(--panel);overflow:hidden}
+.preview .top{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--muted)}
+.preview .top .dot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none}
+.preview .top .u{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview .top button{margin-left:auto;padding:5px 11px;font-size:11px;flex:none}
+.preview .frame{position:relative;height:420px;background:#0A0D12}
+.preview iframe{width:100%;height:100%;border:0;background:#fff}
+.preview .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;padding:20px;line-height:1.9}
+@media(max-width:640px){.preview .frame{height:300px}}
+
+/* ─────────── 區塊 ─────────── */
+section{margin-top:26px}
+.h{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.h::after{content:"";flex:1;height:1px;background:var(--line)}
+.h u{text-decoration:none;color:var(--line)}
+
+/* 指紋牆 */
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+.cell{
+  border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:10px 11px;
+  opacity:0;transform:translateY(4px);animation:pop .3s ease forwards;
+}
+@keyframes pop{to{opacity:1;transform:none}}
+.cell .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.cell .v{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);margin-top:4px;word-break:break-word}
+.cell.c .v{color:var(--cyan)}
+.cell .e{font-family:var(--mono);font-size:10px;color:#5D6877;margin-top:4px;word-break:break-all}
+
+/* 路由 */
+.routes{border:1px solid var(--line);border-radius:3px;background:var(--panel);overflow:hidden}
+.routes div{font-family:var(--mono);font-size:12px;padding:7px 11px;border-bottom:1px solid var(--panel-2);
+  display:flex;gap:10px;align-items:baseline}
+.routes div:last-child{border-bottom:0}
+.routes .p{color:var(--text)}
+.routes .p b{color:var(--amber);font-weight:600}
+.routes .f{color:#5D6877;margin-left:auto;font-size:10px;text-align:right;word-break:break-all}
+.more{font-family:var(--mono);font-size:11px;color:var(--muted);padding:8px 11px !important}
+
+/* 依賴 / 檔案統計 */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.cols{grid-template-columns:1fr}}
+.list{border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:4px 0}
+.list div{font-family:var(--mono);font-size:12px;padding:5px 11px;display:flex;gap:10px}
+.list .n{color:var(--text)}
+.list .x{color:var(--muted);margin-left:auto}
+.bar-mini{height:3px;background:var(--line);border-radius:2px;margin-top:5px;overflow:hidden}
+.bar-mini i{display:block;height:100%;background:var(--cyan)}
+
+/* 搜尋結果 */
+.results{border:1px solid var(--line);border-radius:4px;background:var(--panel);margin-top:8px;
+  overflow:hidden;display:none}
+.results.on{display:block}
+.results button{display:block;width:100%;text-align:left;background:transparent;color:var(--text);
+  border:0;border-bottom:1px solid var(--panel-2);border-radius:0;padding:10px 12px;font-weight:400}
+.results button:last-child{border-bottom:0}
+.results button:hover{background:var(--panel-2);filter:none}
+.results .rn{font-family:var(--mono);font-size:13px;color:var(--amber);font-weight:600}
+.results .rs{font-family:var(--mono);font-size:10px;color:var(--muted);float:right}
+.results .rd{font-family:var(--body);font-size:12px;color:var(--muted);margin-top:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* 可點的檔案路徑 */
+[data-f]{cursor:pointer;border-bottom:1px dotted #46505F}
+[data-f]:hover{color:var(--cyan) !important}
+
+/* 文件搜尋命中 */
+.hit{border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:9px 11px;
+  margin-bottom:6px;cursor:pointer}
+.hit:hover{border-color:var(--cyan)}
+.hit .hf{font-family:var(--mono);font-size:10px;color:var(--amber)}
+.hit .hl{font-family:var(--mono);font-size:12px;color:var(--text);margin-top:4px;
+  white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.hit .hl mark{background:rgba(242,169,59,.25);color:var(--amber);padding:0 1px;border-radius:2px}
+.vbody img{max-width:100%;height:auto;display:block;background:#fff;border-radius:3px}
+
+/* 檔案檢視器 */
+.viewer{position:fixed;inset:0;background:rgba(8,10,14,.93);z-index:50;display:none;
+  flex-direction:column;padding:0}
+.viewer.on{display:flex}
+.vhead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);
+  background:var(--panel);font-family:var(--mono);font-size:12px}
+.vhead .vp{color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.vhead a{color:var(--cyan);text-decoration:none;flex:none;font-size:11px}
+.vhead button{padding:6px 12px;flex:none}
+.vbody{flex:1;overflow:auto;margin:0;padding:14px 15px 40px;font-family:var(--mono);font-size:12px;
+  line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word;
+  -webkit-overflow-scrolling:touch}
+.vhead .vp{min-width:0}
+.vhead button,.vhead a{white-space:nowrap}
+
+/* Markdown 渲染 */
+.md{white-space:normal;font-family:var(--body);font-size:15px;line-height:1.8;max-width:760px;margin:0 auto}
+.md h1,.md h2,.md h3{font-family:var(--mono);line-height:1.4;margin:22px 0 10px}
+.md h1{font-size:22px;color:var(--amber);border-bottom:1px solid var(--line);padding-bottom:8px}
+.md h2{font-size:18px;color:var(--text)}
+.md h3{font-size:15px;color:var(--muted)}
+.md p{margin:10px 0}
+.md a{color:var(--cyan)}
+.md code{font-family:var(--mono);font-size:12px;background:var(--panel-2);padding:2px 5px;
+  border-radius:3px;color:var(--amber);word-break:break-all}
+.md pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:12px;
+  overflow-x:auto;white-space:pre;font-size:12px;line-height:1.6}
+.md pre code{background:none;padding:0;color:var(--text)}
+.md ul,.md ol{padding-left:22px;margin:10px 0}
+.md li{margin:4px 0}
+.md blockquote{border-left:3px solid var(--line);margin:12px 0;padding:2px 0 2px 14px;color:var(--muted)}
+.md hr{border:0;border-top:1px solid var(--line);margin:20px 0}
+.md img{max-width:100%;height:auto;border-radius:3px}
+.md table{border-collapse:collapse;width:100%;font-size:13px;margin:12px 0}
+.md th,.md td{border:1px solid var(--line);padding:6px 9px;text-align:left}
+.md th{background:var(--panel-2);font-family:var(--mono);font-size:11px}
+.card{border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:14px 15px}
+.card .nm{font-family:var(--mono);font-size:15px;font-weight:650;color:var(--amber)}
+.card .row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.risk{border:1px solid rgba(224,104,95,.4);border-left:3px solid var(--red);background:rgba(224,104,95,.06);
+  border-radius:3px;padding:12px 14px;margin-top:16px;font-family:var(--mono);font-size:12px}
+.risk b{color:var(--red);display:block;margin-bottom:7px;font-size:11px;letter-spacing:.1em}
+.risk div{color:var(--muted);padding:2px 0;word-break:break-all}
+.risk div i{color:var(--text);font-style:normal}
+.dl{display:inline-block;margin-top:8px;font-family:var(--mono);font-size:12px;color:var(--cyan);text-decoration:none}
+.empty{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px dashed var(--line);
+  border-radius:3px;padding:14px;text-align:center}
+/* ─────────── 合併搜尋器、上一步、最近紀錄 ─────────── */
+[hidden]{display:none !important}
+button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--line)}
+.navrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.navrow button{padding:7px 12px;font-size:12px}
+.recent{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.recent a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent a i{font-style:normal;color:var(--muted)}
+.results .rr{display:flex;gap:10px;align-items:flex-start}
+.results .rmain{flex:1;min-width:0}
+.results .rz{flex:none;text-align:right;font-family:var(--mono);min-width:74px}
+.results .rz b{display:block;font-size:13px;color:var(--cyan);font-weight:700}
+.results .rz span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+.results .rhead{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--panel-2);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.results select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:3px;font-family:var(--mono);font-size:12px;padding:4px 6px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--ink);font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:99px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
+.toast.show{opacity:.95}
+footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line-height:1.9}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+  .cell{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">REPO <b>X-RAY</b></div>
+  <div class="tag">GitHub 專案透視儀</div>
+  <div class="gauge" id="gauge">API 額度 <span id="rate">—</span></div>
+  <div class="tag" style="width:100%;text-transform:none;letter-spacing:.04em"><a href="./" style="color:var(--cyan);text-decoration:none">← 技能庫</a> · <a href="ai.html" style="color:var(--cyan);text-decoration:none">AI 指南</a></div>
+</header>
+
+<div class="bar">
+  <input id="url" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" spellcheck="false"
+         placeholder="貼 GitHub 網址／owner/repo，或輸入關鍵字搜尋">
+  <button id="go">開始</button>
+</div>
+<div class="hint">貼網址 → 直接掃描；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。</div>
+<div class="navrow" id="navrow" hidden>
+  <button class="ghost" id="back">← 回到搜尋結果</button>
+</div>
+<div class="results" id="results"></div>
+<div class="recent" id="recent"></div>
+
+<div class="subbar">
+  <div class="samples">
+    <a data-s="https://github.com/shadcn-ui/ui">shadcn/ui</a>
+    <a data-s="https://github.com/nuxt/nuxt">nuxt</a>
+    <a data-s="https://github.com/tailwindlabs/tailwindcss.com">tailwindcss.com</a>
+  </div>
+  <details style="margin-left:auto">
+    <summary>加上 Token（額度 60/hr → 5000/hr）</summary>
+    <div class="tokenbox">
+      <input id="tok" type="password" autocomplete="off" placeholder="ghp_… 只存在這個分頁的記憶體">
+      <button id="savetok">套用</button>
+    </div>
+    <div class="hint">
+      到 GitHub → Settings → Developer settings → Personal access tokens → 產生一組<b>不勾任何權限</b>的 token 即可。<br>
+      這支工具不會把 token 送到 GitHub 以外的任何地方，重新整理後就消失。
+    </div>
+  </details>
+</div>
+
+<div id="status"></div>
+<div class="scanline" id="scan"><i></i></div>
+
+<div id="out">
+  <div class="verdict">
+    <div class="eyebrow">判讀結果</div>
+    <h1 id="v-title">—</h1>
+    <div class="desc" id="v-desc"></div>
+    <div class="meta" id="v-meta"></div>
+    <div id="v-quick"></div>
+    <div id="v-live"></div>
+    <div class="navrow"><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
+  </div>
+
+  <section id="sec-preview">
+    <div class="h"><u>01</u> 實機預覽</div>
+    <div class="preview">
+      <div class="top"><span class="dot"></span><span class="u" id="pv-url"></span>
+        <button id="pv-go">載入畫面</button></div>
+      <div class="frame"><div class="ph" id="pv-ph">按「載入畫面」才會真的去連這個網站</div></div>
+    </div>
+  </section>
+
+  <div id="risk"></div>
+
+  <section id="sec-app">
+    <div class="h"><u>02</u> App 身分證</div>
+    <div id="app-card"></div>
+  </section>
+
+  <section id="sec-wall">
+    <div class="h"><u>03</u> 技術指紋</div>
+    <div id="lang-fallback"></div>
+    <div class="wall" id="wall"></div>
+  </section>
+
+  <section id="sec-api">
+    <div class="h"><u>04</u> API 端點與外部服務</div>
+    <div id="api-box"></div>
+  </section>
+
+  <section id="sec-routes">
+    <div class="h"><u>05</u> 路由地圖</div>
+    <div class="routes" id="routes"></div>
+  </section>
+
+  <section id="sec-docs">
+    <div class="h"><u>06</u> 說明文件</div>
+    <div class="bar" style="margin-bottom:10px">
+      <input id="dq" type="search" autocomplete="off" placeholder="搜尋所有 .md 的內容（例如：安裝、API、部署）">
+      <button id="dqgo" style="background:var(--panel-2);color:var(--text);border:1px solid var(--line)">搜尋</button>
+    </div>
+    <div id="doc-hits"></div>
+    <div id="doc-list"></div>
+  </section>
+
+  <section id="sec-skel">
+    <div class="h"><u>07</u> 專案結構</div>
+    <div id="skel-box"></div>
+  </section>
+
+  <section>
+    <div class="h"><u>08</u> 依賴與檔案分佈</div>
+    <div class="cols">
+      <div class="list" id="deps"></div>
+      <div class="list" id="exts"></div>
+    </div>
+  </section>
+</div>
+
+<div class="viewer" id="viewer">
+  <div class="vhead">
+    <span class="vp" id="v-path"></span>
+    <button id="v-mode" style="display:none">原始碼</button>
+    <button id="v-dl">下載</button>
+    <a id="v-gh" href="#" target="_blank" rel="noopener">GitHub</a>
+    <button id="v-close">關閉</button>
+  </div>
+  <div class="vbody" id="v-body"></div>
+</div>
+
+<footer>
+  單一檔案 · 零外部相依 · 全部運算在你的瀏覽器裡完成<br>
+  資料來源：api.github.com（metadata / tree）與 raw.githubusercontent.com（manifest 檔案，不計入 API 額度）
+</footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   0. 基礎設施層：請求佇列 + 指數退避 + 額度儀表 + 快取
+   ══════════════════════════════════════════════════════════════ */
+const S = { token:"", cache:new Map(), busy:false };
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+/* 併發上限 2：避免瞬間併發風暴打爆未授權的 60/hr 額度 */
+const enqueue = (()=>{
+  const q=[]; let active=0; const MAX=2;
+  const pump=()=>{
+    if(active>=MAX || !q.length) return;
+    active++;
+    const job=q.shift();
+    job.fn().then(job.res,job.rej).finally(()=>{active--;pump();});
+  };
+  return fn => new Promise((res,rej)=>{ q.push({fn,res,rej}); pump(); });
+})();
+
+function showRate(h){
+  const rem=h.get("x-ratelimit-remaining"), lim=h.get("x-ratelimit-limit");
+  if(rem===null) return;
+  const g=$("gauge"); $("rate").textContent=rem+"/"+lim;
+  g.className="gauge"+(rem==="0"?" out":(+rem<10?" low":""));
+}
+
+class Fail extends Error{ constructor(code,msg){ super(msg); this.code=code; } }
+
+/* 指數退避（exponential backoff retry）：403 / 429 / 5xx 重試，額度歸零則立刻中止（重試無意義） */
+async function raw(url, tries){
+  tries = tries || 0;
+  const headers = { "Accept":"application/vnd.github+json" };
+  const isApi = url.indexOf("api.github.com")>-1;
+  if(isApi && S.token) headers["Authorization"] = "Bearer "+S.token;
+
+  let r;
+  try{
+    r = await fetch(url,{headers});
+  }catch(e){
+    if(tries<3){ await sleep(400*Math.pow(2,tries)+Math.random()*250); return raw(url,tries+1); }
+    throw new Fail("NET","連不到 GitHub。若你是在 Claude 的預覽視窗裡執行，請把檔案下載後用瀏覽器開啟——預覽沙箱會擋掉對外請求。");
+  }
+  if(isApi) showRate(r.headers);
+
+  if(r.status===404) throw new Fail("404","找不到這個 repo，或它是私有的。");
+  if(r.status===403 || r.status===429){
+    if(r.headers.get("x-ratelimit-remaining")==="0"){
+      const t=+r.headers.get("x-ratelimit-reset")*1000;
+      const m=Math.max(1,Math.ceil((t-Date.now())/60000));
+      throw new Fail("RATE","API 額度用完了，約 "+m+" 分鐘後恢復。加一組 Token 可以直接拉到 5000/hr。");
+    }
+    if(tries<4){ await sleep(600*Math.pow(2,tries)+Math.random()*300); return raw(url,tries+1); }
+    throw new Fail("403","GitHub 拒絕了這次請求。");
+  }
+  if(r.status>=500 && tries<4){ await sleep(600*Math.pow(2,tries)); return raw(url,tries+1); }
+  if(!r.ok) throw new Fail("HTTP","GitHub 回了 "+r.status+"。");
+  return r;
+}
+
+/* 持久快取：搜尋結果與 repo 基本資料存進 localStorage（1 小時），
+   重新整理、上一步、再點一次同樣的東西都不再耗 API 額度。
+   檔案樹可能好幾 MB，超過 200KB 的回應不存，免得塞爆手機儲存空間。 */
+const PC = { key:"xray-cache-v1", ttl:3600e3, max:40, cap:200000 };
+function pcLoad(){ try{ return JSON.parse(localStorage.getItem(PC.key)||"{}"); }catch(e){ return {}; } }
+function pcGet(url){
+  const all=pcLoad(), hit=all[url];
+  return (hit && Date.now()-hit.t<PC.ttl) ? hit.v : undefined;
+}
+function pcSet(url,v){
+  try{
+    const txt=JSON.stringify(v); if(txt.length>PC.cap) return;
+    const all=pcLoad(); all[url]={t:Date.now(),v:v};
+    const keys=Object.keys(all).sort((a,b)=>all[b].t-all[a].t);
+    keys.slice(PC.max).forEach(k=>delete all[k]);          // 只留最近 40 筆
+    localStorage.setItem(PC.key,JSON.stringify(all));
+  }catch(e){ /* 無痕模式或空間不足：少了快取而已，功能照常 */ }
+}
+async function getJSON(url){
+  if(S.cache.has(url)) return S.cache.get(url);
+  const saved=pcGet(url);
+  if(saved!==undefined){ S.cache.set(url,saved); return saved; }
+  const v = await enqueue(()=>raw(url).then(r=>r.json()));
+  S.cache.set(url,v); pcSet(url,v); return v;
+}
+/* raw.githubusercontent.com 不計入 API 額度，manifest 一律走這條 */
+async function getText(url){
+  if(S.cache.has(url)) return S.cache.get(url);
+  const v = await enqueue(async()=>{
+    try{ return await (await raw(url)).text(); }catch(e){ return null; }
+  });
+  S.cache.set(url,v); return v;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   1. 網址解析
+   ══════════════════════════════════════════════════════════════ */
+function parseUrl(input){
+  let s=(input||"").trim();
+  if(!s) throw new Fail("IN","先貼一個 GitHub 網址。");
+  s=s.replace(/^git\+/,"").replace(/\.git$/,"").replace(/\/+$/,"");
+  s=s.replace(/^https?:\/\//,"").replace(/^www\./,"");
+  if(s.indexOf("github.com/")===0) s=s.slice("github.com/".length);
+  else if(s.indexOf("raw.githubusercontent.com/")===0) s=s.slice("raw.githubusercontent.com/".length);
+  else if(s.indexOf("/")===-1) throw new Fail("IN","看起來不像 GitHub 網址。");
+  const p=s.split("?")[0].split("#")[0].split("/").filter(Boolean);
+  if(p.length<2) throw new Fail("IN","網址要包含 擁有者/專案 兩層，例如 github.com/vercel/next.js。");
+  const out={ owner:p[0], repo:p[1], ref:null, sub:"" };
+  if(p[2]==="tree"||p[2]==="blob"){ out.ref=p[3]||null; out.sub=p.slice(4).join("/"); }
+  return out;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   2. 指紋規則表
+   ══════════════════════════════════════════════════════════════ */
+/* dep 規則：[顯示名, 類別, 比對用的套件名陣列] */
+const DEP_RULES = [
+  ["Next.js","框架",["next"]],
+  ["Nuxt","框架",["nuxt","nuxt3"]],
+  ["SvelteKit","框架",["@sveltejs/kit"]],
+  ["Remix","框架",["@remix-run/react","@remix-run/node"]],
+  ["Astro","框架",["astro"]],
+  ["Gatsby","框架",["gatsby"]],
+  ["Angular","框架",["@angular/core"]],
+  ["Create React App","框架",["react-scripts"]],
+  ["Qwik","框架",["@builder.io/qwik"]],
+  ["SolidJS","框架",["solid-js"]],
+  ["Expo / React Native","框架",["expo","react-native"]],
+  ["Electron","框架",["electron"]],
+  ["Tauri","框架",["@tauri-apps/api"]],
+  ["React","UI 函式庫",["react"]],
+  ["Vue","UI 函式庫",["vue"]],
+  ["Svelte","UI 函式庫",["svelte"]],
+  ["Preact","UI 函式庫",["preact"]],
+  ["Tailwind CSS","樣式",["tailwindcss"]],
+  ["MUI","樣式",["@mui/material","@material-ui/core"]],
+  ["Ant Design","樣式",["antd"]],
+  ["Chakra UI","樣式",["@chakra-ui/react"]],
+  ["Bootstrap","樣式",["bootstrap"]],
+  ["styled-components","樣式",["styled-components"]],
+  ["Emotion","樣式",["@emotion/react","@emotion/styled"]],
+  ["Sass","樣式",["sass","node-sass"]],
+  ["UnoCSS","樣式",["unocss"]],
+  ["Framer Motion","動畫",["framer-motion","motion"]],
+  ["GSAP","動畫",["gsap"]],
+  ["Three.js","動畫",["three"]],
+  ["Redux Toolkit","狀態管理",["@reduxjs/toolkit","redux"]],
+  ["Zustand","狀態管理",["zustand"]],
+  ["Jotai","狀態管理",["jotai"]],
+  ["MobX","狀態管理",["mobx"]],
+  ["Pinia","狀態管理",["pinia"]],
+  ["TanStack Query","資料層",["@tanstack/react-query","react-query"]],
+  ["SWR","資料層",["swr"]],
+  ["Axios","資料層",["axios"]],
+  ["Apollo GraphQL","資料層",["@apollo/client"]],
+  ["tRPC","資料層",["@trpc/server","@trpc/client"]],
+  ["Express","後端",["express"]],
+  ["Fastify","後端",["fastify"]],
+  ["Hono","後端",["hono"]],
+  ["NestJS","後端",["@nestjs/core"]],
+  ["Koa","後端",["koa"]],
+  ["Socket.IO","後端",["socket.io"]],
+  ["Prisma","資料庫",["prisma","@prisma/client"]],
+  ["Drizzle","資料庫",["drizzle-orm"]],
+  ["Mongoose","資料庫",["mongoose"]],
+  ["Supabase","資料庫",["@supabase/supabase-js"]],
+  ["Firebase","資料庫",["firebase","firebase-admin"]],
+  ["SQLite","資料庫",["better-sqlite3","sqlite3"]],  // guardrails: ignore（這是比對規則表，不是資料庫連線）
+  ["Vite","建置",["vite"]],
+  ["Webpack","建置",["webpack"]],
+  ["Rollup","建置",["rollup"]],
+  ["esbuild","建置",["esbuild"]],
+  ["Playwright","測試",["@playwright/test","playwright"]],
+  ["Vitest","測試",["vitest"]],
+  ["Jest","測試",["jest"]],
+  ["Cypress","測試",["cypress"]]
+];
+
+/* 檔案規則：[顯示名, 類別, 判斷函式] —— 只吃路徑字串，不吃內容 */
+const FILE_RULES = [
+  ["TypeScript","語言",  p=>p==="tsconfig.json"],
+  ["Dockerfile","部署",  p=>p==="dockerfile"||/(^|\/)dockerfile$/.test(p)],
+  ["Docker Compose","部署", p=>/^docker-compose\.ya?ml$/.test(p)],
+  ["Vercel","部署",      p=>p==="vercel.json"||p===".vercelignore"],
+  ["Netlify","部署",     p=>p==="netlify.toml"],
+  ["Cloudflare Workers","部署", p=>/^wrangler\.(toml|jsonc?)$/.test(p)],
+  ["Firebase Hosting","部署", p=>p==="firebase.json"],
+  ["GitHub Actions","部署", p=>p.indexOf(".github/workflows/")===0],
+  ["GitHub Pages","部署", p=>p==="cname"||p===".nojekyll"],
+  ["PWA","型態",         p=>/(^|\/)(manifest\.webmanifest|sw\.js|service-worker\.js)$/.test(p)],
+  ["純靜態網站","型態",   p=>p==="index.html"],
+  ["Monorepo","結構",    p=>p==="turbo.json"||p==="nx.json"||p==="pnpm-workspace.yaml"||p==="lerna.json"],
+  ["pnpm","套件管理",    p=>p==="pnpm-lock.yaml"],
+  ["Yarn","套件管理",    p=>p==="yarn.lock"],
+  ["npm","套件管理",     p=>p==="package-lock.json"],
+  ["Bun","套件管理",     p=>p==="bun.lockb"||p==="bun.lock"],
+  ["Python","語言",      p=>p==="requirements.txt"||p==="pyproject.toml"],
+  ["Go","語言",          p=>p==="go.mod"],
+  ["Rust","語言",        p=>p==="cargo.toml"],
+  ["Java / Kotlin","語言", p=>p==="pom.xml"||/^build\.gradle/.test(p)],
+  ["PHP","語言",         p=>p==="composer.json"],
+  ["Ruby","語言",        p=>p==="gemfile"],
+  ["shadcn/ui","樣式",   p=>p==="components.json"],
+  ["Storybook","測試",   p=>p.indexOf(".storybook/")===0]
+];
+
+/* index.html 內容規則：無建置的純靜態站，技術全在 <script src> 裡 —— 這是 package.json 掃不到的盲區 */
+const CDN_RULES = [
+  ["Tailwind CSS (CDN)","樣式",      /cdn\.tailwindcss\.com|tailwindcss@/i],
+  ["Bootstrap (CDN)","樣式",         /bootstrap[.@][\w.\/-]*\.(css|js)/i],
+  ["Bulma","樣式",                   /bulma[.@][\w.\/-]*\.css/i],
+  ["Font Awesome","樣式",            /font-?awesome/i],
+  ["Google Fonts","樣式",            /fonts\.googleapis\.com/i],
+  ["React (CDN)","UI 函式庫",        /(unpkg\.com|jsdelivr\.net)\/[\w@.\/-]*react(-dom)?[@.\/]/i],
+  ["Vue (CDN)","UI 函式庫",          /vue@\d|vue\.(global|esm-browser)/i],
+  ["Alpine.js","UI 函式庫",          /alpinejs/i],
+  ["htmx","UI 函式庫",               /htmx[.@]/i],
+  ["jQuery","UI 函式庫",             /jquery[-.@]/i],
+  ["Preact (CDN)","UI 函式庫",       /preact@/i],
+  ["Chart.js","視覺化",              /chart\.?js/i],
+  ["ECharts","視覺化",               /echarts/i],
+  ["D3","視覺化",                    /d3(\.min)?\.js|d3@/i],
+  ["Leaflet","視覺化",               /leaflet/i],
+  ["Three.js (CDN)","動畫",          /three(\.module|\.min)?\.js|three@/i],
+  ["GSAP (CDN)","動畫",              /gsap/i],
+  ["Google Apps Script 後端","後端", /script\.google\.com\/macros/i],
+  ["Supabase (CDN)","資料庫",        /supabase/i],
+  ["Firebase (CDN)","資料庫",        /firebasejs|firebase-app/i],
+  ["Google Sheets API","資料庫",     /sheets\.googleapis\.com|docs\.google\.com\/spreadsheets/i],
+  ["marked / Markdown","工具",       /marked(\.min)?\.js|markdown-it/i],
+  ["highlight.js","工具",            /highlight\.js|hljs/i],
+  ["Swiper","工具",                  /swiper/i],
+  ["ES Modules","建置",              /<script[^>]+type=["']module["']/i],
+  ["Import Map","建置",              /type=["']importmap["']/i],
+  ["localStorage 持久化","型態",     /localStorage\./],
+  ["Service Worker","型態",          /serviceWorker\.register/i],
+  ["Canvas 繪圖","型態",             /getContext\(["']2d["']\)/i],
+  ["Web Audio","型態",               /AudioContext/]
+];
+
+/* Python manifest 內容規則 */
+const PY_RULES=[["FastAPI","後端",/fastapi/i],["Django","後端",/(^|\W)django/i],
+  ["Flask","後端",/(^|\W)flask/i],["Streamlit","框架",/streamlit/i]];
+
+/* ══════════════════════════════════════════════════════════════
+   3. 分批掃描 tree（OOM 防禦：不整棵樹留在記憶體做二次加工）
+   ══════════════════════════════════════════════════════════════ */
+const ROUTE_CAP = 400;   // 路由最多留 400 筆
+const CHUNK     = 2000;  // 每批 2000 個節點，批間讓出 event loop
+
+async function scanTree(nodes){
+  const res = {
+    hits:new Map(),        // 顯示名 -> 佐證路徑
+    routes:[], apiRoutes:[],
+    pwaManifest:null, envExample:null, openapi:null,
+    androidManifest:null, appJson:null, capacitor:null, infoPlist:null,
+    apiFiles:[], srcFiles:[], docs:[], imgs:[], risks:[], hosts:new Map(), calls:[], skel:new Map(),
+    exts:new Map(), files:0, dirs:0,
+    hasAppDir:false, hasPagesDir:false, hasSrc:false,
+    manifests:new Set(), truncatedRoutes:false,
+    indexHtml:null, readme:null, cname:null, htmlCount:0
+  };
+  const depth=p=>p.split("/").length;
+  const hit=(name,cat,ev)=>{ if(!res.hits.has(name)) res.hits.set(name,{cat:cat,ev:ev}); };
+
+  for(let i=0;i<nodes.length;i+=CHUNK){
+    const end=Math.min(i+CHUNK,nodes.length);
+    for(let j=i;j<end;j++){
+      const n=nodes[j];
+      if(n.type==="tree"){ res.dirs++; continue; }
+      res.files++;
+      const path=n.path, low=path.toLowerCase();
+
+      // 副檔名統計
+      const dot=low.lastIndexOf("."), slash=low.lastIndexOf("/");
+      let ext=null;
+      if(dot>slash+1){
+        const e=low.slice(dot+1);
+        if(e.length<=6){ ext=e; res.exts.set(e,(res.exts.get(e)||0)+1); }
+      }
+
+      /* 目錄骨架：對沒有框架指紋的專案，「141 個 js 放在哪」才是真正的答案 */
+      const seg=path.split("/");
+      const key = seg.length>2 ? seg[0]+"/"+seg[1] : (seg.length>1 ? seg[0] : "（根目錄）");
+      let d=res.skel.get(key);
+      if(!d){ d={n:0,ext:new Map()}; res.skel.set(key,d); }
+      d.n++;
+      if(ext) d.ext.set(ext,(d.ext.get(ext)||0)+1);
+
+      // 檔案指紋
+      for(let k=0;k<FILE_RULES.length;k++){
+        const r=FILE_RULES[k];
+        if(!res.hits.has(r[0]) && r[2](low)) hit(r[0],r[1],path);
+      }
+
+      // 結構旗標
+      if(low==="package.json"||low==="requirements.txt"||low==="pyproject.toml"||
+         low==="go.mod"||low==="cargo.toml") res.manifests.add(low);
+      /* 純靜態站的入口：取路徑最淺的 index.html */
+      if(/(^|\/)index\.html?$/.test(low)){
+        res.htmlCount++;
+        if(!res.indexHtml || depth(path)<depth(res.indexHtml)) res.indexHtml=path;
+      } else if(/\.html?$/.test(low)) res.htmlCount++;
+      if(!res.readme && /(^|\/)readme(\.md|\.markdown|\.txt)?$/.test(low)) res.readme=path;
+      if(res.docs.length<80 && /\.(md|markdown|mdx|txt|rst|adoc)$/.test(low)
+         && low.indexOf("node_modules/")<0) res.docs.push(path);
+      if(res.imgs.length<30 && /\.(png|jpe?g|gif|webp|svg|avif)$/.test(low)
+         && low.indexOf("node_modules/")<0) res.imgs.push(path);
+      if(!res.cname && /(^|\/)cname$/.test(low)) res.cname=path;
+
+      /* App 身分：PWA manifest / Android / iOS / Expo / Capacitor */
+      if(/(^|\/)manifest\.(webmanifest|json)$/.test(low) && low.indexOf("node_modules/")<0
+         && (!res.pwaManifest || depth(path)<depth(res.pwaManifest))) res.pwaManifest=path;
+      if(!res.androidManifest && /(^|\/)androidmanifest\.xml$/.test(low)) res.androidManifest=path;
+      if(!res.infoPlist && /(^|\/)info\.plist$/.test(low)) res.infoPlist=path;
+      if(!res.appJson && (low==="app.json"||low==="app.config.js"||low==="app.config.ts")) res.appJson=path;
+      if(!res.capacitor && /^capacitor\.config\./.test(low)) res.capacitor=path;
+      if(!res.openapi && /(^|\/)(openapi|swagger)\.(json|ya?ml)$/.test(low)) res.openapi=path;
+      if(!res.envExample && /(^|\/)\.env\.(example|sample|template)$/.test(low)) res.envExample=path;
+
+      /* 敏感檔案警示：只記路徑，永遠不讀內容 */
+      if(res.risks.length<12){
+        if(/(^|\/)\.env$/.test(low)||/(^|\/)\.env\.(local|production)$/.test(low)) res.risks.push([path,"環境變數檔被 commit 進版控"]);
+        else if(/\.(pem|key|p12|keystore|jks)$/.test(low)) res.risks.push([path,"憑證或簽章金鑰檔"]);
+        else if(/(^|\/)id_rsa$/.test(low)) res.risks.push([path,"SSH 私鑰"]);
+        else if(/(serviceaccount|credentials|secret)[\w-]*\.json$/.test(low)) res.risks.push([path,"服務帳號憑證"]);
+      }
+
+      /* 優先候選：檔名就長得像 API 層 */
+      if(res.apiFiles.length<24 && /\.[jt]sx?$/.test(low) && low.indexOf("node_modules/")<0
+         && !/\.(test|spec|d)\.[jt]sx?$/.test(low)
+         && /(^|\/)(api|apis|service|services|client|request|http|fetch|config|constants|endpoints)[\w.-]*\.[jt]sx?$/.test(low))
+        res.apiFiles.push(path);
+      /* 次要候選：任何原始碼。小型專案沒有 API 層檔名慣例，直接讀本體才找得到東西 */
+      else if(res.srcFiles.length<40 && /\.(py|rb|go|php|java|[jt]sx?)$/.test(low)
+              && low.indexOf("node_modules/")<0 && low.indexOf("vendor/")<0
+              && !/\.(test|spec|min|d)\./.test(low))
+        res.srcFiles.push(path);
+
+      if(/^(src\/)?app\//.test(low)) res.hasAppDir=true;
+      if(/^(src\/)?pages\//.test(low)) res.hasPagesDir=true;
+      if(low.indexOf("src/")===0) res.hasSrc=true;
+
+      // 路由抽取
+      if(res.routes.length<ROUTE_CAP){
+        const r=toRoute(low,path);
+        if(r){ if(r.api){ if(res.apiRoutes.length<200) res.apiRoutes.push(r); } else res.routes.push(r); }
+      } else res.truncatedRoutes=true;
+    }
+    await sleep(0); // 讓出主執行緒，避免大 repo 卡住 UI
+  }
+  return res;
+}
+
+function toRoute(low,orig){
+  let m;
+  // Next App Router
+  if((m=low.match(/^(?:src\/)?app\/(.*)page\.[jt]sx?$/))) return mk(m[1],orig);
+  if((m=low.match(/^(?:src\/)?app\/(.*)route\.[jt]sx?$/))) return api(m[1],orig);
+  // Next Pages Router
+  if((m=low.match(/^(?:src\/)?pages\/(api\/.+)\.[jt]sx?$/))) return api(m[1].replace(/\/?index$/,"")+"/",orig);
+  if((m=low.match(/^(?:src\/)?pages\/(.+)\.[jt]sx?$/))){
+    if(/^_(app|document|error)$/.test(m[1])) return null;
+    return mk(m[1].replace(/\/?index$/,"")+"/",orig);
+  }
+  // Nuxt / Vue
+  if((m=low.match(/^(?:src\/)?pages\/(.+)\.vue$/))) return mk(m[1].replace(/\/?index$/,"")+"/",orig);
+  // SvelteKit
+  if((m=low.match(/^src\/routes\/(.*)\+page\.svelte$/))) return mk(m[1],orig);
+  if((m=low.match(/^src\/routes\/(.*)\+server\.[jt]s$/))) return api(m[1],orig);
+  // Astro
+  if((m=low.match(/^src\/pages\/(.+)\.(astro|md|mdx)$/))) return mk(m[1].replace(/\/?index$/,"")+"/",orig);
+  // Remix
+  if((m=low.match(/^app\/routes\/(.+)\.[jt]sx$/))) return mk(m[1].replace(/\./g,"/")+"/",orig);
+  return null;
+}
+function api(seg,file){ const r=mk(seg,file); r.api=true; return r; }
+function mk(seg,file){
+  let p="/"+seg;
+  p=p.replace(/\/\([^/]+\)/g,"");          // Next route group (marketing)
+  p=p.replace(/\[\.\.\.([^\]]+)\]/g,"*$1") // catch-all
+     .replace(/\[\[?([^\]]+?)\]?\]/g,":$1");
+  p=p.replace(/\/+/g,"/");
+  if(p.length>1) p=p.replace(/\/$/,"");
+  return {path:p,file:file,api:false};
+}
+
+/* ══════════════════════════════════════════════════════════════
+   4. package.json 解析
+   ══════════════════════════════════════════════════════════════ */
+function parsePkg(txt,res){
+  let pkg; try{ pkg=JSON.parse(txt); }catch(e){ return null; }
+  const deps=Object.assign({},pkg.dependencies||{},pkg.devDependencies||{});
+  const names=Object.keys(deps);
+  const nameSet=new Set(names);
+  for(let i=0;i<DEP_RULES.length;i++){
+    const r=DEP_RULES[i];
+    for(let k=0;k<r[2].length;k++){
+      if(nameSet.has(r[2][k])){
+        if(!res.hits.has(r[0])) res.hits.set(r[0],{cat:r[1],ev:r[2][k]+"@"+String(deps[r[2][k]]).replace(/^[\^~]/,"")});
+        break;
+      }
+    }
+  }
+  return {name:pkg.name,scripts:Object.keys(pkg.scripts||{}),deps:deps,main:pkg.main||"",
+          bin:!!pkg.bin,count:names.length,direct:Object.keys(pkg.dependencies||{})};
+}
+
+/* 掃 index.html：只讀前 400KB，避免把巨大單檔整份壓進記憶體 */
+function scanHtml(txt,res,path){
+  if(!txt) return;
+  const head=txt.slice(0,400000);
+  for(let i=0;i<CDN_RULES.length;i++){
+    const r=CDN_RULES[i];
+    if(!res.hits.has(r[0]) && r[2].test(head)) res.hits.set(r[0],{cat:r[1],ev:path});
+  }
+  const inlineJs=(head.match(/<script(?![^>]*\ssrc=)[^>]*>/gi)||[]).length;
+  const ext=(head.match(/<script[^>]+src=/gi)||[]).length;
+  const kb=Math.round(txt.length/1024);
+  if(inlineJs>0 && ext===0 && kb>20)
+    res.hits.set("單檔自足式（無外部 JS）",{cat:"結構",ev:path+" · "+kb+"KB"});
+  res.htmlKb=kb;
+}
+
+/* PWA manifest：這是網站自己填的「身分證」，比任何猜測都準 */
+function parsePwa(txt){
+  if(!txt) return null;
+  let j; try{ j=JSON.parse(txt); }catch(e){ return null; }
+  if(!j.name && !j.short_name && !j.display && !j.icons) return null;
+  const icons=(j.icons||[]).map(i=>i.sizes).filter(Boolean);
+  return {
+    name:j.name||j.short_name||"（未命名）",
+    short:j.short_name||"",
+    display:j.display||"browser",
+    start:j.start_url||"/",
+    theme:j.theme_color||"",
+    bg:j.background_color||"",
+    orientation:j.orientation||"",
+    icons:icons,
+    installable:!!(j.name&&j.icons&&j.icons.length&&j.display&&j.display!=="browser")
+  };
+}
+
+/* Expo app.json / Capacitor：行動 App 的套件識別碼 */
+function parseAppId(txt,kind){
+  if(!txt) return null;
+  try{
+    const j=JSON.parse(txt), e=j.expo||j;
+    const id=(e.android&&e.android.package)||(e.ios&&e.ios.bundleIdentifier)||e.appId||e.slug;
+    if(id||e.name) return {name:e.name||"",id:id||"",ver:e.version||"",kind:kind};
+  }catch(err){
+    const m=txt.match(/appId["'\s:=]+["']([\w.]+)["']/);
+    if(m) return {name:"",id:m[1],ver:"",kind:kind};
+  }
+  return null;
+}
+
+/* API 端點抽取：從原始碼字面值挖 fetch/axios 的目標 */
+const SKIP_HOST=/^(localhost|127\.0\.0\.1|example\.com|schema\.org|www\.w3\.org|github\.com)/i;
+function extractApi(txt,file,res){
+  if(!txt) return;
+  const body=txt.slice(0,200000);
+  let m;
+  // 絕對網址 → 記錄外部服務主機
+  const abs=/https?:\/\/([\w.-]+\.[a-z]{2,})(\/[\w\-./{}$:%]*)?/gi;
+  let n=0;
+  while((m=abs.exec(body)) && n<400){
+    n++;
+    const host=m[1].toLowerCase();
+    if(SKIP_HOST.test(host)) continue;
+    if(!res.hosts.has(host)) res.hosts.set(host,{count:0,ev:file});
+    res.hosts.get(host).count++;
+  }
+  // 沒有 http:// 前綴的裸網址（README 常見寫法，例如 www.example.com）
+  const bare=/(?:^|[\s(\[>*:「（])((?:www\.)[\w-]+(?:\.[\w-]+)+)/gm;
+  n=0;
+  while((m=bare.exec(body)) && n<200){
+    n++;
+    const host=m[1].toLowerCase();
+    if(SKIP_HOST.test(host)) continue;
+    if(!res.hosts.has(host)) res.hosts.set(host,{count:0,ev:file});
+    res.hosts.get(host).count++;
+  }
+
+  // 相對端點：fetch("/api/...") / axios.post(`/v1/...`)
+  const rel=/(?:fetch|axios(?:\.\w+)?|\$\.(?:get|post|ajax))\s*\(\s*[`'"]([^`'"]{1,120})[`'"]/g;
+  n=0;
+  while((m=rel.exec(body)) && n<200){
+    n++;
+    let u=m[1];
+    if(/^https?:/.test(u)) continue;
+    if(!/^[/.]/.test(u)) continue;
+    u=u.replace(/\$\{[^}]*\}/g,":var");
+    if(res.calls.length<60 && !res.calls.some(c=>c.path===u)) res.calls.push({path:u,file:file});
+  }
+}
+
+/* .env.example 只讀「鍵名」——值本來就是佔位符，我們也不需要值 */
+function parseEnvKeys(txt){
+  if(!txt) return [];
+  const keys=[];
+  txt.split(/\r?\n/).forEach(l=>{
+    const m=l.match(/^\s*(?:export\s+)?([A-Z][A-Z0-9_]{2,})\s*=/);
+    if(m && keys.length<40 && keys.indexOf(m[1])<0) keys.push(m[1]);
+  });
+  return keys;
+}
+
+/* Python 沒有 package.json，依賴藏在 import 陳述式與 README 的 pip 指令裡 */
+const PY_LIB={
+  requests:["requests","資料層"], httpx:["httpx","資料層"], aiohttp:["aiohttp","資料層"],
+  urllib:["urllib","資料層"], bs4:["BeautifulSoup","爬蟲"], beautifulsoup4:["BeautifulSoup","爬蟲"],
+  lxml:["lxml","爬蟲"], scrapy:["Scrapy","爬蟲"], selenium:["Selenium","爬蟲"],
+  playwright:["Playwright","爬蟲"], pandas:["pandas","資料處理"], numpy:["NumPy","資料處理"],
+  matplotlib:["matplotlib","視覺化"], flask:["Flask","後端"], django:["Django","後端"],
+  fastapi:["FastAPI","後端"], streamlit:["Streamlit","框架"], PIL:["Pillow","工具"],
+  pillow:["Pillow","工具"], cv2:["OpenCV","工具"], sqlalchemy:["SQLAlchemy","資料庫"],
+  sqlite3:["SQLite","資料庫"], pymongo:["MongoDB","資料庫"], ebooklib:["EbookLib","工具"],
+  tkinter:["Tkinter","型態"], PyQt5:["PyQt","型態"], click:["Click","型態"],
+  argparse:["CLI 參數解析","型態"], asyncio:["asyncio","型態"]
+};
+function scanPy(txt,file,res){
+  if(!txt) return;
+  const body=txt.slice(0,200000);
+  const re=/^[ \t]*(?:from|import)[ \t]+([\w.]+)/gm;
+  let m;
+  while((m=re.exec(body))){
+    const root=m[1].split(".")[0];
+    const lib=PY_LIB[root]||PY_LIB[root.toLowerCase()];
+    if(lib && !res.hits.has(lib[0])) res.hits.set(lib[0],{cat:lib[1],ev:file});
+  }
+}
+
+/* README 的安裝指令：非 npm 專案的「怎麼跑起來」全寫在這裡 */
+function installCmds(txt){
+  if(!txt) return [];
+  const out=[];
+  const re=/^[ \t>$#]*((?:sudo\s+)?(?:pip3?|npm|pnpm|yarn|bun|apt-get|apt|brew|go|cargo|gem|composer|docker(?:\s+compose)?)\s+(?:install|add|i|get|run|up)\b[^\n|&;]{0,80})/gim;
+  let m;
+  while((m=re.exec(txt)) && out.length<12){
+    const c=m[1].trim().replace(/\s+/g," ");
+    if(out.indexOf(c)<0) out.push(c);
+  }
+  // pip 依賴同時登記成指紋
+  return out;
+}
+
+/* README 標題結構 = 作者自己整理的功能清單，比任何猜測都可靠 */
+function readmeOutline(txt){
+  if(!txt) return [];
+  const out=[]; let fence=false;
+  const lines=txt.slice(0,80000).split(/\r?\n/);
+  for(let i=0;i<lines.length && out.length<14;i++){
+    const l=lines[i];
+    if(/^\s*```/.test(l)){ fence=!fence; continue; }
+    if(fence) continue;
+    const m=l.match(/^(#{1,3})\s+(.{1,70}?)\s*#*$/);
+    if(m){
+      const t=m[2].replace(/[*`]/g,"").replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").trim();
+      if(t && !/^(license|授權|contributing)/i.test(t)) out.push({lv:m[1].length,t:t});
+    }
+  }
+  return out;
+}
+
+/* 線上網址推導：homepage 欄位常常是空的，但 GitHub Pages 的網址是可推算的 */
+function liveCandidates(repo,loc,res,readmeTxt,cnameTxt){
+  const out=[], seen=new Set();
+  const add=(u,why)=>{
+    u=u.replace(/[).,]+$/,"").replace(/\/$/,"")+"/";
+    if(!seen.has(u)){ seen.add(u); out.push({url:u,why:why}); }
+  };
+  if(cnameTxt){
+    const d=cnameTxt.trim().split(/\s+/)[0];
+    if(d && /^[\w.-]+\.\w+$/.test(d)) add("https://"+d,"CNAME 自訂網域");
+  }
+  if(repo.homepage && /^https?:/.test(repo.homepage)) add(repo.homepage,"homepage 欄位");
+  if(repo.has_pages){
+    const isUserSite = loc.repo.toLowerCase() === (loc.owner+".github.io").toLowerCase();
+    add(isUserSite ? "https://"+loc.owner+".github.io"
+                   : "https://"+loc.owner+".github.io/"+loc.repo, "GitHub Pages 已啟用（推導）");
+  }
+  if(readmeTxt){
+    const re=/https?:\/\/[\w.-]+\.(?:vercel\.app|netlify\.app|pages\.dev|github\.io|surge\.sh|onrender\.com|streamlit\.app|fly\.dev|deno\.dev)(?:\/[\w\-./]*)?/gi;
+    let m,n=0;
+    while((m=re.exec(readmeTxt)) && n<4){ add(m[0],"README 內的連結"); n++; }
+  }
+  return out;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   5. 判讀句生成
+   ══════════════════════════════════════════════════════════════ */
+const FRAMEWORKS=["Next.js","Nuxt","SvelteKit","Remix","Astro","Gatsby","Angular",
+  "Create React App","Qwik","SolidJS","Expo / React Native","Electron","Tauri","Streamlit"];
+
+function verdict(res,pkg,repo){
+  const has=n=>res.hits.has(n);
+  const fw=FRAMEWORKS.filter(has)[0];
+  const ui=["React","Vue","Svelte","Preact","React (CDN)","Vue (CDN)","Alpine.js","htmx","jQuery","Preact (CDN)"].filter(has)[0];
+  const css=["Tailwind CSS","Tailwind CSS (CDN)","MUI","Ant Design","Chakra UI","Bootstrap",
+             "Bootstrap (CDN)","styled-components","Emotion","UnoCSS","Bulma","Sass"].filter(has)[0];
+  const be=["Next.js","Express","Fastify","Hono","NestJS","Koa","FastAPI","Django","Flask",
+            "Google Apps Script 後端"].filter(has)[0];
+  const noBuild = !res.manifests.has("package.json") && !!res.indexHtml;
+  const parts=[];
+
+  let head;
+  if(fw==="Next.js"){
+    head="Next.js"+(res.hasAppDir?"（App Router）":(res.hasPagesDir?"（Pages Router）":""));
+  } else if(fw) head=fw;
+  else if(noBuild) head = has("單檔自足式（無外部 JS）") ? "單檔式純靜態網站" : "免建置純靜態網站";
+  else if(ui) head=ui;
+  else if(has("Python")) head="Python 專案";
+  else head=repo.language||"未知類型";
+
+  parts.push(head);
+  if(has("TypeScript")) parts.push("TypeScript");
+  if(noBuild && ui && head.indexOf("靜態")>-1) parts.push(ui.replace(" (CDN)",""));
+  if(css) parts.push(css.replace(" (CDN)",""));
+  if(has("Google Apps Script 後端")) parts.push("Google Apps Script");
+
+  let kind="前端專案";
+  if(noBuild) kind="網站";
+  else if(has("Electron")||has("Tauri")) kind="桌面 App";
+  else if(!fw && !ui && !has("純靜態網站"))
+    kind = (pkg && pkg.bin) ? "命令列工具" : (res.routes.length ? "專案" : "函式庫 / 工具");
+  else if(res.apiRoutes.length>0 || (be && be!=="Next.js")) kind="全端專案";
+  else if(has("Expo / React Native")) kind="行動 App";
+  else if(has("Electron")||has("Tauri")) kind="桌面 App";
+  else if(res.routes.length===0 && res.hits.has("Storybook")) kind="元件庫";
+
+  const isApp = kind==="桌面 App"||kind==="行動 App"||kind==="命令列工具"||kind==="函式庫 / 工具";
+  const deploy=["Vercel","Netlify","Cloudflare Workers","Firebase Hosting","GitHub Pages",
+                isApp?null:"Dockerfile"].filter(n=>n&&has(n))[0];
+  return {
+    title:parts.join(" + "),
+    kind:kind,
+    tail:deploy?("部署到 "+(deploy==="Dockerfile"?"自架 Docker":deploy)):null
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   6. 主流程
+   ══════════════════════════════════════════════════════════════ */
+function say(msg,step){ const el=$("status"); el.className=""; el.innerHTML=(step?'<span class="step">'+step+'</span> ':'')+esc(msg); }
+function fail(msg){ const el=$("status"); el.className="err"; el.textContent="✕ "+msg; }
+/* 沒有線上網址不一定是掃描失敗——很多專案本來就不是網站 */
+function noSiteReason(res){
+  const h=n=>res.hits.has(n);
+  if(h("Electron")||h("Tauri"))
+    return "這個專案沒有網站，它是桌面應用程式——成品是上面 Release 區的安裝檔。";
+  if(h("Expo / React Native")||h("原生 Android 專案")||h("原生 iOS 專案"))
+    return "這個專案沒有網站，它是行動 App——成品是上面的 apk / ipa。";
+  if(res.hits.has("Storybook")||(!res.indexHtml&&!res.routes.length&&res.manifests.has("package.json")))
+    return "沒有偵測到頁面，這比較像是給別的專案 import 的函式庫或 CLI 工具，不是能直接開的網站。";
+  return "找不到線上網址：homepage 欄位是空的、GitHub Pages 沒開，README 裡也沒有部署連結。也可能它根本沒有要當網站。";
+}
+
+/* 只有看起來真的是檔案路徑的字串才變成可點連結 */
+function fa(v){
+  return (typeof v==="string" && /^[\w.\-/]+$/.test(v) && /\.[a-z0-9]{1,8}$/i.test(v))
+    ? ' data-f="'+esc(v)+'"' : '';
+}
+function sub(title,rows){
+  return '<div class="h" style="margin-top:14px;font-size:10px">'+esc(title)+'</div><div class="routes">'+
+    rows.map(r=>'<div><span class="p">'+esc(r[0])+'</span><span class="f"'+fa(r[1])+'>'+
+      esc(r[1])+'</span></div>').join("")+'</div>';
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+async function run(target,fromHistory){
+  if(S.busy) return;
+  let loc;
+  try{ loc=parseUrl(typeof target==="string" ? target : $("url").value); }catch(e){ fail(e.message); return; }
+  if(!fromHistory) pushView({v:"scan",repo:loc.owner+"/"+loc.repo});
+  addRecent("repo",loc.owner+"/"+loc.repo);
+  $("results").classList.remove("on");        // 掃描時收起搜尋結果（仍留在記憶體）
+  $("navrow").hidden = !(S.results && S.results.length);
+
+  S.busy=true; $("go").disabled=true; $("out").classList.remove("on");
+  $("scan").classList.add("on");
+  try{
+    say("讀取專案資訊…","[1/4]");
+    const repo=await getJSON("https://api.github.com/repos/"+loc.owner+"/"+loc.repo);
+    const ref=loc.ref||repo.default_branch;
+    S.ctx={owner:loc.owner,repo:loc.repo,ref:ref};
+
+    say("抓取完整檔案樹（單一請求）…","[2/4]");
+    const tree=await getJSON("https://api.github.com/repos/"+loc.owner+"/"+loc.repo+
+                             "/git/trees/"+encodeURIComponent(ref)+"?recursive=1");
+    let nodes=tree.tree||[];
+    if(loc.sub) nodes=nodes.filter(n=>n.path.indexOf(loc.sub+"/")===0||n.path===loc.sub);
+
+    say("分批掃描 "+nodes.length.toLocaleString()+" 個節點…","[3/4]");
+    const res=await scanTree(nodes);
+    nodes=null; tree.tree=null;   // 主動釋放，避免大 repo 佔住記憶體
+
+    say("解析套件清單…","[4/4]");
+    const base="https://raw.githubusercontent.com/"+loc.owner+"/"+loc.repo+"/"+ref+"/";
+    const prefix=loc.sub?loc.sub+"/":"";
+    let pkg=null;
+    if(res.manifests.has("package.json")){
+      const t=await getText(base+prefix+"package.json");
+      if(t) pkg=parsePkg(t,res);
+    }
+    if(res.manifests.has("requirements.txt")||res.manifests.has("pyproject.toml")){
+      const t=await getText(base+prefix+(res.manifests.has("requirements.txt")?"requirements.txt":"pyproject.toml"));
+      if(t) PY_RULES.forEach(r=>{ if(r[2].test(t)&&!res.hits.has(r[0])) res.hits.set(r[0],{cat:r[1],ev:"manifest"}); });
+    }
+
+    /* README / CNAME / index.html 一律走 raw，不計 API 額度；並行但受佇列限流 */
+    say("讀取 README、CNAME 與入口 HTML…","[4/4]");
+    const [readmeTxt,cnameTxt,htmlTxt]=await Promise.all([
+      res.readme    ? getText(base+res.readme)    : null,
+      res.cname     ? getText(base+res.cname)     : null,
+      res.indexHtml ? getText(base+res.indexHtml) : null
+    ]);
+    scanHtml(htmlTxt,res,res.indexHtml);
+    extractApi(htmlTxt,res.indexHtml,res);
+    if(repo.has_pages) res.hits.set("GitHub Pages",{cat:"部署",ev:"repo 設定已啟用 Pages"});
+    const live=liveCandidates(repo,loc,res,readmeTxt,cnameTxt);
+
+    /* App 身分證 + API 原始碼：全部 raw，不吃 API 額度 */
+    say("抽取 App 身分與 API 端點…","[5/5]");
+    const byDepth=(a,b)=>a.split("/").length-b.split("/").length||a.length-b.length;
+    const src=res.apiFiles.slice().sort(byDepth)
+      .concat(res.srcFiles.slice().sort(byDepth)).slice(0,6);
+    const extra=await Promise.all([
+      res.pwaManifest ? getText(base+res.pwaManifest) : null,
+      res.appJson     ? getText(base+res.appJson)     : null,
+      res.capacitor   ? getText(base+res.capacitor)   : null,
+      res.envExample  ? getText(base+res.envExample)  : null
+    ].concat(src.map(f=>getText(base+f))));
+
+    const pwa=parsePwa(extra[0]);
+    const appId=parseAppId(extra[1],"Expo")||parseAppId(extra[2],"Capacitor");
+    const envKeys=parseEnvKeys(extra[3]);
+    for(let i=0;i<src.length;i++){
+      extractApi(extra[4+i],src[i],res);
+      if(/\.py$/.test(src[i])) scanPy(extra[4+i],src[i],res);
+    }
+    /* README 本身就是資訊來源：爬蟲類專案的目標站台清單全在裡面 */
+    extractApi(readmeTxt,res.readme||"README",res);
+    const cmds=installCmds(readmeTxt);
+    cmds.forEach(c=>{
+      const mm=c.match(/^(?:sudo\s+)?pip3?\s+install\s+(.+)$/i);
+      if(mm) mm[1].split(/\s+/).forEach(n=>{
+        const lib=PY_LIB[n]||PY_LIB[n.toLowerCase()];
+        if(lib && !res.hits.has(lib[0])) res.hits.set(lib[0],{cat:lib[1],ev:"README 安裝指令"});
+      });
+    });
+    if(pwa) res.hits.set("PWA（可安裝）",{cat:"型態",ev:res.pwaManifest});
+    if(res.androidManifest) res.hits.set("原生 Android 專案",{cat:"型態",ev:res.androidManifest});
+    if(res.infoPlist) res.hits.set("原生 iOS 專案",{cat:"型態",ev:res.infoPlist});
+    if(res.openapi) res.hits.set("OpenAPI 規格",{cat:"後端",ev:res.openapi});
+
+    /* 條件式 API 呼叫：只在真的有用時才花額度 */
+    let langs=null, release=null;
+    const mobileish = !!(res.androidManifest||res.appJson||res.capacitor||res.hits.has("Expo / React Native")
+                      ||res.hits.has("Electron")||res.hits.has("Tauri"));
+    if(mobileish){
+      say("查詢 Release 產出物（apk / exe / dmg）…","[+]");
+      try{ release=await getJSON("https://api.github.com/repos/"+loc.owner+"/"+loc.repo+"/releases/latest"); }
+      catch(e){ release=null; }
+    }
+    if(res.hits.size<4){   // 指紋太少才動用語言統計當保底
+      say("指紋不足，改用語言統計保底…","[+]");
+      try{ langs=await getJSON("https://api.github.com/repos/"+loc.owner+"/"+loc.repo+"/languages"); }
+      catch(e){ langs=null; }
+    }
+
+    render(res,pkg,repo,loc,ref,live,{pwa:pwa,appId:appId,envKeys:envKeys,langs:langs,
+                                      release:release,outline:readmeOutline(readmeTxt),cmds:cmds});
+    say("完成 · "+res.files.toLocaleString()+" 個檔案 · "+res.hits.size+" 項指紋"+
+        (tree.truncated?" · 註：檔案樹過大已被 GitHub 截斷":""),"✓");
+  }catch(e){
+    fail(e.message||"發生未預期的錯誤。");
+  }finally{
+    S.busy=false; $("go").disabled=false; $("scan").classList.remove("on");
+  }
+}
+
+/* ── 渲染 ── */
+function render(res,pkg,repo,loc,ref,live,x){
+  x=x||{};
+  const v=verdict(res,pkg,repo);
+  $("v-title").innerHTML="這是一個 <em>"+esc(v.title)+"</em> 的"+esc(v.kind)+
+                         (v.tail?"，"+esc(v.tail):"")+"。";
+  $("v-desc").textContent=repo.description||"（這個 repo 沒有寫描述）";
+
+  const meta=[];
+  meta.push(["repo",loc.owner+"/"+loc.repo]);
+  meta.push(["分支",ref]);
+  if(repo.language) meta.push(["主要語言",repo.language]);
+  meta.push(["★",Number(repo.stargazers_count||0).toLocaleString()]);
+  meta.push(["最後更新",(repo.pushed_at||"").slice(0,10)]);
+  meta.push(["檔案",res.files.toLocaleString()]);
+  if(pkg) meta.push(["依賴",pkg.count+" 個"]);
+  if(repo.size!=null) meta.push(["大小",fmtSize(repo.size)]);
+  if(repo.license&&repo.license.spdx_id) meta.push(["授權",repo.license.spdx_id]);
+  $("v-meta").innerHTML=meta.map(m=>'<span class="chip">'+esc(m[0])+' <b>'+esc(m[1])+'</b></span>').join("");
+
+  live=live||[];
+  $("v-live").innerHTML=live.length
+    ? live.map(l=>'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">▸ '+
+        esc(l.url.replace(/^https?:\/\//,""))+' <s>'+esc(l.why)+'</s></a>').join("")
+    : '<div class="hint" style="margin-top:14px">'+esc(noSiteReason(res))+'</div>';
+
+  // 重點檔案快捷：最常想直接打開的就這幾支
+  {
+    const gh="https://github.com/"+loc.owner+"/"+loc.repo;
+    const zip=gh+"/archive/refs/heads/"+encodeURIComponent(ref)+".zip";
+    const links='<a class="chip" href="'+esc(gh)+'" target="_blank" rel="noopener" '+
+      'style="text-decoration:none;color:var(--cyan);border-color:rgba(72,211,192,.3)">↗ GitHub 頁面</a>'+
+      '<a class="chip" href="'+esc(zip)+'" target="_blank" rel="noopener" '+
+      'style="text-decoration:none;color:var(--cyan);border-color:rgba(72,211,192,.3)">⤓ 下載整包 ZIP</a>';
+    const quick=[[res.readme,"README"],
+                 [res.manifests.has("package.json")?"package.json":null,"package.json"],
+                 [res.indexHtml,"入口 HTML"],
+                 [res.pwaManifest,"PWA manifest"],
+                 [res.openapi,"API 規格"]].filter(q=>q[0]);
+    $("v-quick").innerHTML = '<div class="meta" style="margin-top:10px">'+links+'</div>' + (quick.length
+      ? '<div class="meta" style="margin-top:6px">'+quick.map(q=>
+          '<span class="chip" data-f="'+esc(q[0])+'" style="cursor:pointer;color:var(--cyan);'+
+          'border-color:rgba(72,211,192,.3)">▤ 看 '+esc(q[1])+'</span>').join("")+'</div>'
+      : "");
+  }
+
+  // 實機預覽（點擊才載入）
+  const pv=live[0];
+  $("sec-preview").style.display = pv ? "" : "none";
+  if(pv){
+    $("pv-url").textContent=pv.url;
+    $("pv-ph").textContent="按「載入畫面」才會真的去連這個網站";
+    $("pv-ph").style.display="";
+    const f=document.querySelector(".preview iframe"); if(f) f.remove();
+    $("pv-go").disabled=false; $("pv-go").textContent="載入畫面";
+    $("pv-go").onclick=()=>{
+      $("pv-ph").textContent="載入中…若一直空白，代表這個站設了 X-Frame-Options 禁止被嵌入，請直接開新分頁。";
+      const ifr=document.createElement("iframe");
+      ifr.setAttribute("loading","lazy");
+      ifr.setAttribute("referrerpolicy","no-referrer");
+      ifr.setAttribute("sandbox","allow-scripts allow-same-origin allow-popups");
+      ifr.src=pv.url;
+      ifr.onload=()=>{ $("pv-ph").style.display="none"; };
+      document.querySelector(".preview .frame").appendChild(ifr);
+      $("pv-go").disabled=true; $("pv-go").textContent="已載入";
+    };
+  }
+
+  // ── 風險提示（只報路徑，不讀也不顯示內容）──
+  $("risk").innerHTML = res.risks.length
+    ? '<div class="risk"><b>⚠ 這些檔案不該進版控</b>'+
+      res.risks.map(r=>'<div><i'+fa(r[0])+'>'+esc(r[0])+'</i> — '+esc(r[1])+'</div>').join("")+
+      '<div style="margin-top:8px">本工具只列出檔名，不讀取也不顯示內容。若這是你的 repo，撤回歷史紀錄後請立刻輪替金鑰。</div></div>'
+    : "";
+
+  // ── App 身分證：PWA manifest / 行動 App / Release 產出物 ──
+  const pwa=x.pwa, appId=x.appId, rel=x.release;
+  const assets = rel && rel.assets ? rel.assets.filter(a=>/\.(apk|aab|ipa|exe|dmg|msi|appimage|deb)$/i.test(a.name)) : [];
+  if(pwa||appId||assets.length){
+    let h='<div class="card">';
+    if(pwa){
+      h+='<div class="nm">'+esc(pwa.name)+'</div><div class="row">'+
+         [["顯示模式",pwa.display],["起始頁",pwa.start],["主題色",pwa.theme||"—"],
+          ["方向",pwa.orientation||"—"],["圖示",pwa.icons.length+" 種尺寸"],
+          ["可安裝",pwa.installable?"是":"否（缺 name / icons / display）"]]
+         .map(m=>'<span class="chip">'+esc(m[0])+' <b>'+esc(m[1])+'</b></span>').join("")+'</div>';
+    }
+    if(appId){
+      h+=(pwa?'<div style="height:12px"></div>':'')+
+         '<div class="nm">'+esc(appId.name||appId.id)+'</div><div class="row">'+
+         [["平台",appId.kind],["套件 ID",appId.id||"—"],["版本",appId.ver||"—"]]
+         .map(m=>'<span class="chip">'+esc(m[0])+' <b>'+esc(m[1])+'</b></span>').join("")+'</div>';
+    }
+    if(assets.length){
+      h+='<div class="row" style="margin-top:12px"><span class="chip">最新 Release <b>'+
+         esc(rel.tag_name||"")+'</b></span></div>'+
+         assets.slice(0,6).map(a=>'<a class="dl" href="'+esc(a.browser_download_url)+
+           '" target="_blank" rel="noopener">⤓ '+esc(a.name)+' · '+
+           Math.round(a.size/1048576)+'MB · '+(a.download_count||0)+' 次下載</a><br>').join("");
+    }
+    $("app-card").innerHTML=h+'</div>';
+    $("sec-app").style.display="";
+  } else $("sec-app").style.display="none";
+
+  // ── API 端點與外部服務 ──
+  const hosts=[...res.hosts.entries()].sort((a,b)=>b[1].count-a[1].count).slice(0,14);
+  const ar=res.apiRoutes.slice(0,20), cl=res.calls.slice(0,20), ek=x.envKeys||[];
+  if(ar.length||cl.length||hosts.length||ek.length||res.openapi){
+    let h="";
+    if(res.openapi) h+='<div class="empty" style="text-align:left;border-style:solid;margin-bottom:10px">'+
+      '有完整的 OpenAPI 規格檔：<b>'+esc(res.openapi)+'</b> — 這份檔案就是這個服務的端點總表，直接開它最快。</div>';
+    if(ar.length) h+=sub("自有 API 路由（"+res.apiRoutes.length+"）",
+        ar.map(r=>[r.path,r.file]));
+    if(cl.length) h+=sub("原始碼裡呼叫的相對端點",cl.map(c=>[c.path,c.file]));
+    if(hosts.length) h+=sub("程式碼與 README 裡出現的外部網址（爬蟲專案＝目標站台）",
+      hosts.map(hh=>[hh[0],hh[1].ev+" · "+hh[1].count+" 次"]));
+    if(ek.length) h+='<div class="h" style="margin-top:14px;font-size:10px">.env.example 需要的設定鍵</div>'+
+      '<div class="meta">'+ek.map(k=>'<span class="chip">'+esc(k)+'</span>').join("")+'</div>'+
+      '<div class="hint">只列鍵名。值本來就是佔位符，這裡不會去讀真正的 .env。</div>';
+    $("api-box").innerHTML=h; $("sec-api").style.display="";
+  } else $("sec-api").style.display="none";
+
+  // 指紋牆：依類別排序
+  const ORDER=["框架","UI 函式庫","語言","樣式","動畫","狀態管理","資料層","爬蟲","資料處理",
+               "後端","資料庫","路由","視覺化","工具","建置","套件管理","部署","測試","結構","型態"];
+  const items=[...res.hits.entries()].sort((a,b)=>{
+    const d=ORDER.indexOf(a[1].cat)-ORDER.indexOf(b[1].cat);
+    return d!==0?d:a[0].localeCompare(b[0]);
+  });
+  $("wall").innerHTML=items.map((it,i)=>{
+    const primary=["框架","UI 函式庫","樣式","語言"].indexOf(it[1].cat)>-1;
+    return '<div class="cell'+(primary?"":" c")+'" style="animation-delay:'+Math.min(i*22,600)+'ms">'+
+      '<div class="k">'+esc(it[1].cat)+'</div>'+
+      '<div class="v">'+esc(it[0])+'</div>'+
+      '<div class="e"'+fa(it[1].ev)+'>'+esc(it[1].ev)+'</div></div>';
+  }).join("") || '<div class="empty">沒有辨識出已知的技術指紋</div>';
+
+  // 路由
+  const rs=res.routes.slice().sort((a,b)=>a.path.length-b.path.length||a.path.localeCompare(b.path));
+  const show=rs.slice(0,60);
+  $("routes").innerHTML = show.length
+    ? show.map(r=>'<div><span class="p">'+esc(r.path).replace(/(:|\*)[\w-]+/g,'<b>$&</b>')+
+        '</span><span class="f"'+fa(r.file)+'>'+esc(r.file)+'</span></div>').join("")+
+      ((rs.length>show.length||res.truncatedRoutes)
+        ? '<div class="more">…另有 '+(rs.length-show.length)+(res.truncatedRoutes?"+":"")+' 條路由未列出</div>':"")+
+      (res.apiRoutes.length?'<div class="more">＋ '+res.apiRoutes.length+' 個 API endpoint（見上一節）</div>':"")
+    : '<div class="empty">沒有偵測到檔案式路由（可能是 SPA 用程式碼定義路由，或這不是網站專案）</div>';
+  $("sec-routes").style.display = show.length ? "" : "none";
+
+  // 直接依賴
+  const dl=$("deps");
+  if(pkg&&pkg.direct.length){
+    dl.innerHTML='<div><span class="n" style="color:var(--muted)">直接依賴（前 12）</span><span class="x">'+pkg.direct.length+' 個</span></div>'+
+      pkg.direct.slice(0,12).map(n=>'<div><span class="n">'+esc(n)+'</span><span class="x">'+
+        esc(String(pkg.deps[n])) +'</span></div>').join("");
+  } else dl.innerHTML='<div><span class="n" style="color:var(--muted)">沒有 package.json</span></div>';
+
+  renderDocs(res);
+
+  // ── 專案結構：目錄骨架 + 啟動指令 + README 大綱 ──
+  {
+    let h="";
+    const sk=[...res.skel.entries()].sort((a,b)=>b[1].n-a[1].n).slice(0,12);
+    if(sk.length>1){
+      const mx=sk[0][1].n;
+      h+='<div class="h" style="margin-top:0;font-size:10px">檔案最集中的目錄</div><div class="list">'+
+        sk.map(d=>{
+          const top=[...d[1].ext.entries()].sort((a,b)=>b[1]-a[1])[0];
+          return '<div style="display:block"><span class="n">'+esc(d[0])+
+            '</span><span class="x" style="float:right">'+d[1].n+
+            (top?' 檔 · 主要 .'+esc(top[0]):' 檔')+'</span>'+
+            '<div class="bar-mini"><i style="width:'+Math.round(d[1].n/mx*100)+'%"></i></div></div>';
+        }).join("")+'</div>';
+    }
+    if(pkg && pkg.scripts.length){
+      h+='<div class="h" style="margin-top:14px;font-size:10px">怎麼跑起來（package.json scripts）</div>'+
+        '<div class="meta">'+pkg.scripts.slice(0,14).map(k=>
+          '<span class="chip">npm run <b>'+esc(k)+'</b></span>').join("")+'</div>';
+    }
+    if(res.imgs.length){
+      h+='<div class="h" style="margin-top:14px;font-size:10px">圖片素材（'+res.imgs.length+
+        '）· 點檔名直接預覽</div><div class="meta">'+
+        res.imgs.map(f=>'<span class="chip" data-f="'+esc(f)+'" style="cursor:pointer;color:var(--cyan);'+
+          'border-color:rgba(72,211,192,.3)">▣ '+esc(f.split("/").pop())+'</span>').join("")+'</div>';
+    }
+    if(x.cmds && x.cmds.length){
+      h+='<div class="h" style="margin-top:14px;font-size:10px">README 裡的安裝與執行指令</div>'+
+        '<div class="routes">'+x.cmds.map(c=>
+          '<div><span class="p">$ '+esc(c)+'</span></div>').join("")+'</div>';
+    }
+    if(x.outline && x.outline.length){
+      h+='<div class="h" style="margin-top:14px;font-size:10px">README 章節（作者自己列的功能表）</div><div class="routes">'+
+        x.outline.map(o=>'<div><span class="p" style="padding-left:'+((o.lv-1)*14)+'px">'+
+          (o.lv>1?'· ':'')+esc(o.t)+'</span></div>').join("")+'</div>';
+    }
+    $("skel-box").innerHTML=h;
+    $("sec-skel").style.display = h ? "" : "none";
+  }
+
+  // 語言統計保底：指紋掃不出東西時，至少給 GitHub 官方的語言比例
+  if(x.langs && Object.keys(x.langs).length){
+    const tot=Object.values(x.langs).reduce((a,b)=>a+b,0)||1;
+    const ls=Object.entries(x.langs).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    $("lang-fallback").innerHTML=
+      '<div class="empty" style="text-align:left;border-style:solid;margin-bottom:10px">'+
+      '框架指紋不足，補上 GitHub 語言統計：'+
+      ls.map(l=>esc(l[0])+" "+Math.round(l[1]/tot*100)+"%").join(" · ")+'</div>';
+  } else $("lang-fallback").innerHTML="";
+
+  // 副檔名分佈
+  const ex=[...res.exts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const max=ex.length?ex[0][1]:1;
+  $("exts").innerHTML='<div><span class="n" style="color:var(--muted)">檔案類型分佈</span><span class="x">'+
+    res.files.toLocaleString()+' 檔 / '+res.dirs.toLocaleString()+' 夾</span></div>'+
+    ex.map(e=>'<div style="display:block"><span class="n">.'+esc(e[0])+
+      '</span><span class="x" style="float:right">'+e[1]+'</span>'+
+      '<div class="bar-mini"><i style="width:'+Math.round(e[1]/max*100)+'%"></i></div></div>').join("");
+
+  $("out").classList.add("on");
+  S.last={full:loc.owner+"/"+loc.repo,title:v.title,kind:v.kind,desc:repo.description||""};
+}
+
+/* ══════════════════════════════════════════════════════════════
+   7. GitHub 專案搜尋（獨立額度池：未授權 10 次/分，不吃那 60 次/小時）
+   ══════════════════════════════════════════════════════════════ */
+let qLast="";
+const PER=10;
+S.sort="best";
+async function search(more,qArg,fromHistory){
+  const q = more ? qLast : String(qArg!=null ? qArg : $("url").value).trim();
+  if(q.length<2){ fail("關鍵字至少 2 個字。"); return; }
+  if(!more){
+    // 同一個關鍵字已經有結果：直接顯示記憶體裡的，不再花搜尋額度
+    if(q===qLast && S.results && S.results.length){ showResults(); if(!fromHistory) pushView({v:"search",q:q}); return; }
+    qLast=q; S.page=1; S.results=[];
+  }else S.page=(S.page||1)+1;
+
+  const btn=$("more-btn");
+  if(btn){ btn.textContent="載入中…"; btn.disabled=true; }
+  say("搜尋「"+q+"」…");
+  try{
+    const r=await getJSON("https://api.github.com/search/repositories?q="+
+      encodeURIComponent(q)+"&sort=stars&order=desc&per_page="+PER+"&page="+S.page);
+    S.results=(S.results||[]).concat(r.items||[]);
+    S.total=Math.min(r.total_count||0,1000);   // GitHub 搜尋最多只讓翻到第 1000 筆
+    if(!more){ addRecent("q",q); if(!fromHistory) pushView({v:"search",q:q}); }
+    say("找到 "+Number(S.total).toLocaleString()+" 個專案，點一個開始掃描","✓");
+    showResults();
+  }catch(e){
+    if(!S.results||!S.results.length){
+      $("results").innerHTML='<button disabled style="color:var(--red)">'+esc(e.message)+'</button>';
+      $("results").classList.add("on");
+    }else if(btn){ btn.textContent=e.message; btn.disabled=false; }
+  }
+}
+
+/* GitHub 的 size 單位是 KB（整個 repo 的 git 資料量，含歷史，約略值） */
+function fmtSize(kb){
+  kb=+kb||0;
+  if(kb<1024) return kb+" KB";
+  if(kb<1048576) return (kb/1024).toFixed(kb<10240?1:0)+" MB";
+  return (kb/1048576).toFixed(1)+" GB";
+}
+function showResults(){
+  paintResults(qLast);
+  $("out").classList.remove("on");
+  $("navrow").hidden=true;
+}
+function sortedIdx(){
+  const it=S.results||[], idx=it.map((_,i)=>i);
+  const by={
+    stars:(a,b)=>it[b].stargazers_count-it[a].stargazers_count,
+    updated:(a,b)=>String(it[b].pushed_at).localeCompare(String(it[a].pushed_at)),
+    big:(a,b)=>it[b].size-it[a].size,
+    small:(a,b)=>it[a].size-it[b].size
+  }[S.sort];
+  return by ? idx.sort(by) : idx;   // best＝GitHub 原本的順序
+}
+function paintResults(q){
+  const items=S.results||[];
+  if(!items.length){
+    $("results").innerHTML='<button disabled style="color:var(--muted)">找不到符合的專案</button>';
+    $("results").classList.add("on"); return;
+  }
+  const opts=[["best","預設排序"],["stars","星數多→少"],["updated","最近更新"],["big","檔案大→小"],["small","檔案小→大"]]
+    .map(o=>'<option value="'+o[0]+'"'+(S.sort===o[0]?" selected":"")+'>'+o[1]+'</option>').join("");
+  const head='<div class="rhead"><span>「'+esc(q)+'」共 '+Number(S.total).toLocaleString()+
+    ' 個 · 已顯示 '+items.length+'</span><select id="rsort" aria-label="排序">'+opts+'</select></div>';
+  const rows=sortedIdx().map(i=>{
+    const it=items[i];
+    return '<button data-i="'+i+'"><div class="rr"><div class="rmain">'+
+      '<span class="rn">'+esc(it.full_name)+'</span>'+
+      '<div class="rd">'+esc(it.description||"（沒有描述）")+'</div>'+
+      '<div class="rd" style="font-family:var(--mono);font-size:10px">★ '+Number(it.stargazers_count).toLocaleString()+
+      (it.language?' · '+esc(it.language):'')+' · 更新 '+esc(String(it.pushed_at||"").slice(0,10))+'</div></div>'+
+      '<div class="rz"><b>'+fmtSize(it.size)+'</b><span>檔案大小</span></div></div></button>';
+  }).join("");
+  const more=(items.length<S.total && items.length<1000)
+    ? '<button id="more-btn" style="color:var(--cyan);font-family:var(--mono);font-size:12px;'+
+      'text-align:center;background:var(--panel-2)">載入更多（第 '+((S.page||1)+1)+' 頁）</button>' : "";
+  $("results").innerHTML=head+rows+more;
+  $("results").classList.add("on");
+}
+
+/* ── 合併搜尋器：看起來像 repo 就掃描，否則當關鍵字搜尋 ── */
+function looksLikeRepo(s){
+  s=s.trim();
+  if(/(^|\/\/|\.)github\.com\//i.test(s)||/raw\.githubusercontent\.com\//i.test(s)) return true;
+  return !/\s/.test(s) && /^[\w.-]+\/[\w.-]+(\/.*)?$/.test(s);
+}
+function go(){
+  const v=$("url").value.trim();
+  if(!v){ fail("先輸入 GitHub 網址或關鍵字。"); return; }
+  if(looksLikeRepo(v)) run(v); else search(false,v);
+}
+
+/* ── 上一步：用瀏覽器歷史紀錄（iPhone 左滑返回也有效），資料全從快取拿，不重新查詢 ── */
+function pushView(st){
+  if(S.restoring) return;
+  const qs = st.v==="scan" ? "?repo="+encodeURIComponent(st.repo) : "?q="+encodeURIComponent(st.q);
+  try{ history.pushState(st,"",qs); }catch(e){}
+}
+function restore(st){
+  if(!st) return;
+  S.restoring=true;
+  try{
+    if(st.v==="search"){ $("url").value=st.q; search(false,st.q,true); }
+    else if(st.v==="scan"){ run(st.repo,true); }
+  }finally{ S.restoring=false; }
+}
+window.addEventListener("popstate",e=>{
+  if(e.state) restore(e.state);
+  else{ $("results").classList.remove("on"); $("out").classList.remove("on"); }
+});
+
+/* ── 最近搜尋／掃描：點一下就回來，有快取時不花額度 ── */
+function loadRecent(){ try{ return JSON.parse(localStorage.getItem("xray-recent")||"[]"); }catch(e){ return []; } }
+function addRecent(t,v){
+  let r=loadRecent().filter(x=>!(x.t===t&&x.v===v));
+  r.unshift({t:t,v:v}); r=r.slice(0,8);
+  try{ localStorage.setItem("xray-recent",JSON.stringify(r)); }catch(e){}
+  paintRecent();
+}
+function paintRecent(){
+  const r=loadRecent();
+  $("recent").innerHTML = r.length ? '最近：'+r.map((x,i)=>'<a data-r="'+i+'" title="'+esc(x.v)+'"><i>'+
+    (x.t==="q"?"🔍":"▤")+'</i> '+esc(x.v)+'</a>').join("")+
+    ' <a id="clear-recent" style="border:0;color:var(--muted)">清除</a>' : "";
+}
+
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),1800); }
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select();
+    let ok=false; try{ ok=document.execCommand("copy"); }catch(err){ ok=false; }
+    ta.remove(); if(!ok){ toast("無法自動複製，請長按選取"); return; }
+  }
+  toast("已複製 ✓");
+}
+
+/* ══════════════════════════════════════════════════════════════
+   8. 檔案檢視器：畫面上每個路徑都能點開，不必翻檔案樹
+   ══════════════════════════════════════════════════════════════ */
+/* 極簡 Markdown 渲染器：零外部相依，先轉義再套規則，不可能注入 HTML */
+function mdToHtml(src,dir,rawBase){
+  const abs=u=>{
+    if(/^(https?:|mailto:|#|data:)/i.test(u)) return u;
+    return rawBase+(dir?dir+"/":"")+u.replace(/^\.\//,"");
+  };
+  const blocks=[];
+  let t=esc(src);
+  // 圍籬程式碼先抽走，避免內容被後續規則污染
+  t=t.replace(/```[\w+-]*\n([\s\S]*?)```/g,(m,c)=>{
+    blocks.push('<pre><code>'+c.replace(/\n$/,"")+'</code></pre>');
+    return "\u0000B"+(blocks.length-1)+"\u0000";
+  });
+  const inline=x=>x
+    .replace(/`([^`\n]+)`/g,'<code>$1</code>')
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g,(m,a,u)=>'<img alt="'+a+'" src="'+abs(u)+'">')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g,(m,a,u)=>
+      '<a href="'+abs(u)+'" target="_blank" rel="noopener">'+a+'</a>')
+    .replace(/(^|[\s(])(https?:\/\/[^\s)<>"']+)/g,(m,pre,u)=>{
+      const clean=u.replace(/(&(lt|gt|quot|amp);|[.,;:！。，、])+$/,"");
+      return pre+'<a href="'+clean+'" target="_blank" rel="noopener">'+clean+'</a>'+u.slice(clean.length);
+    })
+    .replace(/\*\*([^*\n]+)\*\*/g,"<b>$1</b>")
+    .replace(/(^|\W)\*([^*\n]+)\*/g,"$1<i>$2</i>");
+  const out=[]; let list=null;
+  const closeList=()=>{ if(list){ out.push("</"+list+">"); list=null; } };
+  t.split(/\n/).forEach(line=>{
+    const raw=line.trim();
+    if(/^\u0000B\d+\u0000$/.test(raw)){ closeList(); out.push(raw); return; }
+    if(!raw){ closeList(); return; }
+    let m;
+    if((m=raw.match(/^(#{1,6})\s+(.*)$/))){
+      closeList(); const lv=Math.min(m[1].length,3);
+      out.push("<h"+lv+">"+inline(m[2])+"</h"+lv+">"); return;
+    }
+    if(/^([-*_])\s*\1\s*\1[-*_\s]*$/.test(raw)){ closeList(); out.push("<hr>"); return; }
+    if((m=raw.match(/^&gt;\s?(.*)$/))){ closeList(); out.push("<blockquote>"+inline(m[1])+"</blockquote>"); return; }
+    if((m=raw.match(/^[-*+]\s+(.*)$/))){
+      if(list!=="ul"){ closeList(); out.push("<ul>"); list="ul"; }
+      out.push("<li>"+inline(m[1])+"</li>"); return;
+    }
+    if((m=raw.match(/^\d+[.)]\s+(.*)$/))){
+      if(list!=="ol"){ closeList(); out.push("<ol>"); list="ol"; }
+      out.push("<li>"+inline(m[1])+"</li>"); return;
+    }
+    if(/^\|/.test(raw)){
+      const cells=raw.replace(/^\||\|$/g,"").split("|");
+      if(cells.every(c=>/^[\s:-]+$/.test(c))) return;   // 表格分隔線
+      if(list!=="table"){ closeList(); out.push("<table>"); list="table"; }
+      out.push("<tr>"+cells.map(c=>"<td>"+inline(c.trim())+"</td>").join("")+"</tr>"); return;
+    }
+    closeList();
+    out.push("<p>"+inline(raw)+"</p>");
+  });
+  closeList();
+  return out.join("\n").replace(/\u0000B(\d+)\u0000/g,(m,i)=>blocks[+i]);
+}
+
+const IMAGE =/\.(png|jpe?g|gif|webp|svg|ico|bmp|avif)$/i;
+const BINARY=/\.(svgz|woff2?|ttf|eot|mp[34]|mov|zip|gz|7z|rar|exe|dll|dmg|apk|aab|ipa|deb|pdf|so|dylib|class|jar|db|sqlite)$/i;
+async function openFile(path){
+  const c=S.ctx; if(!c) return;
+  $("v-path").textContent=path;
+  $("v-gh").href="https://github.com/"+c.owner+"/"+c.repo+"/blob/"+c.ref+"/"+path;
+  $("viewer").classList.add("on");
+  const rawBase="https://raw.githubusercontent.com/"+c.owner+"/"+c.repo+"/"+c.ref+"/";
+  S.cur=null; $("v-mode").style.display="none"; $("v-body").className="vbody";
+  if(IMAGE.test(path)){
+    $("v-body").innerHTML='<img alt="'+esc(path)+'" src="'+esc(rawBase+path)+
+      '" onerror="this.replaceWith(document.createTextNode(\'圖片載入失敗，用上面的連結到 GitHub 看。\'))">';
+    return;
+  }
+  if(BINARY.test(path)){
+    $("v-body").textContent="這是二進位檔案（執行檔、壓縮檔之類），沒有可讀的文字內容。\n用上面的「在 GitHub 開啟」下載。";
+    return;
+  }
+  $("v-body").textContent="讀取中…";
+  const txt=await getText(rawBase+path);
+  if(txt===null){ $("v-body").textContent="讀不到這個檔案。可能已被改名、或不在這個分支上。"; return; }
+  S.cur={path:path,txt:txt,rawBase:rawBase,md:/\.(md|markdown|mdx)$/i.test(path)};
+  $("v-mode").style.display = S.cur.md ? "" : "none";
+  S.rendered = S.cur.md;          // markdown 預設用渲染模式
+  paintFile();
+}
+
+function paintFile(){
+  const c=S.cur; if(!c) return;
+  const CAP=250000;
+  if(c.md && S.rendered){
+    $("v-mode").textContent="原始碼";
+    const dir=c.path.indexOf("/")>-1 ? c.path.slice(0,c.path.lastIndexOf("/")) : "";
+    $("v-body").className="vbody md";
+    $("v-body").innerHTML=mdToHtml(c.txt.slice(0,CAP),dir,c.rawBase);
+  }else{
+    $("v-mode").textContent="渲染檢視";
+    $("v-body").className="vbody";
+    $("v-body").textContent = c.txt.length>CAP
+      ? c.txt.slice(0,CAP)+"\n\n─── 內容過長，畫面只顯示前 "+Math.round(CAP/1024)+
+        "KB；按「下載」可取得完整檔案 ───"
+      : (c.txt||"（空檔案）");
+  }
+  $("v-body").scrollTop=0;
+}
+
+function download(name,text){
+  const b=new Blob([text],{type:"text/plain;charset=utf-8"});
+  const u=URL.createObjectURL(b), a=document.createElement("a");
+  a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   9. 說明文件：全部列出，並支援跨檔全文搜尋（走 raw，不吃 API 額度）
+   ══════════════════════════════════════════════════════════════ */
+function renderDocs(res){
+  S.docs=res.docs||[];
+  if(!S.docs.length){ $("sec-docs").style.display="none"; return; }
+  $("sec-docs").style.display="";
+  $("doc-hits").innerHTML="";
+  const order=S.docs.slice().sort((a,b)=>{
+    const ra=/readme/i.test(a)?0:1, rb=/readme/i.test(b)?0:1;
+    return ra-rb || a.split("/").length-b.split("/").length || a.localeCompare(b);
+  });
+  $("doc-list").innerHTML='<div class="h" style="margin-top:0;font-size:10px">'+
+    order.length+' 份文件 · 點檔名直接看內容</div><div class="routes">'+
+    order.map(d=>'<div><span class="p" data-f="'+esc(d)+'">'+esc(d)+'</span></div>').join("")+'</div>';
+}
+
+let docBusy=false;
+async function searchDocs(){
+  const kw=$("dq").value.trim();
+  if(!kw){ $("doc-hits").innerHTML=""; return; }
+  if(docBusy || !S.docs || !S.docs.length) return;
+  docBusy=true;
+  const list=S.docs.slice(0,30);   // 上限 30 份，避免一次拉太多
+  $("doc-hits").innerHTML='<div class="empty">搜尋 '+list.length+' 份文件中…</div>';
+  const lower=kw.toLowerCase();
+  const hits=[];
+  try{
+    // getText 走 enqueue 佇列（同時最多 2 個），不會併發風暴
+    const texts=await Promise.all(list.map(f=>getText(  // guardrails: ignore
+      "https://raw.githubusercontent.com/"+S.ctx.owner+"/"+S.ctx.repo+"/"+S.ctx.ref+"/"+f)));
+    for(let i=0;i<list.length && hits.length<60;i++){
+      const t=texts[i]; if(!t) continue;
+      const lines=t.split(/\r?\n/);
+      for(let n=0;n<lines.length && hits.length<60;n++){
+        if(lines[n].toLowerCase().indexOf(lower)<0) continue;
+        let ln=lines[n].trim();
+        if(ln.length>200) {
+          const at=ln.toLowerCase().indexOf(lower);
+          ln=(at>80?"…":"")+ln.slice(Math.max(0,at-80),at+120)+"…";
+        }
+        hits.push({f:list[i],n:n+1,l:ln});
+      }
+    }
+  }catch(e){}
+  docBusy=false;
+  if(!hits.length){
+    $("doc-hits").innerHTML='<div class="empty">'+esc(list.length)+' 份文件裡都沒有「'+esc(kw)+'」</div>';
+    return;
+  }
+  const re=new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi");
+  $("doc-hits").innerHTML='<div class="h" style="margin-top:0;font-size:10px">'+
+    hits.length+' 處提到「'+esc(kw)+'」</div>'+
+    hits.map(h=>'<div class="hit" data-f="'+esc(h.f)+'">'+
+      '<div class="hf">'+esc(h.f)+' · 第 '+h.n+' 行</div>'+
+      '<div class="hl">'+esc(h.l).replace(re,x=>"<mark>"+x+"</mark>")+'</div></div>').join("");
+}
+
+/* ── 事件綁定 ── */
+$("dqgo").addEventListener("click",searchDocs);
+$("dq").addEventListener("keydown",e=>{ if(e.key==="Enter") searchDocs(); });
+$("results").addEventListener("change",e=>{
+  if(e.target.id==="rsort"){ S.sort=e.target.value; paintResults(qLast); }
+});
+$("results").addEventListener("click",e=>{
+  if(e.target.closest("#more-btn")){ search(true); return; }
+  const b=e.target.closest("button[data-i]"); if(!b||!S.results) return;
+  const it=S.results[+b.dataset.i];
+  $("results").classList.remove("on");       // 收起來但保留在記憶體，「回到搜尋結果」不用重查
+  S.cache.set("https://api.github.com/repos/"+it.full_name,it); // 省掉一次 API 呼叫
+  run(it.html_url);                           // 輸入框保留原本的關鍵字
+});
+$("back").addEventListener("click",()=>{ showResults(); pushView({v:"search",q:qLast}); window.scrollTo(0,0); });
+$("recent").addEventListener("click",e=>{
+  if(e.target.closest("#clear-recent")){ try{ localStorage.removeItem("xray-recent"); }catch(err){} paintRecent(); return; }
+  const a=e.target.closest("a[data-r]"); if(!a) return;
+  const x=loadRecent()[+a.dataset.r]; if(!x) return;
+  $("url").value=x.v;
+  if(x.t==="q") search(false,x.v); else run(x.v);
+});
+$("askclaude").addEventListener("click",()=>{
+  const l=S.last; if(!l) return;
+  copyText("請幫我分析 GitHub 專案 https://github.com/"+l.full+"（Repo X-Ray 判讀："+l.title+" 的"+l.kind+"）。"+
+    "用白話說明：它能做什麼、適合誰用、怎麼在手機上試用或部署、有沒有安全或授權要注意的地方；"+
+    "如果適合拿來改成我自己的 App，列出最少步驟。");
+});
+$("sharebtn").addEventListener("click",async()=>{
+  const l=S.last; if(!l) return;
+  const u=location.origin+location.pathname+"?repo="+encodeURIComponent(l.full);
+  // iOS：只傳 url 不帶 title，避免只分享到標題文字
+  if(navigator.share){ try{ await navigator.share({url:u}); return; }catch(e){ if(e.name==="AbortError") return; } }
+  copyText(u);
+});
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-f]");
+  if(t) openFile(t.dataset.f);
+});
+$("v-close").addEventListener("click",()=>$("viewer").classList.remove("on"));
+$("v-mode").addEventListener("click",()=>{ S.rendered=!S.rendered; paintFile(); });
+$("v-dl").addEventListener("click",()=>{
+  const c=S.cur;
+  if(c) download(c.path.split("/").pop(), c.txt);
+  else window.open($("v-gh").href,"_blank","noopener");   // 圖片/二進位交給 GitHub
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("viewer").classList.remove("on"); });
+
+$("go").addEventListener("click",go);
+$("url").addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+$("savetok").addEventListener("click",()=>{
+  S.token=$("tok").value.trim();
+  $("rate").textContent=S.token?"5000/hr 已授權":"—";
+  $("gauge").className="gauge";
+});
+document.querySelectorAll("[data-s]").forEach(a=>a.addEventListener("click",e=>{
+  e.preventDefault(); $("url").value=a.dataset.s; run();
+}));
+
+paintRecent();
+(function(){
+  const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q");
+  if(r){ history.replaceState({v:"scan",repo:r},"",location.search); $("url").value=r; run(r,true); }
+  else if(q){ history.replaceState({v:"search",q:q},"",location.search); $("url").value=q; search(false,q,true); }
+})();
+
+const APP_VER="__APP_VER__";
+document.addEventListener("visibilitychange",async()=>{
+  if(document.hidden || APP_VER.indexOf("__")===0) return;
+  try{ const r=await fetch("version.json",{cache:"no-store"}); if(!r.ok) return;
+    const v=await r.json(); if(v.ver && v.ver!==APP_VER) location.reload(); }catch(e){}
+});
+</script>
+</body>
+</html>
