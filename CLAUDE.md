@@ -68,6 +68,8 @@
     研究更新（自我進化）；改資料後必須跑 `python3 web/ai/check_ai_data.py`，通過才能推。跑分一律附出處網址。
   - `web/xray.html`：Repo X-Ray（使用者提供的單檔工具，GitHub 專案透視）。合併搜尋器（網址直接掃、關鍵字搜尋）、
     上一步／瀏覽器返回不重查、搜尋結果顯示檔案大小與排序、localStorage 快取 1 小時（超過 200KB 不存）省 API 額度。
+  - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
+    使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。
 - 需要的 Secrets：無（選用 `SKL_READ_TOKEN`：唯讀 Token，讓每週報告能掃私人 repo）。
 - 部署在哪：網頁 https://xin7355-collab.github.io/skl/ （`Deploy web page` 工作流）；
@@ -79,6 +81,6 @@
   - 新增技能後跑：`python3 scripts/check_frontmatter.py --all`、`python3 scripts/check_paths.py --all`、
     兩支工具的 `selftest`。
   - 不要把上游的 `.claude/settings.json`（會自動載入第三方外掛）或 `.mcp.json` 加回來。
-  - `.claude/skills/` 是用 app-bootstrap 從本 repo 複製給「skl 自己的工作階段」用的 6 個技能（清單在
+  - `.claude/skills/` 是用 app-bootstrap 從本 repo 複製給「skl 自己的工作階段」用的 8 個技能（清單在
     `.claude/skills/.skl-vendor.json`）；原始檔改了之後跑
     `python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py update --target . --no-hook` 同步。

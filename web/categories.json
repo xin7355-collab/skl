@@ -11,6 +11,13 @@
    ]
   },
   {
+   "id": "method",
+   "zh": "開發方法論",
+   "path": [
+    "superpowers/"
+   ]
+  },
+  {
    "id": "security",
    "zh": "資安與隱私",
    "name": [
@@ -271,7 +278,8 @@
    "path": [
     "engineering-team/",
     "engineering/",
-    "xin-toolkit/"
+    "xin-toolkit/",
+    "ecc/"
    ]
   },
   {
@@ -287,6 +295,24 @@
   "xin-toolkit/skills/app-bootstrap": "ai",
   "engineering/skills/interview-system-designer": "leadership",
   "product-team/skills/experiment-designer": "product",
-  "xin-toolkit/skills/file-intake": "ai"
+  "xin-toolkit/skills/file-intake": "ai",
+  "ecc/skills/accessibility": "web",
+  "ecc/skills/make-interfaces-feel-better": "web",
+  "ecc/skills/dashboard-builder": "web",
+  "ecc/skills/browser-qa": "web",
+  "ecc/skills/e2e-testing": "dev",
+  "ecc/skills/production-audit": "dev",
+  "ecc/skills/content-hash-cache-pattern": "backend",
+  "ecc/skills/error-handling": "backend",
+  "ecc/skills/token-budget-advisor": "ai",
+  "ecc/skills/context-budget": "ai",
+  "ecc/skills/strategic-compact": "ai",
+  "ecc/skills/github-ops": "devops",
+  "ecc/skills/deployment-patterns": "devops",
+  "ecc/skills/safety-guard": "security",
+  "ecc/skills/data-scraper-agent": "backend",
+  "ecc/skills/repo-scan": "dev",
+  "ecc/skills/search-first": "method",
+  "ecc/skills/verification-loop": "method"
  }
 }

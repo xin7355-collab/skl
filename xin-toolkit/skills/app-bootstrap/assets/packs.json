@@ -54,5 +54,26 @@
     "skills": [
       "xin-toolkit/skills/auto-video-edit"
     ]
+  },
+  "workflow": {
+    "desc": "開發方法論（superpowers）：先腦力激盪與寫計畫、系統化除錯、測試先行、完成前必驗證、請求程式審查",
+    "skills": [
+      "superpowers/skills/brainstorming",
+      "superpowers/skills/writing-plans",
+      "superpowers/skills/executing-plans",
+      "superpowers/skills/systematic-debugging",
+      "superpowers/skills/test-driven-development",
+      "superpowers/skills/verification-before-completion",
+      "superpowers/skills/requesting-code-review"
+    ]
+  },
+  "python": {
+    "desc": "Python 專案：寫法慣例、測試、爬蟲資料擷取、錯誤處理",
+    "skills": [
+      "ecc/skills/python-patterns",
+      "ecc/skills/python-testing",
+      "ecc/skills/data-scraper-agent",
+      "ecc/skills/error-handling"
+    ]
   }
 }

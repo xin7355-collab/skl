@@ -5,16 +5,20 @@
     "ci-cd-pipeline-builder",
     "code-reviewer",
     "file-intake",
-    "skill-security-auditor"
+    "skill-security-auditor",
+    "systematic-debugging",
+    "verification-before-completion"
   ],
   "source_repo": "https://github.com/xin7355-collab/skl",
-  "source_commit": "fc85fb0",
-  "updated_at": "2026-09-24T05:04:39Z",
+  "source_commit": "7124942",
+  "updated_at": "2026-09-24T11:34:04Z",
   "packs": [],
   "extra_skills": [
     "engineering-team/skills/code-reviewer",
     "engineering/skills/ci-cd-pipeline-builder",
     "engineering/skills/skill-security-auditor",
+    "superpowers/skills/systematic-debugging",
+    "superpowers/skills/verification-before-completion",
     "xin-toolkit/skills/app-bootstrap",
     "xin-toolkit/skills/file-intake"
   ]

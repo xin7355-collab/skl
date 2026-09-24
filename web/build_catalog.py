@@ -38,6 +38,7 @@ DOMAIN_ZH = {
     "research-ops": "研究營運", "markdown-html": "Markdown 轉網頁", "finance": "財務",
     "business-growth": "業務成長", "xin-toolkit": "自製工具包", "loop-library": "迴圈庫",
     "standards": "標準",
+    "superpowers": "Superpowers 方法論", "ecc": "ECC 精選",
 }
 
 
