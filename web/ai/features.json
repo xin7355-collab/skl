@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-09-23",
+ "checked_at": "2026-09-28",
  "products": [
   {
    "product": "Claude Code",
@@ -235,6 +235,17 @@
      "mobile": true,
      "new": true,
      "url": "https://code.claude.com/docs/en/sub-agents"
+    },
+    {
+     "name": "/doctor prompt-audit（守則體檢）",
+     "icon": "🩺",
+     "zh": "檢查你的 CLAUDE.md、技能、代理人和指令裡，有沒有「為舊模型寫的」提示寫法（新模型不需要、甚至會變差）。",
+     "how": "在 Claude Code 工作階段輸入 /doctor prompt-audit（或 /checkup prompt-audit）。2026-09-25 的 2.1.283 版才加入；若網頁版說沒有這個指令，代表還沒推到網頁版。",
+     "when": "換新模型後、覺得 CLAUDE.md 越寫越長時",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/changelog"
     }
    ]
   },
