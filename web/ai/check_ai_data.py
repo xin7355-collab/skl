@@ -67,7 +67,8 @@ def check_models(d):
 def check_features(d):
     errs = []
     prods = {p.get("product") for p in d.get("products", [])}
-    for need in ("Claude Code", "Codex"):
+    # Cowork 分頁靠這份資料；每週自動更新若不小心把它洗掉，要擋下來而不是讓分頁變空白。
+    for need in ("Claude Code", "Codex", "Cowork"):
         if need not in prods:
             errs.append(f"features 缺少 {need}")
     for p in d.get("products", []):
@@ -81,6 +82,15 @@ def check_features(d):
                 errs.append(f"{f.get('name')} 的 level 不合法")
             if f.get("url") and not re.match(r"https?://", f["url"]):
                 errs.append(f"{f.get('name')} 的 url 不是網址")
+    for p in d.get("products", []):
+        if p.get("product") != "Cowork":
+            continue
+        if len(p.get("examples", [])) < 3:
+            errs.append("Cowork 範例少於 3 個")
+        for x in p.get("examples", []):
+            for k in ("title", "prompt"):
+                if not x.get(k):
+                    errs.append(f"Cowork 範例「{x.get('title', '?')}」缺欄位 {k}")
     return errs
 
 
@@ -127,6 +137,14 @@ def selftest():
     check(any("日期" in e for e in check_models(bad)), "檢查日期格式")
     check(any("缺少 Codex" in e for e in check_features({"products": [{"product": "Claude Code", "features": []}]})),
           "缺產品會被擋下")
+    cw = {"product": "Cowork", "features": [], "examples": [{"title": "t", "prompt": "p"}] * 3}
+    check(not any("範例" in e for e in check_features({"products": [cw]})), "正確的 Cowork 範例通過")
+    bad = json.loads(json.dumps(cw))
+    bad["examples"][0]["prompt"] = ""
+    check(any("缺欄位 prompt" in e for e in check_features({"products": [bad]})), "範例缺內容會被擋下")
+    bad["examples"] = bad["examples"][:2]
+    check(any("少於 3" in e for e in check_features({"products": [bad]})), "範例太少會被擋下")
+    check(any("缺少 Cowork" in e for e in check_features({"products": []})), "缺 Cowork 會被擋下")
     with tempfile.TemporaryDirectory() as d:
         with open(os.path.join(d, "models.json"), "w") as f:
             f.write("{壞")

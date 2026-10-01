@@ -32,8 +32,8 @@ header { padding: 18px 0 4px; display: flex; justify-content: space-between; ali
 h1 { font-size: 22px; margin: 0; }
 header a { color: var(--accent); text-decoration: none; font-size: 14px; white-space: nowrap; }
 .sub { color: var(--muted); font-size: 13px; margin: 2px 0 6px; }
-nav.tabs { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px 0; background: var(--bg); }
-nav.tabs button { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 10px; padding: 9px 2px; font: inherit; font-size: 13px; cursor: pointer; }
+nav.tabs { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 8px 0; background: var(--bg); }
+nav.tabs button { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 10px; padding: 9px 2px; font: inherit; font-size: 12px; cursor: pointer; }
 nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; margin: 8px 0 12px; }
 h2 { font-size: 17px; margin: 0 0 4px; }
@@ -81,6 +81,16 @@ select { width: 100%; font: inherit; font-size: 16px; padding: 9px 10px; border-
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 99px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; }
 .toast.show { opacity: .95; }
 .flow { width: 100%; height: auto; margin: 4px 0 8px; }
+.areas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 4px; }
+.area { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+.area b { display: block; font-size: 14px; }
+.area small { color: var(--muted); }
+.area.on { border-color: var(--accent); background: var(--accent-soft); }
+.ex { padding: 12px 0; border-top: 1px solid var(--line); }
+.ex:first-child { border-top: 0; }
+.ex .q { background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; margin: 6px 0; font-size: 14px; }
+.ex small { color: var(--muted); display: block; margin-bottom: 6px; }
+.warn { border-left: 3px solid var(--warn); padding: 6px 10px; font-size: 13px; margin: 8px 0; }
 [hidden] { display: none !important; }
 </style>
 </head>
@@ -93,6 +103,7 @@ select { width: 100%; font: inherit; font-size: 16px; padding: 9px 10px; border-
   <button data-tab="bench" aria-selected="false">跑分</button>
   <button data-tab="claude" aria-selected="false">Claude Code</button>
   <button data-tab="codex" aria-selected="false">Codex</button>
+  <button data-tab="cowork" aria-selected="false">Cowork</button>
 </nav>
 
 <main>
@@ -140,6 +151,18 @@ select { width: 100%; font: inherit; font-size: 16px; padding: 9px 10px; border-
     <select class="ff" data-for="codex" aria-label="篩選"></select>
     <div id="codexList"></div>
   </section>
+  <section id="tab-cowork" class="card" hidden>
+    <h2>Claude App 四個分區怎麼分工</h2>
+    <div class="areas" id="areas"></div>
+    <p class="hint" id="coworkNote"></p>
+    <h2 style="margin-top:14px">Cowork 使用範例</h2>
+    <p class="hint">按「複製這段」→ 到 Claude App 切到 Cowork 貼上；「____」換成你自己的內容。</p>
+    <div id="examples"></div>
+    <p class="warn" id="privacy"></p>
+    <h2 style="margin-top:14px">Cowork 功能</h2>
+    <select class="ff" data-for="cowork" aria-label="篩選"></select>
+    <div id="coworkList"></div>
+  </section>
   <p class="note">🔄 每週一自動更新：有新模型、新功能時會自動加上去。跑分一律附出處；「第三方」與「對照表」的數字僅供參考。</p>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -149,6 +172,7 @@ select { width: 100%; font: inherit; font-size: 16px; padding: 9px 10px; border-
 const APP_VER = "__APP_VER__";
 const $ = (id) => document.getElementById(id);
 const COLOR = { Anthropic: "var(--anth)", OpenAI: "var(--oai)" };
+const PRODUCT = { claude: "Claude Code", codex: "Codex", cowork: "Cowork" };
 const TIER = { daily: "日常主力", hardest: "最強旗艦", balanced: "平衡", cheap: "快又省", legacy: "舊款" };
 const FILTERS = [["", "全部"], ["new", "⭐ 你可能還沒用過"], ["mobile", "📱 手機可用"], ["入門", "入門"], ["進階", "進階"]];
 const store = {
@@ -270,7 +294,8 @@ function renderCharts() {
 }
 
 function renderFeatures(key) {
-  const prod = F.products.find((p) => (key === "claude" ? p.product === "Claude Code" : p.product === "Codex"));
+  const prod = F.products.find((p) => p.product === PRODUCT[key]);
+  if (!prod) { $(key + "List").replaceChildren(el("p", "error", "這一區的資料暫時缺少，下次每週更新會補上；急的話請 Claude 檢查 web/ai/features.json。")); return; }
   $(key + "Note").textContent = prod.note || "";
   const sel = document.querySelector(`.ff[data-for="${key}"]`);
   const box = $(key + "List");
@@ -297,9 +322,32 @@ function renderFeatures(key) {
   }
 }
 
+// Cowork 分頁上半部：分區對照與可複製的範例；資料缺少時只隱藏這兩塊，不影響其他分頁。
+function renderCowork() {
+  const cw = F.products.find((p) => p.product === "Cowork");
+  if (!cw) return;
+  for (const a of cw.areas || []) {
+    const d = el("div", "area" + (a.name === "Cowork" ? " on" : ""));
+    d.appendChild(el("b", "", `${a.icon} ${a.name}`)); d.appendChild(el("div", "", a.zh)); d.appendChild(el("small", "", "適合：" + a.use));
+    $("areas").appendChild(d);
+  }
+  for (const x of cw.examples || []) {
+    const d = el("div", "ex");
+    d.appendChild(el("b", "", `${x.icon || "✨"} ${x.title}`));
+    d.appendChild(el("div", "q", x.prompt));
+    if (x.tip) d.appendChild(el("small", "", "💡 " + x.tip));
+    const b = el("button", "btn", "複製這段");
+    b.addEventListener("click", () => copyText(x.prompt));
+    d.appendChild(b);
+    $("examples").appendChild(d);
+  }
+  $("privacy").textContent = "🔒 " + (cw.privacy || "");
+  $("privacy").hidden = !cw.privacy;
+}
+
 function showTab(id) {
   for (const b of document.querySelectorAll("nav.tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === id));
-  for (const t of ["pick", "bench", "claude", "codex"]) $("tab-" + t).hidden = t !== id;
+  for (const t of ["pick", "bench", "claude", "codex", "cowork"]) $("tab-" + t).hidden = t !== id;
   store.set("ai-tab", id);
 }
 
@@ -316,7 +364,7 @@ async function load() {
   $("sub").textContent = `資料檢查日期 ${M.checked_at}・每週自動更新` + (APP_VER.startsWith("__") ? "" : `・版本 ${APP_VER}`);
   for (const v of M.vendors) { const o = el("option", "", v.product); o.value = v.vendor; $("vendor").appendChild(o); }
   $("vendor").addEventListener("change", renderModels);
-  renderPicks(); renderModels(); renderCharts();
+  renderPicks(); renderModels(); renderCharts(); renderCowork();
   for (const sel of document.querySelectorAll(".ff")) {
     for (const [v, t] of FILTERS) { const o = el("option", "", t); o.value = v; sel.appendChild(o); }
     sel.addEventListener("change", () => renderFeatures(sel.dataset.for));

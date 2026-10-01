@@ -529,6 +529,160 @@
      "url": "https://developers.openai.com/codex/ide"
     }
    ]
+  },
+  {
+   "product": "Cowork",
+   "note": "Cowork 是 Claude App 左側選單的「交辦工作」模式：說出想要的成果就能離開，Claude 在雲端做完再通知你。網頁與手機版目前為 Beta（Pro、Max、Team 方案）。",
+   "areas": [
+    {
+     "icon": "💬",
+     "name": "Chats",
+     "zh": "一般聊天：問一句答一句，不會自己動你的檔案。",
+     "use": "問問題、討論想法、傳截圖請它解釋"
+    },
+    {
+     "icon": "</>",
+     "name": "Code",
+     "zh": "Claude Code：連到 GitHub repo，直接改程式、測試、推上去。",
+     "use": "做 App、修 bug、部署網頁"
+    },
+    {
+     "icon": "🧩",
+     "name": "Artifacts",
+     "zh": "Claude 做過的互動網頁、小工具、文件都收在這裡。",
+     "use": "回頭找以前做的頁面、分享連結"
+    },
+    {
+     "icon": "✅",
+     "name": "Cowork",
+     "zh": "交辦工作：描述成果後離開，雲端做完會推播通知。",
+     "use": "報告、研究、整理資料、每週固定工作"
+    }
+   ],
+   "features": [
+    {
+     "name": "交辦任務",
+     "icon": "📋",
+     "zh": "描述你要的「成果」而不是步驟，Claude 會自己讀資料、做檔案，直到完成。",
+     "how": "打開 Claude App → 輸入框左下角選「Cowork」（或左側選單 Cowork）→ 一句話說出要的成果 → 送出。看不到 Cowork 就先到 App Store 更新 App。",
+     "when": "一件要花你半小時以上、但不用你一直盯著的工作",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://support.claude.com/en/articles/15520349-use-claude-cowork-on-web-desktop-and-mobile"
+    },
+    {
+     "name": "雲端背景執行",
+     "icon": "☁️",
+     "zh": "任務在雲端跑，手機鎖螢幕、沒網路也會繼續做；在手機開始的工作可以換到網頁或電腦接著看。",
+     "how": "送出任務後直接離開，回到 Cowork 清單點那個任務就能看進度。",
+     "when": "通勤前交辦、回來收成果",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://support.claude.com/en/articles/15520349-use-claude-cowork-on-web-desktop-and-mobile"
+    },
+    {
+     "name": "推播通知與中途確認",
+     "icon": "🔔",
+     "zh": "做完或需要你決定時（例如要不要寄出、選哪個方案）會推播到手機，等你點頭才繼續。",
+     "how": "第一次用時允許 Claude App 的通知；收到通知點進去回覆即可。",
+     "when": "重要信件、會花錢或對外的動作",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://support.claude.com/en/articles/13947068-assign-tasks-from-anywhere-in-claude-cowork"
+    },
+    {
+     "name": "排程任務",
+     "icon": "⏰",
+     "zh": "讓 Claude 定時自動做同一件事，例如每週一早上整理新聞做成簡報；在雲端跑，不用開著任何裝置。",
+     "how": "在 Cowork 直接說「每週一早上 7 點幫我…」，或在排程任務設定裡建立。",
+     "when": "每週固定的整理、報表、追蹤",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://claude.com/blog/cowork-web-mobile"
+    },
+    {
+     "name": "連接器（Connectors）",
+     "icon": "🔌",
+     "zh": "讓 Cowork 讀寫你連結的服務，例如 Google Drive、Gmail、行事曆，資料不用自己複製貼上。",
+     "how": "在 claude.ai 設定裡的連接器（Connectors）頁面連結需要的服務；之後在任務裡直接說「到我的 Drive 某資料夾…」。",
+     "when": "資料在雲端硬碟、信箱、行事曆裡的工作",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://claude.com/blog/cowork-web-mobile"
+    },
+    {
+     "name": "技能與外掛",
+     "icon": "🧠",
+     "zh": "你帳號裡啟用的技能（Skills）和外掛會自動套用，讓輸出符合你的格式與習慣。",
+     "how": "在 claude.ai 設定裡的技能（Skills）頁面啟用；Cowork 會在適合時自動用上。",
+     "when": "固定格式的文件、重複性的專業工作",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://support.claude.com/en/articles/15520349-use-claude-cowork-on-web-desktop-and-mobile"
+    },
+    {
+     "name": "電腦上的檔案與瀏覽器",
+     "icon": "💻",
+     "zh": "讀寫你電腦裡的資料夾、操作瀏覽器或軟體；需要電腦開著 Claude Desktop App。",
+     "how": "安裝 Claude Desktop 並保持開啟，再從手機交辦。你沒有電腦，這項先略過。",
+     "when": "處理只存在電腦裡的檔案",
+     "level": "進階",
+     "mobile": false,
+     "new": false,
+     "url": "https://support.claude.com/en/articles/13947068-assign-tasks-from-anywhere-in-claude-cowork"
+    }
+   ],
+   "examples": [
+    {
+     "icon": "📝",
+     "title": "會議逐字稿 → 會議紀錄",
+     "prompt": "把我上傳的會議逐字稿整理成會議紀錄：列出決議事項、待辦（負責人、期限）、未決問題，做成 Word 檔。",
+     "tip": "附上逐字稿檔案；也可以說「到我的 Google Drive 某資料夾讀最新那份」。"
+    },
+    {
+     "icon": "📊",
+     "title": "股票比較表",
+     "prompt": "研究這 5 檔股票（代號：____）最近 4 季的營收、營業利益、本益比，做成比較表 Excel，最後用 5 行重點說明差異。",
+     "tip": "只是研究整理，不構成投資建議；數字請它附出處。"
+    },
+    {
+     "icon": "🗞️",
+     "title": "每週新聞簡報（排程）",
+     "prompt": "每週一早上 7 點，整理上週「____ 產業」的重要新聞 10 則，每則 2 行摘要加連結，做成一頁簡報，完成後通知我。",
+     "tip": "排程在雲端跑，手機不用開著。"
+    },
+    {
+     "icon": "📣",
+     "title": "小店社群貼文",
+     "prompt": "幫我的在地小店（服務：____，地區：____）寫 10 篇社群貼文和 1 段 Google 商家介紹，語氣親切、每篇附 3 個 hashtag，整理成一份文件。",
+     "tip": "把店名、地區換成自己的；不想公開的資訊不要寫。"
+    },
+    {
+     "icon": "🧾",
+     "title": "收據整理記帳",
+     "prompt": "把我上傳的收據照片整理成記帳 Excel：日期、店家、金額、類別，最後一頁做每月各類別合計與圓餅圖。",
+     "tip": "一次上傳多張照片即可。"
+    },
+    {
+     "icon": "🧳",
+     "title": "旅遊行程規劃",
+     "prompt": "規劃 3 天 2 夜的____旅遊：每天行程、交通方式與時間、預算估算，做成可以列印的 PDF。",
+     "tip": "可以補充「有長輩同行、不要走太多路」等條件。"
+    },
+    {
+     "icon": "📚",
+     "title": "資料研究報告",
+     "prompt": "研究「____」這個主題，找 8 個可信來源，寫一份 2 頁的重點報告，每個論點標出處，做成 Word 檔。",
+     "tip": "題目越具體，結果越好。"
+    }
+   ],
+   "privacy": "Cowork 會把你給的資料送到雲端處理。公務、機密、個資、客戶資料等，先確認單位或公司規定允許再用；不確定就不要上傳。"
   }
  ]
 }
