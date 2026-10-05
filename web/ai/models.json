@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-09-28",
+ "checked_at": "2026-10-05",
  "vendors": [
   {
    "vendor": "Anthropic",
@@ -172,13 +172,82 @@
      ]
     },
     {
-     "name": "Claude Sonnet 5",
+     "name": "Claude Sonnet 5.5",
+     "id": "claude-sonnet-5-5",
+     "released": "2026-09-28",
+     "context": "1M tokens（最大輸出 128K）",
+     "price": "$2 / $10 每百萬 tokens；cache read $0.20（與 Sonnet 5 同價，官方稱每個任務成本最多低 30%）",
+     "tier": "balanced",
+     "legacy": false,
+     "best_for": [
+      "範圍明確的日常工作",
+      "修 bug",
+      "做文件、簡報、試算表"
+     ],
+     "strengths": [
+      "速度與智慧的最佳平衡（官方描述）",
+      "比 Sonnet 5 快 30% 以上，多數基準只落後 Opus 5.5 幾分",
+      "預設 effort 為 high"
+     ],
+     "benchmarks": [
+      {
+       "name": "Terminal-Bench 4.0",
+       "score": "70.6%",
+       "source": "https://www.anthropic.com/claude-sonnet-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "GDPval-AA v2.1",
+       "score": "1844 (Elo)",
+       "source": "https://www.anthropic.com/claude-sonnet-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "AA-Briefcase v1.1",
+       "score": "1811 (Elo)",
+       "source": "https://www.anthropic.com/claude-sonnet-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Humanity's Last Exam（with tools）",
+       "score": "64.5%",
+       "source": "https://www.anthropic.com/claude-sonnet-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "OSWorld 2.1 (partial)",
+       "score": "80.1%",
+       "source": "https://www.anthropic.com/claude-sonnet-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "FrontierCode 1.1 (Main, max)",
+       "score": "46.2%",
+       "source": "https://www.anthropic.com/claude-sonnet-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "CursorBench 4.0",
+       "score": "55.5%",
+       "source": "https://www.anthropic.com/claude-sonnet-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Chartography（no tools）",
+       "score": "61.6%",
+       "source": "https://www.anthropic.com/claude-sonnet-5-5",
+       "kind": "官方"
+      }
+     ]
+    },
+    {
+     "name": "Claude Sonnet 5（舊款）",
      "id": "claude-sonnet-5",
      "released": "2026-06-30",
      "context": "1M tokens（最大輸出 128K）",
      "price": "$2 / $10 每百萬 tokens；cache read $0.20（官方文件；原為推出優惠價，官方公告稱已轉為常態）",
-     "tier": "balanced",
-     "legacy": false,
+     "tier": "legacy",
+     "legacy": true,
      "best_for": [
       "多步驟軟體工程",
       "企業自動化流程",
@@ -186,9 +255,8 @@
       "代理式搜尋與工具呼叫"
      ],
      "strengths": [
-      "速度與智慧的最佳平衡（官方描述）",
-      "延遲快",
-      "Sonnet 4.6 的直接升級版"
+      "官方已列為 Legacy（仍可用），建議改用 Sonnet 5.5",
+      "速度與智慧的最佳平衡（官方描述）"
      ],
      "benchmarks": [
       {
@@ -237,6 +305,7 @@
       "大量、簡單的處理工作"
      ],
      "strengths": [
+      "官方退役承諾日期：不早於 2026-10-15，之後可能下架，長期用途請改 Sonnet 5.5",
       "目前陣容中最快",
       "接近前沿的寫程式能力、成本低",
       "不支援 effort 參數，用 extended thinking"
@@ -480,9 +549,9 @@
   {
    "need": "速度和能力平衡",
    "icon": "⚖️",
-   "claude": "Claude Sonnet 5",
+   "claude": "Claude Sonnet 5.5",
    "codex": "GPT-6 Sol",
-   "why": "比旗艦便宜很多、速度快"
+   "why": "比旗艦便宜很多、速度快；Sonnet 5.5 多數基準接近 Opus 5.5"
   }
  ],
  "charts": [
@@ -490,7 +559,7 @@
    "title": "Terminal-Bench 4.0：在終端機裡寫程式完成任務",
    "unit": "%",
    "higher_better": true,
-   "note": "同一張表：Anthropic 在 Opus 5.5 公告中的對照（OpenAI 分數由 Anthropic 測得）；Fable 5.1 來自其官方公告。",
+   "note": "同一張表：Anthropic 在 Opus 5.5 公告中的對照（OpenAI 分數由 Anthropic 測得）；Fable 5.1 來自其官方公告。 Sonnet 5.5 來自其官方公告（同測驗同版本）。",
    "rows": [
     [
      "Claude Opus 5.5",
@@ -511,6 +580,11 @@
      "GPT-5.6 Sol（舊款）",
      "OpenAI",
      37.3
+    ],
+    [
+     "Claude Sonnet 5.5",
+     "Anthropic",
+     70.6
     ]
    ]
   },
@@ -546,7 +620,7 @@
    "title": "GDPval-AA v2.1：真實職場知識工作（Elo 分數）",
    "unit": "",
    "higher_better": true,
-   "note": "只列同一版本（v2.1）的分數，來源為 Anthropic 公告對照表。",
+   "note": "只列同一版本（v2.1）的分數，來源為 Anthropic 公告對照表。 Sonnet 5.5 來自其官方公告。",
    "rows": [
     [
      "Claude Opus 5.5",
@@ -562,6 +636,11 @@
      "GPT-6 Astra",
      "OpenAI",
      1542
+    ],
+    [
+     "Claude Sonnet 5.5",
+     "Anthropic",
+     1844
     ]
    ]
   }
@@ -576,6 +655,7 @@
   "OpenAI API 價格與 1.05M context 來自第三方（Yotta Labs、liteLLM 等）轉述，未能讀取 OpenAI 官方定價頁。Codex 內的 context 設定（272K / 872K）與 API 上限不同。",
   "GPT-5.3-Codex-Spark 據第三方（releasebot）已於 2026-09-14 停用；GPT-5.5 將於 2026-10-14 自 ChatGPT/Codex 退役——皆未經 OpenAI 原文核對。",
   "GPT-6 Astra 的 ARC-AGI-3 99.9% 是 OpenAI 自家 harness 結果（標準 harness 約 62.7%），爭議大，未收錄。",
-  "2026-09-28 週檢：兩家都沒有新模型或退役公告。Opus 5.5 新增 Artificial Analysis 第三方分數（Intelligence Index 58、自測 Terminal-Bench 4.0 59.6%，與官方 66.4% 測法不同，不放進同一張圖）；該網站被 egress 擋住，數字取自搜尋結果摘要，未直接讀原文。"
+  "2026-09-28 週檢：兩家都沒有新模型或退役公告。Opus 5.5 新增 Artificial Analysis 第三方分數（Intelligence Index 58、自測 Terminal-Bench 4.0 59.6%，與官方 66.4% 測法不同，不放進同一張圖）；該網站被 egress 擋住，數字取自搜尋結果摘要，未直接讀原文。",
+  "2026-10-05 週檢：新增 Claude Sonnet 5.5（2026-09-28，官方文件與公告），Sonnet 5 改列舊款；Haiku 4.5 官方退役承諾日期為不早於 2026-10-15。OpenAI DevDay 2026 據搜尋摘要推出 GPT-6 Astra Ultrafast（Pro 500／Enterprise），openai.com 被 egress 擋住、未讀原文，未列為獨立模型。Sonnet 5.5 公告中 Sonnet 5 的 Terminal-Bench 4.0 為 10.3%（官方原文數字）。"
  ]
 }

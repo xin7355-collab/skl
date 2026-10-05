@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-09-28",
+ "checked_at": "2026-10-05",
  "products": [
   {
    "product": "Claude Code",
@@ -174,7 +174,7 @@
      "name": "/code-review、/security-review",
      "icon": "🔍",
      "zh": "自動審查程式的 bug 與資安問題，列出嚴重程度。",
-     "how": "輸入 /code-review 或說「幫我審查這次修改有沒有 bug」。",
+     "how": "輸入 /code-review 或說「幫我審查這次修改有沒有 bug」。想看更多或更少問題，可加 --max-findings 數字（或 all），2026-10-02 起支援。",
      "when": "推上去之前、合併之前",
      "level": "入門",
      "mobile": true,
