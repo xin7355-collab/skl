@@ -313,6 +313,9 @@
   "ecc/skills/data-scraper-agent": "backend",
   "ecc/skills/repo-scan": "dev",
   "ecc/skills/search-first": "method",
-  "ecc/skills/verification-loop": "method"
+  "ecc/skills/verification-loop": "method",
+  "community/skills/oil-ui": "web",
+  "community/skills/hairline-create": "web",
+  "community/skills/live-panel": "media"
  }
 }

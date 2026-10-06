@@ -75,5 +75,13 @@
       "ecc/skills/data-scraper-agent",
       "ecc/skills/error-handling"
     ]
+  },
+  "visual": {
+    "desc": "視覺設計（社群精選）：介面設計與評審、會轉動的線條插圖、動態架構圖影片",
+    "skills": [
+      "community/skills/oil-ui",
+      "community/skills/hairline-create",
+      "community/skills/live-panel"
+    ]
   }
 }

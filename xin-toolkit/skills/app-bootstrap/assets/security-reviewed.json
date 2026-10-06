@@ -1,0 +1,50 @@
+{
+ "_說明": "掃描 FAIL 但逐行人工審查為誤判的技能。sha256 是內容指紋（bootstrap_app.py hash <路徑>），技能有任何改動就失效、要重新審查；categories 是審查過的問題類別。",
+ "skills": {
+  "community/skills/oil-ui": {
+   "sha256": "7b2d620fdeeb3bfed97e38f2389acb922ba45bab800d457ee7bd6c77adb5391a",
+   "categories": [
+    "CMD-INJECT"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "shoot.mjs 只啟動本機 Chrome／ffmpeg 截圖錄影；自動更新與推銷腳本已移除（2026-10-06）"
+  },
+  "community/skills/hairline-create": {
+   "sha256": "f186a8dadab8e2d99b12b60a110a97ca2fc5138df0d47f1f4ea67f40c5debbcb",
+   "categories": [
+    "CMD-INJECT",
+    "CODE-EXEC"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "命中的是正規表達式 .exec() 與本機 node --check；預覽時 npm install playwright-core@1 到快取（2026-10-06）"
+  },
+  "community/skills/live-panel": {
+   "sha256": "aa3e9b0c45c392edf95cda72e0d7551b175888e8706f0c28fe7020ac92455bdc",
+   "categories": [
+    "CODE-EXEC",
+    "FS-ABUSE",
+    "OBFUSCATION"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "eval 是在本機 headless Chrome 頁面內執行（DevTools 管線）、base64 是截圖、rmtree 只刪自己的暫存資料夾（2026-10-06）"
+  },
+  "superpowers/skills/brainstorming": {
+   "sha256": "4a210045db535ffcb86cbc978aa9b8a782e218592e7ff65ab086467b80ff87cb",
+   "categories": [
+    "CMD-INJECT",
+    "CODE-EXEC"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "server.cjs 的 exec 只在使用者設定 BRAINSTORM_OPEN_CMD 時開瀏覽器（2026-09-24）"
+  },
+  "superpowers/skills/writing-skills": {
+   "sha256": "5c1e1bcab7b97349563f4bde413f62f9304bdf10ed96d916f77490d03c1cb25d",
+   "categories": [
+    "CMD-INJECT",
+    "CODE-EXEC"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "render-graphs.js 用 execFileSync 呼叫 graphviz 產生圖（2026-09-24）"
+  }
+ }
+}

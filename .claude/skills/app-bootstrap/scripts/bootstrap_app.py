@@ -18,6 +18,7 @@
 
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import shutil
@@ -34,6 +35,9 @@ ALWAYS = ["xin-toolkit/skills/app-guardrails-audit"]
 MANIFEST = ".skl-vendor.json"
 MAX_FILE_BYTES = 2 * 1024 * 1024  # 技能裡不該有大檔；有的話多半是誤放的資料，不複製。
 AUDITOR_REL = "engineering/skills/skill-security-auditor/scripts/skill_security_auditor.py"
+# 人工審查過的誤判清單：掃描 FAIL 但逐行看過是誤判的技能（例如正規表達式的 .exec()、驅動本機瀏覽器）。
+# 用內容指紋綁定：技能有任何一個檔案改變，指紋就對不上，會重新被擋，必須再審一次。
+REVIEWED_REL = "xin-toolkit/skills/app-bootstrap/assets/security-reviewed.json"
 HOOK_REL = os.path.join(".claude", "hooks", "skl-session-start.sh")
 HOOK_CMD = '"$CLAUDE_PROJECT_DIR"/.claude/hooks/skl-session-start.sh'
 
@@ -118,6 +122,36 @@ def security_scan(src, source_root=REPO_ROOT, auditor=None):
     return verdict, ("、".join(cats) if cats else "")
 
 
+def tree_hash(src):
+    """技能資料夾的內容指紋（路徑＋內容，略過與複製時相同的雜檔），用來確認「審查的就是這一版」。"""
+    h = hashlib.sha256()
+    for root, dirs, files in os.walk(src):
+        dirs[:] = sorted(d for d in dirs if d not in {"__pycache__"})
+        for n in sorted(files):
+            if n == ".DS_Store" or n.endswith(".pyc"):
+                continue
+            p = os.path.join(root, n)
+            h.update(os.path.relpath(p, src).replace(os.sep, "/").encode() + b"\0")
+            with open(p, "rb") as f:
+                h.update(hashlib.sha256(f.read()).digest())
+    return h.hexdigest()
+
+
+def reviewed_ok(rel, src, detail, source_root=REPO_ROOT):
+    """FAIL 的技能若在人工審查清單、指紋相同、且這次的問題類別都審查過，回傳審查說明；否則 None。"""
+    try:
+        with open(os.path.join(source_root, REVIEWED_REL), encoding="utf-8") as f:
+            entry = json.load(f).get("skills", {}).get(rel.strip("/"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not entry or entry.get("sha256") != tree_hash(src):
+        return None
+    cats = {c for c in detail.split("、") if c}
+    if not cats <= set(entry.get("categories", [])):
+        return None
+    return entry.get("note", "已人工審查")
+
+
 def install_hook(target, res):
     """安裝 SessionStart hook；合併既有 .claude/settings.json，不覆蓋使用者原本的設定。"""
     settings_path = os.path.join(target, ".claude", "settings.json")
@@ -190,6 +224,9 @@ def install(target, pack_names, force=False, dry_run=False, write_claude_md=True
             continue
         if scan:
             verdict, detail = security_scan(src, source_root, auditor)
+            note = reviewed_ok(rel, src, detail, source_root) if verdict == "FAIL" else None
+            if note:
+                verdict, detail = "WARN", f"掃描 FAIL 為誤判，已人工審查：{note}"
             if verdict in ("FAIL", "ERROR"):
                 res["failed"].append((name, f"安全掃描未通過（{verdict}：{detail}），沒有安裝。"
                                             "確認安全後可加 --no-security-scan 強制安裝"))
@@ -387,6 +424,28 @@ def selftest():
         r, code = install(tgt3, ["one"], source_root=src, packs=fake, extra_skills=["a/skills/evil"])
         check(code == 1 and any(n == "evil" and "FAIL" in w for n, w in r["failed"]), "安全掃描 FAIL 的技能不安裝")
         check(not os.path.exists(os.path.join(tgt3, ".claude/skills/evil")), "FAIL 的技能確實沒有被複製")
+        # 人工審查清單：指紋相同且類別都審過 → 改列提醒照裝；內容一改或多出新類別 → 照樣擋
+        rv = os.path.join(src, REVIEWED_REL)
+        os.makedirs(os.path.dirname(rv), exist_ok=True)
+        evil_src = os.path.join(src, "a/skills/evil")
+        def write_rv(cats, sha):
+            with open(rv, "w") as f:
+                json.dump({"skills": {"a/skills/evil": {"sha256": sha, "categories": cats, "note": "測試"}}}, f)
+        for n in ("rv4", "rv5", "rv6"):
+            os.makedirs(os.path.join(d, n))
+        write_rv(["NET-EXFIL"], tree_hash(evil_src))
+        rr, _ = install(os.path.join(d, "rv4"), [], source_root=src, packs=fake, extra_skills=["a/skills/evil"])
+        check("evil" in rr["installed"] and any(n == "evil" and "人工審查" in w for n, w in rr["warnings"]),
+              "審查過且內容沒變的 FAIL 技能改列提醒照裝")
+        write_rv(["CMD-INJECT"], tree_hash(evil_src))
+        rr, _ = install(os.path.join(d, "rv5"), [], source_root=src, packs=fake, extra_skills=["a/skills/evil"])
+        check(any(n == "evil" for n, _ in rr["failed"]), "出現沒審查過的問題類別照樣擋")
+        write_rv(["NET-EXFIL"], tree_hash(evil_src))
+        with open(os.path.join(evil_src, "SKILL.md"), "a") as f:
+            f.write("changed\n")
+        rr, _ = install(os.path.join(d, "rv6"), [], source_root=src, packs=fake, extra_skills=["a/skills/evil"])
+        check(any(n == "evil" for n, _ in rr["failed"]), "審查後內容被改過（指紋不同）照樣擋")
+        os.remove(rv)
         check(any(n == "beta" for n, _ in r["warnings"]) and "beta" in r["installed"], "WARN 的技能照裝但列出提醒")
         r2, _ = install(tgt3, [], source_root=src, packs=fake, extra_skills=["a/skills/evil"], scan=False)
         check("evil" in r2["installed"], "--no-security-scan 可強制安裝")
@@ -446,8 +505,13 @@ def main(argv=None):
     u.add_argument("--no-security-scan", action="store_true")
     u.add_argument("--no-hook", action="store_true")
     sub.add_parser("selftest", help="離線自我測試")
+    hp = sub.add_parser("hash", help="印出技能資料夾的內容指紋（加進 security-reviewed.json 用）")
+    hp.add_argument("path")
     args = ap.parse_args(argv)
 
+    if args.cmd == "hash":
+        print(tree_hash(args.path))
+        return 0
     if args.cmd == "selftest":
         return selftest()
     if args.cmd == "catalog":

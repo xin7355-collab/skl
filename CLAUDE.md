@@ -73,6 +73,10 @@
     繁中翻譯（Google 免費端點，熱門清單部署時預翻）、專案類型判斷與「參考它做我的 App」提示。
   - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
     使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
+  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（oil-ui、hairline-create、live-panel，MIT）；來源、版本與修改
+    記在 `community/README.md`（oil-ui 已移除自動更新與推銷）。組合 `visual`。
+  - `xin-toolkit/skills/app-bootstrap/assets/security-reviewed.json`：掃描 FAIL 但人工審查為誤判的技能清單，
+    以內容指紋（`bootstrap_app.py hash <路徑>`）綁定；技能一改就失效、要重審。不要為了「裝得上」隨便加。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。
 - 需要的 Secrets：無（選用 `SKL_READ_TOKEN`：唯讀 Token，讓每週報告能掃私人 repo）。
 - 部署在哪：網頁 https://xin7355-collab.github.io/skl/ （`Deploy web page` 工作流）；
