@@ -17,6 +17,7 @@
 環境變數 GITHUB_TOKEN（選用）：用 HTTP 標頭傳，不放網址。
 """
 
+import argparse
 import datetime as dt
 import json
 import os
@@ -154,9 +155,12 @@ def build(fetch, prev, now, sleep=time.sleep):
 def main(argv):
     if argv[1:2] == ["selftest"]:
         return selftest()
-    args = dict(zip(argv[1::2], argv[2::2]))
-    out = args.get("--out", "trending.json")
-    prev = load_prev(args.get("--prev"))
+    ap = argparse.ArgumentParser(description="收集 GitHub 熱門專案，產生 Repo X-Ray 的 trending.json")
+    ap.add_argument("--out", default="trending.json", help="輸出路徑")
+    ap.add_argument("--prev", default="", help="上一份 trending.json（網址或路徑），用來算竄升與失敗時沿用")
+    a = ap.parse_args(argv[1:])
+    out = a.out
+    prev = load_prev(a.prev)
     token = os.environ.get("GITHUB_TOKEN", "")
     now = dt.datetime.now(dt.timezone.utc)
     data, failed = build(lambda u: http_json(u, token), prev, now)
