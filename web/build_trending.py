@@ -39,6 +39,7 @@ LISTS = [
     {"id": "skills", "title": "Claude／Agent 技能", "desc": "名稱或描述含 claude skills", "q": "claude skills in:name,description,topics", "per": 20},
 ]
 KEEP = ("full_name", "description", "stargazers_count", "language", "pushed_at", "created_at", "size", "html_url")
+TR_URL = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-TW&dt=t&q="
 SEARCH_GAP = 2.5  # 有 Token 時搜尋上限每分鐘 30 次；保守間隔，避免連續請求被擋
 
 
@@ -77,6 +78,79 @@ def http_json(url, token, tries=4):
             if i == tries - 1:
                 raise
             time.sleep(2 ** (i + 1))
+
+
+def is_zh(t):
+    n = sum(1 for c in t if "\u3400" <= c <= "\u9fff")
+    return n > 0 and n / max(1, len(t.replace(" ", ""))) > 0.3
+
+
+def google_translate(text, tries=3):
+    """免費的 Google 翻譯端點（不需金鑰）；失敗時指數退避重試。"""
+    for i in range(tries):
+        try:
+            req = urllib.request.Request(TR_URL + urllib.parse.quote(text), headers={"User-Agent": "skl-trending"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                d = json.load(r)
+            return "".join(seg[0] or "" for seg in d[0])
+        except Exception:
+            if i == tries - 1:
+                raise
+            time.sleep(2 ** (i + 1))
+
+
+def translate_lists(lists, prev, translate, sleep=time.sleep):
+    """把描述預先翻成繁中（description_zh），手機打開熱門推薦就不用再送翻譯請求。
+    上一份翻過的直接沿用；批次用換行串起來送，行數對不上就整批放棄（不配錯譯文）。
+    回傳翻譯失敗的筆數（不致命：失敗的顯示英文原文）。"""
+    known = {}
+    for l in (prev or {}).get("lists", []):
+        for it in l.get("items", []):
+            if it.get("description_zh"):
+                known[it.get("description", "")] = it["description_zh"]
+    todo = []
+    for l in lists:
+        for it in l["items"]:
+            d = (it.get("description") or "").replace("\n", " ").strip()
+            if d and not is_zh(d) and d not in known and d not in todo:
+                todo.append(d)
+    failed, batch, size, streak = 0, [], 0, 0
+
+    def flush():
+        nonlocal failed, batch, size, streak
+        if not batch:
+            return
+        # 連續兩批失敗多半是雲端 IP 被 Google 限流（429）：不再硬打，剩下的交給手機端即時翻譯
+        if streak >= 2:
+            failed += len(batch)
+            batch, size = [], 0
+            return
+        try:
+            out = translate("\n".join(batch)).split("\n")
+            if len(out) == len(batch):
+                known.update({a: b.strip() for a, b in zip(batch, out)})
+                streak = 0
+            else:
+                failed += len(batch)
+        except Exception as e:
+            failed += len(batch)
+            streak += 1
+            print(f"✗ 翻譯一批 {len(batch)} 筆失敗：{e}", file=sys.stderr)
+        batch, size = [], 0
+        sleep(1)
+
+    for d in todo:
+        if size + len(d) > 1800:
+            flush()
+        batch.append(d)
+        size += len(d) + 1
+    flush()
+    for l in lists:
+        for it in l["items"]:
+            d = (it.get("description") or "").replace("\n", " ").strip()
+            if d in known:
+                it["description_zh"] = known[d]
+    return failed
 
 
 def load_prev(src):
@@ -164,6 +238,7 @@ def main(argv):
     token = os.environ.get("GITHUB_TOKEN", "")
     now = dt.datetime.now(dt.timezone.utc)
     data, failed = build(lambda u: http_json(u, token), prev, now)
+    tr_failed = translate_lists(data["lists"], prev, google_translate) if data and not data.get("stale") else 0
     if data is None:
         print("✗ 全部清單都查不到，也沒有上一份資料可沿用；不產生 trending.json（網頁會改用即時查詢）。"
               "請到 Actions 看錯誤；若是 GitHub 暫時故障，下次排程會自動補上。", file=sys.stderr)
@@ -174,7 +249,11 @@ def main(argv):
     if len(failed) == len(LISTS):
         print(f"✗ 全部清單查詢失敗，已沿用上一份資料（{n} 筆，標為過期）。", file=sys.stderr)
         return 1
-    print(f"熱門清單：{len(data['lists'])} 份、{n} 筆" + (f"；{len(failed)} 份沿用舊資料：{', '.join(failed)}" if failed else ""))
+    print(f"熱門清單：{len(data['lists'])} 份、{n} 筆" + (f"；{len(failed)} 份沿用舊資料：{', '.join(failed)}" if failed else "")
+          + (f"；{tr_failed} 筆描述翻譯失敗（網頁會顯示英文或即時翻譯）" if tr_failed else ""))
+    if tr_failed:
+        # 翻譯是加分項，網頁會在手機上即時補翻，所以只留提示、不亮紅燈
+        print(f"::notice::熱門清單有 {tr_failed} 筆描述沒有預先翻成中文（多半是雲端 IP 被 Google 限流），網頁會在手機上即時翻譯")
     if failed:
         print(f"::warning::熱門清單有 {len(failed)} 份查詢失敗，已沿用上一份：{', '.join(failed)}")
     return 0
@@ -249,6 +328,36 @@ def selftest():
         check(load_prev(p) is None and load_prev(os.path.join(td, "nope")) is None and load_prev("") is None,
               "上一份壞掉或不存在 → 當作沒有")
     check(fill_dates("x{d3}", dt.date(2026, 3, 2)) == "x2026-02-27", "跨月日期正確")
+
+    sent = []
+
+    def fake_tr(text):
+        sent.append(text)
+        return "\n".join("譯" + x for x in text.split("\n"))
+    L = [{"items": [{"description": "Hello"}, {"description": "World"}, {"description": "已經是中文"}, {"description": ""}]}]
+    f = translate_lists(L, None, fake_tr, nosleep)
+    its = L[0]["items"]
+    check(f == 0 and its[0]["description_zh"] == "譯Hello" and its[1]["description_zh"] == "譯World", "描述預先翻成中文")
+    check("description_zh" not in its[2] and len(sent) == 1, "已是中文不送、多筆合成一批")
+    P = {"lists": [{"items": [{"description": "Hello", "description_zh": "舊譯"}]}]}
+    L2 = [{"items": [{"description": "Hello"}]}]
+    sent.clear()
+    translate_lists(L2, P, fake_tr, nosleep)
+    check(L2[0]["items"][0]["description_zh"] == "舊譯" and not sent, "上一份翻過的直接沿用，不再送")
+    L3 = [{"items": [{"description": "A"}, {"description": "B"}]}]
+    f3 = translate_lists(L3, None, lambda t: "只有一行", nosleep)
+    check(f3 == 2 and "description_zh" not in L3[0]["items"][0], "行數對不上整批放棄，不配錯譯文")
+    L4 = [{"items": [{"description": "A"}]}]
+    f4 = translate_lists(L4, None, lambda t: (_ for _ in ()).throw(urllib.error.URLError("x")), nosleep)
+    check(f4 == 1, "翻譯服務掛掉：回報失敗筆數、不中斷")
+    calls = []
+
+    def boom(t):
+        calls.append(t)
+        raise urllib.error.URLError("429")
+    L5 = [{"items": [{"description": ("w%d " % i) * 300} for i in range(5)]}]
+    f5 = translate_lists(L5, None, boom, nosleep)
+    check(f5 == 5 and len(calls) == 2, "連續兩批失敗就停手，不硬打（其餘交給手機）")
     print("\n自我測試" + ("全部通過" if ok else "有失敗"))
     return 0 if ok else 1
 

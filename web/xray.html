@@ -242,6 +242,11 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .fz input{accent-color:var(--cyan);width:16px;height:16px}
 .results .rfilter{display:block;width:calc(100% - 24px);margin:8px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:8px 10px;font-family:var(--mono);font-size:13px}
 .results .gain{color:var(--amber)}
+.tb{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--cyan);border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;vertical-align:1px}
+.tcard{margin-top:14px;border:1px solid var(--line);border-radius:4px;background:var(--panel-2);padding:12px 14px;font-size:13px;line-height:1.7}
+.tcard b.tn{font-size:15px;color:var(--amber)}
+.tcard .tk{color:var(--muted);font-family:var(--mono);font-size:11px;margin-right:6px}
+.orig{color:var(--muted);font-size:12px;margin-top:6px}
 .recent{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .recent a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .recent a i{font-style:normal;color:var(--muted)}
@@ -279,6 +284,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 </div>
 <div class="hint">貼網址 → 直接掃描；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。</div>
 <label class="fz"><input type="checkbox" id="fuzzy"> 🌀 模糊搜尋：中文自動加英文同義詞、拼錯也找得到、依相關度排序（一樣只用 1 次額度）</label>
+<label class="fz"><input type="checkbox" id="zh"> 🈯 描述翻成繁體中文（Google 翻譯，免費；只送公開的專案描述）</label>
 <div class="trend" id="trend"></div>
 <div class="navrow" id="navrow" hidden>
   <button class="ghost" id="back">← 回到搜尋結果</button>
@@ -314,9 +320,10 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     <h1 id="v-title">—</h1>
     <div class="desc" id="v-desc"></div>
     <div class="meta" id="v-meta"></div>
+    <div id="v-type"></div>
     <div id="v-quick"></div>
     <div id="v-live"></div>
-    <div class="navrow"><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
+    <div class="navrow"><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="refclaude">🧩 複製「參考它做我的 App」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
   </div>
 
   <section id="sec-preview">
@@ -379,6 +386,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
   <div class="vhead">
     <span class="vp" id="v-path"></span>
     <button id="v-mode" style="display:none">原始碼</button>
+    <button id="v-tr" style="display:none">🈯 中文</button>
     <button id="v-dl">下載</button>
     <a id="v-gh" href="#" target="_blank" rel="noopener">GitHub</a>
     <button id="v-close">關閉</button>
@@ -487,6 +495,121 @@ async function getText(url){
   });
   S.cache.set(url,v); return v;
 }
+
+/* ══ 翻譯：Google 翻譯的免費端點（不需金鑰）。只送公開的專案描述／README 文字。
+   - 獨立佇列一次一個請求＋指數退避，避免被當成濫用而封鎖。
+   - 譯文存 localStorage（最多 400 筆），同一段話第二次不再送出。
+   - 失敗不卡畫面：顯示原文並說明可以改用 Safari 的「aA → 翻譯」。 */
+const TR={key:"xray-tr-v1",max:400,url:"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-TW&dt=t&q="};
+let trMem=null;
+function trAll(){ if(trMem) return trMem; try{ trMem=JSON.parse(localStorage.getItem(TR.key)||"{}"); }catch(e){ trMem={}; } return trMem; }
+function trGet(t){ const h=trAll()[t]; return h?h.v:undefined; }
+function trPut(pairs){
+  const all=trAll(), now=Date.now();
+  pairs.forEach(p=>{ all[p[0]]={v:p[1],t:now}; });
+  const keys=Object.keys(all).sort((a,b)=>all[b].t-all[a].t);
+  keys.slice(TR.max).forEach(k=>delete all[k]);
+  try{ localStorage.setItem(TR.key,JSON.stringify(all)); }catch(e){ /* 空間不足：少了快取而已 */ }
+}
+/* 已經是中文（中日韓字占三成以上）就不翻，省請求 */
+function isZh(t){ const m=String(t).match(/[㐀-鿿]/g); return !!m && m.length/String(t).replace(/\s/g,"").length>0.3; }
+const trQueue=(()=>{ let p=Promise.resolve(); return fn=>{ const r=p.then(fn); p=r.catch(()=>{}); return r; }; })();
+async function trFetch(text,tries){
+  tries=tries||0;
+  let r;
+  try{ r=await fetch(TR.url+encodeURIComponent(text)); }
+  catch(e){ if(tries<3){ await sleep(500*Math.pow(2,tries)); return trFetch(text,tries+1); } throw new Error("連不到翻譯服務"); }
+  if((r.status===429||r.status>=500) && tries<3){ await sleep(800*Math.pow(2,tries)+Math.random()*300); return trFetch(text,tries+1); }
+  if(!r.ok) throw new Error("翻譯服務回 "+r.status);
+  const d=await r.json();
+  return (d[0]||[]).map(x=>x[0]||"").join("");
+}
+/* 一次翻一批：用換行串起來送（每批 ≤ 1800 字，網址才不會太長），回來再依換行拆開；
+   行數對不上就整批放棄（寧可顯示原文，也不要把 A 的譯文配到 B 上）。 */
+const trBad=new Set();   // 這次開啟頁面中翻譯失敗過的句子：不重送，直接顯示原文
+async function translateMany(texts){
+  const uniq=[...new Set(texts.map(t=>String(t||"").replace(/\s*\n\s*/g," ").trim()))]
+    .filter(t=>t && !isZh(t) && trGet(t)===undefined && !trBad.has(t));
+  let batch=[], len=0, failed=0;
+  const flush=async()=>{
+    if(!batch.length) return;
+    const b=batch; batch=[]; len=0;
+    try{
+      const out=(await trQueue(()=>trFetch(b.join("\n")))).split("\n");
+      if(out.length===b.length) trPut(b.map((t,i)=>[t,out[i].trim()]));
+      else{ failed+=b.length; b.forEach(t=>trBad.add(t)); S.trErr="譯文行數對不上"; }
+    }catch(e){ failed+=b.length; b.forEach(t=>trBad.add(t)); S.trErr=e.message; }
+  };
+  for(const t of uniq){
+    if(len+t.length>1800) await flush();
+    batch.push(t.slice(0,1800)); len+=t.length+1;
+  }
+  await flush();
+  return failed;
+}
+function zhOn(){ return $("zh").checked; }
+function zhOf(t){ const k=String(t||"").replace(/\s*\n\s*/g," ").trim(); return isZh(k)?k:trGet(k); }
+
+/* ══ 專案類型：很多 repo 沒寫清楚自己是什麼，先猜類型再說明「為什麼沒有網址、怎麼用」。
+   quickType 只看名稱／描述／主題（搜尋結果就能用，不耗額度）；deepType 再加上掃描到的檔案證據。 */
+const TYPES={
+  skills:{i:"🧠",n:"AI 技能包",what:"給 Claude Code／Codex 等 AI 代理用的技能說明書（SKILL.md），不是網站也不是 App。",
+    why:"它是放進 AI 工具裡用的文字指令，本來就不需要網址。",use:"把需要的技能資料夾複製到你 App 的 .claude/skills/，或請 Claude 用 app-bootstrap 幫你裝。"},
+  mcp:{i:"🔌",n:"MCP 伺服器",what:"讓 AI 連到外部服務（資料庫、網站、工具）的小程式。",
+    why:"它在背景跑、給 AI 呼叫，不是給人看的頁面。",use:"在 Claude 的連接器（Connectors）加入，或請 Claude Code 幫你的專案設定。"},
+  list:{i:"📚",n:"資源清單",what:"一份整理好的連結清單（awesome list），內容幾乎都在 README。",
+    why:"它本身就是一篇文章，直接看 README。",use:"按「看 README」，或請 Claude 幫你挑出適合你 App 的項目。"},
+  docs:{i:"📖",n:"教學／文件／電子書",what:"以 Markdown 文章為主的知識庫或教材。",
+    why:"內容就是文件；有些作者會另外架網站，但不一定。",use:"看 README 或資料夾裡的 .md，可以按「🈯 中文」翻譯，或請 Claude 摘要。"},
+  cli:{i:"⌨️",n:"命令列工具",what:"在電腦終端機打指令執行的工具，沒有畫面。",
+    why:"靠指令操作，不是網站；手機不能直接跑。",use:"放進 GitHub Actions 定時自動跑，或請 Claude Code 在雲端工作階段幫你執行。"},
+  lib:{i:"📦",n:"函式庫／套件",what:"給其他程式 import 的零件，不能單獨使用。",
+    why:"它是零件不是成品，所以沒有網址。",use:"在你的 App 裡安裝後呼叫；請 Claude 示範怎麼整合。"},
+  server:{i:"🖥️",n:"後端／伺服器",what:"要一台一直開著的主機（或雲端服務）才能跑的程式，例如 API、聊天機器人、資料服務。",
+    why:"要先部署到主機（Render、Fly.io、Cloudflare、自架）才會有網址；作者自己架的通常不公開。",use:"看 README 的部署段落；免費做法可改成 GitHub Actions 定時跑，或用 Cloudflare Workers。"},
+  ext:{i:"🧩",n:"瀏覽器擴充功能",what:"裝在 Chrome／Edge／Safari 裡的外掛。",
+    why:"它裝在瀏覽器裡，不是網站。",use:"電腦版 Chrome 可以安裝；iPhone 要 App Store 有 Safari 版本才行。"},
+  dotfiles:{i:"⚙️",n:"設定檔集合",what:"作者自己電腦或工具的設定（dotfiles）。",why:"純設定，沒有畫面。",use:"挑你需要的設定參考就好。"},
+  app:{i:"📱",n:"手機／桌面 App",what:"安裝型的應用程式。",why:"成品是安裝檔，不是網址。",use:"看 Release 區有沒有安裝檔；iPhone 通常要上架 App Store 才能裝。"},
+  web:{i:"🌐",n:"網站／前端",what:"在瀏覽器打開的網頁。",why:"沒有網址代表作者沒部署，或部署在別處（Vercel、自己的網域）。",use:"fork 後開 GitHub Pages 部署，或請 Claude 幫你部署。"},
+  data:{i:"🗃️",n:"資料集",what:"整理好的資料檔（CSV、JSON 等）。",why:"資料本身就是成品。",use:"下載檔案，或讓你的 App 直接讀取。"},
+  model:{i:"🤖",n:"AI 模型／研究程式",what:"訓練或執行 AI 模型的程式，通常需要顯示卡（GPU）。",
+    why:"多半要在有 GPU 的電腦或雲端跑，沒有現成網頁。",use:"找有沒有線上 Demo（Hugging Face Spaces）；手機只能用別人架好的。"}
+};
+function quickType(it){
+  const tp=(it.topics||[]).join(" ").toLowerCase();
+  const t=(it.full_name+" "+(it.description||"")+" "+tp).toLowerCase();
+  const has=re=>re.test(t);
+  if(has(/\bawesome\b|curated list|awesome-list/)) return "list";
+  if(has(/\bskills?\b/) && has(/claude|agent|codex|cursor|copilot/)) return "skills";
+  if(has(/\bmcp\b|model context protocol/)) return "mcp";
+  if(has(/browser[- ]extension|chrome[- ]extension|firefox[- ]add-?on|userscript/)) return "ext";
+  if(has(/dotfiles/)) return "dotfiles";
+  if(has(/\bdataset|\bdata set\b/)) return "data";
+  if(has(/tutorial|\bbook\b|\bcourse\b|roadmap|interview|cheat ?sheet|learn |guide\b|教程|教學/)) return "docs";
+  if(has(/\bcli\b|command[- ]line|terminal tool/)) return "cli";
+  if(has(/machine-learning|deep-learning|\bdiffusion\b|\btransformers?\b|fine-?tun|\btraining\b/)) return "model";
+  if(has(/self-host|\bserver\b|\bbackend\b|\bapi\b|\bbot\b|discord|telegram/)) return "server";
+  if(has(/android|\bios\b|flutter|react-native|desktop app|electron|tauri/)) return "app";
+  if(has(/website|web app|webapp|frontend|dashboard|\bnextjs\b|\bvue\b|\breact\b|\bsvelte\b/)) return "web";
+  if(has(/library|framework|\bsdk\b|\bpackage\b|\bplugin\b/)) return "lib";
+  if(!it.language || it.language==="Markdown") return "docs";
+  return null;
+}
+function deepType(res,pkg,repo,readme){
+  const h=n=>res.hits.has(n);
+  if(res.skillMd) return "skills";
+  if(/model context protocol|\bmcp server\b/i.test(readme||"") || (pkg && pkg.deps && pkg.deps["@modelcontextprotocol/sdk"])) return "mcp";
+  if(h("Electron")||h("Tauri")||h("Expo / React Native")||h("原生 Android 專案")||h("原生 iOS 專案")) return "app";
+  const md=(res.exts.get("md")||0)+(res.exts.get("mdx")||0);
+  if(res.files>2 && md/res.files>0.6) return quickType(repo)==="list" ? "list" : "docs";
+  if(pkg && pkg.bin) return "cli";
+  const q=quickType(repo);
+  if(q) return q;
+  if(["Express","Fastify","Hono","NestJS","Koa","FastAPI","Django","Flask"].some(h) && !res.indexHtml) return "server";
+  return null;
+}
+function typeBadge(id){ const t=TYPES[id]; return t?'<span class="tb">'+t.i+' '+esc(t.n)+'</span>':""; }
 
 /* ══════════════════════════════════════════════════════════════
    1. 網址解析
@@ -698,6 +821,7 @@ async function scanTree(nodes){
         if(!res.indexHtml || depth(path)<depth(res.indexHtml)) res.indexHtml=path;
       } else if(/\.html?$/.test(low)) res.htmlCount++;
       if(!res.readme && /(^|\/)readme(\.md|\.markdown|\.txt)?$/.test(low)) res.readme=path;
+      if(/(^|\/)skill\.md$/.test(low)) res.skillMd=(res.skillMd||0)+1;   // AI 技能包的最強證據
       if(res.docs.length<80 && /\.(md|markdown|mdx|txt|rst|adoc)$/.test(low)
          && low.indexOf("node_modules/")<0) res.docs.push(path);
       if(res.imgs.length<30 && /\.(png|jpe?g|gif|webp|svg|avif)$/.test(low)
@@ -1167,7 +1291,7 @@ async function run(target,fromHistory){
     }
 
     render(res,pkg,repo,loc,ref,live,{pwa:pwa,appId:appId,envKeys:envKeys,langs:langs,
-                                      release:release,outline:readmeOutline(readmeTxt),cmds:cmds});
+                                      release:release,outline:readmeOutline(readmeTxt),cmds:cmds,readme:readmeTxt});
     say("完成 · "+res.files.toLocaleString()+" 個檔案 · "+res.hits.size+" 項指紋"+
         (tree.truncated?" · 註：檔案樹過大已被 GitHub 截斷":""),"✓");
   }catch(e){
@@ -1181,9 +1305,20 @@ async function run(target,fromHistory){
 function render(res,pkg,repo,loc,ref,live,x){
   x=x||{};
   const v=verdict(res,pkg,repo);
-  $("v-title").innerHTML="這是一個 <em>"+esc(v.title)+"</em> 的"+esc(v.kind)+
-                         (v.tail?"，"+esc(v.tail):"")+"。";
-  $("v-desc").textContent=repo.description||"（這個 repo 沒有寫描述）";
+  const dt=deepType(res,pkg,repo,x.readme), T=TYPES[dt];
+  // 框架指紋認不出來時（「未知類型」「函式庫／工具」），改用類型判斷的白話說法
+  if(T && (v.title.indexOf("未知類型")>-1 || v.kind==="函式庫 / 工具" || v.kind==="專案"))
+    // 括號只補有資訊量的技術組合；只是語言名稱（Python、Python 專案）就不重複講
+    $("v-title").innerHTML="這是一個 <em>"+T.i+" "+esc(T.n)+"</em>"+
+      (v.title.indexOf("未知類型")>-1 || v.title===repo.language || /專案$/.test(v.title) ? "" : "（"+esc(v.title)+"）")+"。";
+  else
+    $("v-title").innerHTML="這是一個 <em>"+esc(v.title)+"</em> 的"+esc(v.kind)+(v.tail?"，"+esc(v.tail):"")+"。";
+  $("v-type").innerHTML = T ? '<div class="tcard"><b class="tn">'+T.i+' '+esc(T.n)+'</b>'+
+    '<div><span class="tk">是什麼</span>'+esc(T.what)+'</div>'+
+    '<div><span class="tk">沒網址？</span>'+esc(T.why)+'</div>'+
+    '<div><span class="tk">怎麼用</span>'+esc(T.use)+'</div></div>' : "";
+  S.descRaw=repo.description||"";
+  paintDesc();
 
   const meta=[];
   meta.push(["repo",loc.owner+"/"+loc.repo]);
@@ -1201,7 +1336,7 @@ function render(res,pkg,repo,loc,ref,live,x){
   $("v-live").innerHTML=live.length
     ? live.map(l=>'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">▸ '+
         esc(l.url.replace(/^https?:\/\//,""))+' <s>'+esc(l.why)+'</s></a>').join("")
-    : '<div class="hint" style="margin-top:14px">'+esc(noSiteReason(res))+'</div>';
+    : '<div class="hint" style="margin-top:14px">'+esc(T?"沒有線上網址："+T.why:noSiteReason(res))+'</div>';
 
   // 重點檔案快捷：最常想直接打開的就這幾支
   {
@@ -1396,7 +1531,8 @@ function render(res,pkg,repo,loc,ref,live,x){
       '<div class="bar-mini"><i style="width:'+Math.round(e[1]/max*100)+'%"></i></div></div>').join("");
 
   $("out").classList.add("on");
-  S.last={full:loc.owner+"/"+loc.repo,title:v.title,kind:v.kind,desc:repo.description||""};
+  S.last={full:loc.owner+"/"+loc.repo,title:v.title,kind:v.kind,desc:repo.description||"",
+          type:T?T.n:"",license:(repo.license&&repo.license.spdx_id)||"未標示"};
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1566,17 +1702,50 @@ function paintResults(){
 /* 只重畫清單列：篩選框打字時不重建輸入框，鍵盤才不會一直收起來 */
 function paintRows(){
   const items=S.results||[], idx=sortedIdx();
-  $("rrows").innerHTML = idx.length ? idx.map(i=>{
-    const it=items[i], pd=perDay(it);
+  const zh=zhOn(), missing=[];
+  $("rrows").innerHTML = idx.length ? idx.map((i,n)=>{
+    const it=items[i], pd=perDay(it), d=it.description||"";
+    let shown=d;
+    if(zh && d){
+      const t=it.description_zh||zhOf(d);
+      if(t!==undefined) shown=t; else if(n<40) missing.push(d);
+    }
     return '<button data-i="'+i+'"><div class="rr"><div class="rmain">'+
       '<span class="rn">'+esc(it.full_name)+'</span>'+
-      '<div class="rd">'+esc(it.description||"（沒有描述）")+'</div>'+
+      '<div class="rd">'+typeBadge(quickType(it))+esc(shown||"（沒有描述）")+'</div>'+
       '<div class="rd" style="font-family:var(--mono);font-size:10px">★ '+Number(it.stargazers_count).toLocaleString()+
       (it.gain_per_day?' <span class="gain">▲ +'+fmtPerDay(it.gain_per_day)+'★/天（最近）</span>':'')+
       (pd?' · ≈'+fmtPerDay(pd)+'★/天':'')+
       (it.language?' · '+esc(it.language):'')+' · 更新 '+esc(String(it.pushed_at||"").slice(0,10))+'</div></div>'+
       '<div class="rz"><b>'+fmtSize(it.size)+'</b><span>檔案大小</span></div></div></button>';
   }).join("") : '<button disabled style="color:var(--muted)">已載入的結果中沒有符合「'+esc(S.filter)+'」的，清空篩選或換個詞</button>';
+  // 畫面上（前 40 筆）還沒翻的描述一次送出；每段話只試一次，失敗就留原文，不會無限重試
+  S.trTried=S.trTried||new Set();
+  const todo=missing.filter(t=>!S.trTried.has(t));
+  if(todo.length && !S.trBusy){
+    todo.forEach(t=>S.trTried.add(t)); S.trBusy=true;
+    translateMany(todo).then(f=>{
+      S.trBusy=false;
+      if(f) toast("有 "+f+" 筆描述翻譯失敗，先顯示原文（可用 Safari「aA → 翻譯」）");
+      if($("rrows")) paintRows();
+    });
+  }
+}
+/* 專案描述：開中文時顯示譯文＋原文；翻譯失敗就顯示原文並說明替代做法 */
+async function paintDesc(){
+  const raw=S.descRaw;
+  if(!raw){ $("v-desc").textContent="（這個 repo 沒有寫描述）"; return; }
+  if(!zhOn() || isZh(raw)){ $("v-desc").textContent=raw; return; }
+  let zh=zhOf(raw);
+  if(zh===undefined){
+    $("v-desc").textContent=raw+"（翻譯中…）";
+    await translateMany([raw]);
+    if(S.descRaw!==raw) return;           // 翻譯回來前已經換到別的專案
+    zh=zhOf(raw);
+  }
+  $("v-desc").innerHTML = zh===undefined
+    ? esc(raw)+'<div class="orig">翻譯暫時失敗（'+esc(S.trErr||"")+'），可用 Safari 網址列「aA → 翻譯成中文」。</div>'
+    : esc(zh)+'<div class="orig">原文：'+esc(raw)+'</div>';
 }
 
 /* ══ 熱門推薦：部署時每天由工作流收集成 trending.json（同網站的靜態檔，讀它不耗 GitHub 額度）。
@@ -1763,6 +1932,8 @@ async function openFile(path){
   if(txt===null){ $("v-body").textContent="讀不到這個檔案。可能已被改名、或不在這個分支上。"; return; }
   S.cur={path:path,txt:txt,rawBase:rawBase,md:/\.(md|markdown|mdx)$/i.test(path)};
   $("v-mode").style.display = S.cur.md ? "" : "none";
+  $("v-tr").style.display = S.cur.md ? "" : "none";
+  $("v-tr").textContent="🈯 中文"; S.zhView=false;
   S.rendered = S.cur.md;          // markdown 預設用渲染模式
   paintFile();
 }
@@ -1774,7 +1945,7 @@ function paintFile(){
     $("v-mode").textContent="原始碼";
     const dir=c.path.indexOf("/")>-1 ? c.path.slice(0,c.path.lastIndexOf("/")) : "";
     $("v-body").className="vbody md";
-    $("v-body").innerHTML=mdToHtml(c.txt.slice(0,CAP),dir,c.rawBase);
+    $("v-body").innerHTML=mdToHtml((S.zhView&&c.zh?c.zh:c.txt).slice(0,CAP),dir,c.rawBase);
   }else{
     $("v-mode").textContent="渲染檢視";
     $("v-body").className="vbody";
@@ -1784,6 +1955,27 @@ function paintFile(){
       : (c.txt||"（空檔案）");
   }
   $("v-body").scrollTop=0;
+}
+
+/* README 翻譯：只翻文字行（程式碼區塊、純連結／符號行原樣保留），最多 400 行，免得大文件送太多請求 */
+async function translateDoc(){
+  const c=S.cur; if(!c||!c.md) return;
+  if(S.zhView){ S.zhView=false; $("v-tr").textContent="🈯 中文"; S.rendered=true; paintFile(); return; }
+  if(!c.zh){
+    const lines=c.txt.split("\n"); let code=false; const pick=[];
+    lines.forEach((l,i)=>{
+      if(/^\s*(```|~~~)/.test(l)){ code=!code; return; }
+      if(!code && /[A-Za-z]{3,}/.test(l) && !isZh(l) && pick.length<400) pick.push(i);
+    });
+    $("v-tr").textContent="翻譯中…"; $("v-tr").disabled=true;
+    const failed=await translateMany(pick.map(i=>lines[i]));
+    $("v-tr").disabled=false;
+    pick.forEach(i=>{ const t=zhOf(lines[i]); if(t!==undefined) lines[i]=t; });
+    c.zh=lines.join("\n");
+    if(failed) toast("有 "+failed+" 行翻譯失敗，保留原文");
+    if(pick.length>=400) toast("文件很長，只翻了前 400 行");
+  }
+  S.zhView=true; S.rendered=true; $("v-tr").textContent="原文"; paintFile();
 }
 
 function download(name,text){
@@ -1886,6 +2078,21 @@ $("recent").addEventListener("click",e=>{
   $("url").value=x.v;
   if(x.t==="q") search(false,x.v); else run(x.v);
 });
+$("v-tr").addEventListener("click",translateDoc);
+$("zh").addEventListener("change",()=>{
+  try{ localStorage.setItem("xray-zh",$("zh").checked?"1":"0"); }catch(e){}
+  if($("rrows")) paintRows();
+  if(S.descRaw!==undefined) paintDesc();
+});
+$("refclaude").addEventListener("click",()=>{
+  const l=S.last; if(!l) return;
+  copyText("我想參考 GitHub 專案 https://github.com/"+l.full+"（Repo X-Ray 判讀："+(l.type||l.title)+"；授權 "+l.license+"）"+
+    "來做我自己的 App。我用 iPhone、沒有電腦，App 放在 GitHub，用 GitHub Pages 和 GitHub Actions。請：\n"+
+    "1. 用白話說明它的核心做法（架構、用了哪些技術、資料從哪來）。\n"+
+    "2. 哪些部分能用免費資源做到（Pages 靜態網頁、Actions 排程），做不到的要怎麼替代。\n"+
+    "3. 依授權說明我能不能參考或複製，要保留哪些標示。\n"+
+    "4. 列出最小可行版本的步驟，然後直接在我的 repo 動手做。");
+});
 $("askclaude").addEventListener("click",()=>{
   const l=S.last; if(!l) return;
   copyText("請幫我分析 GitHub 專案 https://github.com/"+l.full+"（Repo X-Ray 判讀："+l.title+" 的"+l.kind+"）。"+
@@ -1925,6 +2132,8 @@ document.querySelectorAll("[data-s]").forEach(a=>a.addEventListener("click",e=>{
 
 paintRecent();
 try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}
+// 中文翻譯預設開；使用者關過就記住
+try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").checked=true; }
 (async function(){
   const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q"), t=p.get("t");
   await loadTrend();
