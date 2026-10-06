@@ -71,6 +71,8 @@
     熱門推薦由 `web/build_trending.py` 在 `Deploy web page`（每天 06:00 排程＋push）收集成 `trending.json`（不進 git）；
     另有模糊搜尋（同義詞＋OR 放寬＋本機重排）、結果內模糊篩選、成長速度（★/天）、
     繁中翻譯（Google 免費端點，熱門清單部署時預翻）、專案類型判斷與「參考它做我的 App」提示。
+    「我的 App」＋「App 顧問」：規則在 `web/advisor_rules.json`（推薦技能路徑必須存在，`web/check_advisor_rules.py` 檢查），
+    部署時複製 `.github/apps.json` 成 `apps.json`。新增 App 就加進 apps.json。
   - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
     使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
   - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（oil-ui、hairline-create、live-panel，MIT）；來源、版本與修改

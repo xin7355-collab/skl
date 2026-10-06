@@ -247,6 +247,17 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .tcard b.tn{font-size:15px;color:var(--amber)}
 .tcard .tk{color:var(--muted);font-family:var(--mono);font-size:11px;margin-right:6px}
 .orig{color:var(--muted);font-size:12px;margin-top:6px}
+.adv .sig{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px}
+.adv .rule{border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:4px;background:var(--panel);padding:10px 12px;margin-top:10px}
+.adv .rule b{color:var(--text);font-size:14px}
+.adv .rule p{margin:4px 0 8px;color:var(--muted);font-size:13px;line-height:1.6}
+.adv .sk{display:block;font-size:12px;margin:3px 0;color:var(--text)}
+.adv .sk code{color:var(--amber);font-family:var(--mono);font-size:11px}
+.adv .sk .ok{color:var(--cyan);font-family:var(--mono);font-size:11px}
+.adv .gq{display:inline-block;margin:4px 6px 0 0;font-family:var(--mono);font-size:11px;color:var(--cyan);border:1px dashed var(--line);border-radius:3px;padding:3px 7px;cursor:pointer;background:transparent}
+.adv .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.myapps{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.myapps a{color:var(--text);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer}
 .recent{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .recent a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .recent a i{font-style:normal;color:var(--muted)}
@@ -286,6 +297,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 <label class="fz"><input type="checkbox" id="fuzzy"> 🌀 模糊搜尋：中文自動加英文同義詞、拼錯也找得到、依相關度排序（一樣只用 1 次額度）</label>
 <label class="fz"><input type="checkbox" id="zh"> 🈯 描述翻成繁體中文（Google 翻譯，免費；只送公開的專案描述）</label>
 <div class="trend" id="trend"></div>
+<div class="myapps" id="myapps"></div>
 <div class="navrow" id="navrow" hidden>
   <button class="ghost" id="back">← 回到搜尋結果</button>
 </div>
@@ -325,6 +337,11 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     <div id="v-live"></div>
     <div class="navrow"><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="refclaude">🧩 複製「參考它做我的 App」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
   </div>
+
+  <section id="sec-advisor" class="adv">
+    <div class="h"><u>00</u> 🧭 App 顧問：skl 能幫它什麼</div>
+    <div id="advisor"><div class="hint">掃描完成後，這裡會列出建議安裝的技能、該去 GitHub 找的東西與一鍵複製的安裝指令。</div></div>
+  </section>
 
   <section id="sec-preview">
     <div class="h"><u>01</u> 實機預覽</div>
@@ -611,6 +628,78 @@ function deepType(res,pkg,repo,readme){
 }
 function typeBadge(id){ const t=TYPES[id]; return t?'<span class="tb">'+t.i+' '+esc(t.n)+'</span>':""; }
 
+/* ══ App 顧問：掃描完一個 repo 後，依偵測到的訊號對照 advisor_rules.json，
+   推薦 skl 技能、該去 GitHub 搜的東西，並產生一鍵複製的安裝指令。
+   全部在手機上算；規則與技能清單是本站的靜態檔，不耗 GitHub API 額度。 */
+const SKL_REPO="https://github.com/xin7355-collab/skl";
+const SKL_TOOL="/tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py";
+const SKL_FETCH="(git -C /tmp/skl pull -q 2>/dev/null || git clone -q --depth 1 "+SKL_REPO+" /tmp/skl)";
+let ADV=null, CAT=null;
+async function loadStatic(url){ try{ const r=await fetch(url,{cache:"no-cache"}); return r.ok?await r.json():null; }catch(e){ return null; } }
+function signalsOf(res,pkg,repo,readme){
+  const h=n=>res.hits.has(n);
+  const deps=pkg&&pkg.deps?Object.keys(pkg.deps).join(" "):"";
+  const hay=nz([repo.name,repo.description,(repo.topics||[]).join(" "),String(readme||"").slice(0,20000),deps,[...res.hits.keys()].join(" ")].join(" "));
+  return {
+    claudeMd:!!res.claudeMd, skl:!!res.sklVendor, workflows:!!res.workflows, tests:!!res.tests,
+    ui:!!res.indexHtml || ["React","Vue","Svelte","Preact","Next.js","Alpine.js","jQuery","htmx"].some(n=>h(n)||h(n+" (CDN)")),
+    pwa:!!res.pwaManifest || h("PWA（可安裝）"),
+    py:h("Python") || res.manifests.has("requirements.txt") || res.manifests.has("pyproject.toml") || (res.exts.get("py")||0)>2,
+    js:res.manifests.has("package.json"),
+    api:res.apiRoutes.length>0 || !!res.openapi || ["Express","Fastify","Hono","NestJS","Koa","FastAPI","Django","Flask"].some(h),
+    sqlite:!!res.sqliteFile || /sqlite/.test(hay),
+    scrape:/scrap|crawl|spider|爬蟲|beautifulsoup|\bbs4\b|scrapy|puppeteer|selenium|cheerio/.test(hay),
+    stock:/\bstocks?\b|twse|tpex|證交所|櫃買|股票|台股|k線|kline|candlestick/.test(hay),
+    video:/ffmpeg|\bvideo\b|影片|剪輯|youtube/.test(hay),
+    llm:/openai|anthropic|\bclaude\b|gemini|\bllm\b|\bgpt|langchain|ollama/.test(hay),
+    risks:res.risks.length>0, docker:!!res.docker
+  };
+}
+function ruleHits(rules,sig){ return rules.filter(r=>(r.when||[]).every(w=>w[0]==="!"?!sig[w.slice(1)]:!!sig[w])); }
+/* 「找同類專案」：優先用主題標籤；沒有就從英文描述或名稱挑關鍵字 */
+function similarQuery(repo){
+  const tp=(repo.topics||[]).filter(t=>!/^(hacktoberfest|github|javascript|typescript|python|html|css|hacktoberfest\d*)$/.test(t)).slice(0,2);
+  if(tp.length) return tp.map(t=>"topic:"+t).join(" ")+" stars:>50";
+  const stop=new Set("this that with from your have will what when using used into about simple tool tools based make made more also only just than then them they their there these those which while where each other some such very much many most over under after before between through".split(" "));
+  let words=nz(repo.description||"").match(/[a-z][a-z0-9-]{3,}/g)||[];
+  if(!words.length) words=nz(repo.name||"").split(/[-_.\s]+/).filter(w=>/^[a-z][a-z0-9]{2,}$/.test(w));
+  const k=[...new Set(words.filter(w=>!stop.has(w)))].slice(0,3);
+  return k.length ? k.join(" ")+" stars:>50" : null;
+}
+async function advise(res,pkg,repo,loc,ref,readme){
+  const box=$("advisor"), tok=S.advTok=(S.advTok||0)+1;
+  box.innerHTML='<div class="hint">分析中…</div>';
+  if(!ADV) ADV=await loadStatic("advisor_rules.json");
+  if(!CAT) CAT=await loadStatic("catalog.json");
+  if(tok!==S.advTok) return;                    // 已經換到別的專案
+  if(!ADV||!ADV.rules){ box.innerHTML='<div class="hint">App 顧問規則載入失敗（advisor_rules.json）。重新整理再試；一直失敗就看 GitHub Actions 的「Deploy web page」是否紅燈。</div>'; return; }
+  const sig=signalsOf(res,pkg,repo,readme);
+  const installed=new Set();
+  if(res.sklVendor){
+    const t=await getText("https://raw.githubusercontent.com/"+loc.owner+"/"+loc.repo+"/"+ref+"/"+res.sklVendor);
+    try{ (JSON.parse(t||"{}").skills||[]).forEach(n=>installed.add(n)); }catch(e){ /* 清單壞掉就當沒裝 */ }
+    if(tok!==S.advTok) return;
+  }
+  const zh={}; ((CAT&&CAT.skills)||[]).forEach(k=>{ zh[k.path]=k.zh||k.desc||""; });
+  const base=p=>p.replace(/\/+$/,"").split("/").pop();
+  const hits=ruleHits(ADV.rules,sig), want=[], why={};
+  hits.forEach(r=>r.skills.forEach(p=>{ if(!installed.has(base(p)) && want.indexOf(p)<0){ want.push(p); why[p]=r.title; } }));
+  const on=Object.keys(ADV.signals).filter(k=>sig[k]);
+  let html='<div class="sig">'+(on.length?on.map(k=>'<span class="chip">'+esc(ADV.signals[k])+'</span>').join(""):'<span class="chip">沒有特別的技術訊號</span>')+
+    (installed.size?'<span class="chip">已裝 skl 技能 <b>'+installed.size+'</b></span>':'')+'</div>';
+  html+=hits.map(r=>'<div class="rule"><b>'+esc(r.title)+'</b><p>'+esc(r.why)+'</p>'+
+    r.skills.map(p=>'<span class="sk"><code>'+esc(base(p))+'</code> '+esc(zh[p]||"")+
+      (installed.has(base(p))?' <span class="ok">✓ 已裝</span>':'')+'</span>').join("")+
+    (r.search||[]).map(q=>'<button class="gq" data-gq="'+esc(q.q)+'">🔍 '+esc(q.q)+'｜'+esc(q.why)+'</button>').join("")+'</div>').join("");
+  const sim=similarQuery(repo);
+  if(sim) html+='<div class="rule"><b>🔎 找同類的熱門專案參考</b><p>用它的主題或關鍵字搜尋，看別人怎麼做同樣的東西（點了會用 1 次搜尋額度）。</p>'+
+    '<button class="gq" data-gq="'+esc(sim)+'">🔍 '+esc(sim)+'</button></div>';
+  html+='<div class="acts">'+(want.length?'<button class="ghost" id="adv-install">📋 複製：幫這個 App 裝建議的 '+want.length+' 個技能</button>':'<span class="hint">建議的技能都已經裝了 👍</span>')+
+    '<button class="ghost" id="adv-fix">🩺 複製：請 Claude 依診斷改善這個 App</button></div>';
+  box.innerHTML=html;
+  S.adv={full:loc.owner+"/"+loc.repo,want:want,why:why,hits:hits};
+}
+
 /* ══════════════════════════════════════════════════════════════
    1. 網址解析
    ══════════════════════════════════════════════════════════════ */
@@ -822,6 +911,13 @@ async function scanTree(nodes){
       } else if(/\.html?$/.test(low)) res.htmlCount++;
       if(!res.readme && /(^|\/)readme(\.md|\.markdown|\.txt)?$/.test(low)) res.readme=path;
       if(/(^|\/)skill\.md$/.test(low)) res.skillMd=(res.skillMd||0)+1;   // AI 技能包的最強證據
+      /* App 顧問用的訊號：有沒有自動化、測試、工作守則、已裝 skl、資料庫檔、Docker */
+      if(low.indexOf(".github/workflows/")===0 && /\.ya?ml$/.test(low)) res.workflows=(res.workflows||0)+1;
+      if(/(^|\/)(tests?|__tests__|e2e|spec)\//.test(low) || /\.(test|spec)\.[jt]sx?$/.test(low) || /(^|\/)test_[^\/]*\.py$/.test(low)) res.tests=(res.tests||0)+1;
+      if(low==="claude.md"||low===".claude/claude.md") res.claudeMd=path;
+      if(low===".claude/skills/.skl-vendor.json") res.sklVendor=path;
+      if(!res.sqliteFile && /\.(db|sqlite3?)$/.test(low)) res.sqliteFile=path;
+      if(!res.docker && /(^|\/)dockerfile$/.test(low)) res.docker=path;
       if(res.docs.length<80 && /\.(md|markdown|mdx|txt|rst|adoc)$/.test(low)
          && low.indexOf("node_modules/")<0) res.docs.push(path);
       if(res.imgs.length<30 && /\.(png|jpe?g|gif|webp|svg|avif)$/.test(low)
@@ -1533,6 +1629,7 @@ function render(res,pkg,repo,loc,ref,live,x){
   $("out").classList.add("on");
   S.last={full:loc.owner+"/"+loc.repo,title:v.title,kind:v.kind,desc:repo.description||"",
           type:T?T.n:"",license:(repo.license&&repo.license.spdx_id)||"未標示"};
+  advise(res,pkg,repo,loc,ref,x.readme);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2079,6 +2176,24 @@ $("recent").addEventListener("click",e=>{
   if(x.t==="q") search(false,x.v); else run(x.v);
 });
 $("v-tr").addEventListener("click",translateDoc);
+$("advisor").addEventListener("click",e=>{
+  const g=e.target.closest("[data-gq]");
+  if(g){ $("url").value=g.dataset.gq; search(false,g.dataset.gq); window.scrollTo(0,0); return; }
+  const a=S.adv; if(!a) return;
+  if(e.target.closest("#adv-install"))
+    copyText("請在這個 repo（"+a.full+"）安裝 skl 技能庫的技能：先執行 "+SKL_FETCH+"，再用 python3 "+SKL_TOOL+
+      " install --target . --skills "+a.want.join(",")+" 先加 --dry-run 試跑、確認後正式安裝。\n要裝的技能與原因：\n"+
+      a.want.map(p=>"- "+p+"（"+a.why[p]+"）").join("\n")+
+      "\n裝完跑一次 app-guardrails-audit 健檢並回報結果，最後 commit。不適合這個 repo 的就跳過並說明原因。");
+  else if(e.target.closest("#adv-fix"))
+    copyText("Repo X-Ray 的 App 顧問對 "+a.full+" 的診斷如下，請依影響大小排出前 3 項，說明怎麼做，然後直接動手改：\n"+
+      a.hits.filter(r=>r.id!=="always").map(r=>"- "+r.title+"："+r.why).join("\n")+
+      "\n我用 iPhone、沒有電腦；做完要用實際資料或 Playwright 驗證，並分開回報驗過與沒驗到的部分。");
+});
+$("myapps").addEventListener("click",e=>{
+  const a=e.target.closest("a[data-app]"); if(!a) return;
+  $("url").value=a.dataset.app; run(a.dataset.app); window.scrollTo(0,0);
+});
 $("zh").addEventListener("change",()=>{
   try{ localStorage.setItem("xray-zh",$("zh").checked?"1":"0"); }catch(e){}
   if($("rrows")) paintRows();
@@ -2137,6 +2252,12 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
 (async function(){
   const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q"), t=p.get("t");
   await loadTrend();
+  // 我的 App：skl 的 .github/apps.json 部署時複製成 apps.json；點一下就掃描並看 App 顧問
+  loadStatic("apps.json").then(d=>{
+    const apps=(d&&d.apps)||[];
+    $("myapps").innerHTML=apps.length?'🧭 我的 App（點了掃描＋顧問建議）：'+apps.map(x=>'<a data-app="'+esc(x.repo)+'">'+
+      (x.private?"🔒 ":"")+esc(x.repo.split("/").pop())+'</a>').join(""):"";
+  });
   if(t && S.trend){ history.replaceState({v:"trend",id:t},"",location.search); showTrend(t,true); }
   else if(r){ history.replaceState({v:"scan",repo:r},"",location.search); $("url").value=r; run(r,true); }
   else if(q){ history.replaceState({v:"search",q:q},"",location.search); $("url").value=q; search(false,q,true); }

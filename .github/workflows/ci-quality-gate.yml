@@ -83,6 +83,8 @@ jobs:
           python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
           python3 web/build_catalog.py selftest
           python3 web/build_trending.py selftest
+          python3 web/check_advisor_rules.py selftest
+          python3 web/check_advisor_rules.py
           python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py selftest
           python3 ops/weekly_report.py selftest
           python3 web/ai/check_ai_data.py selftest

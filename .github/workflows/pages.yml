@@ -53,12 +53,16 @@ jobs:
           python3 web/build_catalog.py selftest
           python3 web/ai/check_ai_data.py selftest
           python3 web/build_trending.py selftest
+          python3 web/check_advisor_rules.py selftest
+          python3 web/check_advisor_rules.py
 
       - name: Build site
         run: |
           mkdir -p _site
           python3 web/build_catalog.py
-          cp web/index.html web/ai.html web/xray.html web/catalog.json _site/
+          cp web/index.html web/ai.html web/xray.html web/catalog.json web/advisor_rules.json _site/
+          # Repo X-Ray「我的 App」清單：apps.json 本來就在公開 repo 裡，不增加曝光
+          cp .github/apps.json _site/apps.json
           mkdir -p _site/ai && cp web/ai/models.json web/ai/features.json _site/ai/
           # 手動重新部署時 commit 不變，版本號加上執行編號，手機才會重載到新版。
           ver="${GITHUB_SHA::7}.${GITHUB_RUN_NUMBER}"
