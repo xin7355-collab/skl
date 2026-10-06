@@ -234,6 +234,14 @@ section{margin-top:26px}
 button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--line)}
 .navrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .navrow button{padding:7px 12px;font-size:12px}
+.trend{margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.trend a{color:var(--amber);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:3px 8px;cursor:pointer;white-space:nowrap}
+.trend a.on{background:var(--amber);color:#12151B;border-color:var(--amber)}
+.trend .tnote{width:100%;font-size:10px}
+.fz{display:inline-flex;gap:6px;align-items:center;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer}
+.fz input{accent-color:var(--cyan);width:16px;height:16px}
+.results .rfilter{display:block;width:calc(100% - 24px);margin:8px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:8px 10px;font-family:var(--mono);font-size:13px}
+.results .gain{color:var(--amber)}
 .recent{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .recent a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .recent a i{font-style:normal;color:var(--muted)}
@@ -270,6 +278,8 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
   <button id="go">開始</button>
 </div>
 <div class="hint">貼網址 → 直接掃描；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。</div>
+<label class="fz"><input type="checkbox" id="fuzzy"> 🌀 模糊搜尋：中文自動加英文同義詞、拼錯也找得到、依相關度排序（一樣只用 1 次額度）</label>
+<div class="trend" id="trend"></div>
 <div class="navrow" id="navrow" hidden>
   <button class="ghost" id="back">← 回到搜尋結果</button>
 </div>
@@ -1395,25 +1405,106 @@ function render(res,pkg,repo,loc,ref,live,x){
 let qLast="";
 const PER=10;
 S.sort="best";
+S.view="search";   // search＝關鍵字搜尋結果；trend＝熱門推薦清單（不耗 API 額度）
+
+/* ══ 模糊搜尋 ══
+   GitHub 搜尋是「字要對得上」：打中文、拼錯、單複數不同就找不到。
+   做法：①中文詞加英文同義詞 ②所有詞用 OR 放寬（GitHub 一次最多 5 個 OR，所以最多 6 個詞）
+   ③拿回來後在手機上依「每個詞都有對到」重新排序。全程只花 1 次搜尋額度。 */
+const SYN={
+  "小說":["novel","fiction"],"下載":["download","downloader"],"影片":["video"],"視頻":["video"],"剪輯":["video-editing","editor"],
+  "爬蟲":["crawler","scraper","spider"],"爬":["scrape","crawler"],"股票":["stock","trading"],"台股":["twse","taiwan-stock"],"記帳":["expense","accounting","budget"],
+  "翻譯":["translate","translator"],"字幕":["subtitle","srt"],"音樂":["music","audio"],"圖片":["image","photo"],"照片":["photo","image"],
+  "聊天":["chat","chatbot"],"機器人":["bot","robot"],"筆記":["note","notes"],"部落格":["blog"],"遊戲":["game"],"電子書":["ebook","epub"],
+  "漫畫":["manga","comic"],"天氣":["weather"],"地圖":["map"],"待辦":["todo"],"密碼":["password"],"監控":["monitor","monitoring"],
+  "自動化":["automation","workflow"],"排程":["scheduler","cron"],"資料庫":["database","db"],"前端":["frontend"],"後端":["backend"],
+  "語音":["speech","voice","tts"],"辨識":["recognition","ocr"],"技能":["skills","skill"],"代理":["agent"],"模板":["template","boilerplate"],
+  "架構":["architecture","boilerplate"],"旅遊":["travel","trip"],"旅行":["travel","trip"],"健身":["fitness","workout"],"直播":["live","streaming"],
+  "瀏覽器":["browser"],"外掛":["plugin","extension"],"擴充":["extension"],"簡報":["slides","presentation"],"表單":["form"],
+  "電商":["ecommerce","shop"],"部署":["deploy","deployment"],"監視":["monitor"],"教學":["tutorial","awesome"],"清單":["awesome","list"]
+};
+function nz(s){ return String(s||"").normalize("NFKC").toLowerCase(); }
+function compact(s){ return nz(s).replace(/[\s\-_.\/]+/g,""); }
+/* 每個輸入的詞變成一組「同義詞」；中文詞沒空格也能拆出字典裡的詞（小說下載器 → 小說、下載） */
+function fzGroups(q){
+  return nz(q).split(/\s+/).filter(Boolean).map(t=>{
+    const g=[t];
+    Object.keys(SYN).forEach(k=>{ if(t.indexOf(k)>-1) SYN[k].forEach(w=>{ if(g.indexOf(w)<0) g.push(w); }); });
+    if(/^[a-z0-9]+s$/.test(t) && t.length>3) g.push(t.slice(0,-1));   // 複數 → 單數
+    return g;
+  });
+}
+function fuzzyQuery(q){
+  if(q.indexOf(":")>-1) return q;                 // 使用者自己下了 GitHub 語法（stars:>100），不要動它
+  const gs=fzGroups(q), terms=[];
+  for(let i=0;terms.length<6;i++){                // 先放每組原詞，再輪流補同義詞
+    let added=false;
+    gs.forEach(g=>{ if(g[i]!==undefined && terms.length<6 && terms.indexOf(g[i])<0){ terms.push(g[i]); added=true; } });
+    if(!added) break;
+  }
+  return terms.length>1 ? terms.join(" OR ") : q;
+}
+function editWithin(a,b,k){                        // 編輯距離是否 ≤ k（只算短字，夠快）
+  if(Math.abs(a.length-b.length)>k) return false;
+  let prev=[...Array(b.length+1).keys()];
+  for(let i=1;i<=a.length;i++){
+    const cur=[i]; let low=i;
+    for(let j=1;j<=b.length;j++){
+      cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); low=Math.min(low,cur[j]);
+    }
+    if(low>k) return false; prev=cur;
+  }
+  return prev[b.length]<=k;
+}
+function termScore(term,hay,hayC,words){
+  const t=nz(term), tc=compact(term);
+  if(!tc) return 0;
+  if(hay.indexOf(t)>-1 || hayC.indexOf(tc)>-1) return 1;
+  if(/^[a-z0-9]+$/.test(tc) && tc.length>=3){
+    const k=tc.length>=8?2:1;
+    if(tc.length>=4 && words.some(w=>editWithin(tc,w,k))) return 0.8;   // 拼錯一兩個字（太短的字不猜，免得什麼都對上）
+    let i=0; for(const c of hayC){ if(c===tc[i]) i++; if(i===tc.length) return 0.5; }   // 縮寫：nvldl → novel-downloader
+  }
+  return 0;
+}
+function fzScore(groups,it){
+  if(!groups.length) return 1;
+  const hay=nz([it.full_name,it.description,(it.topics||[]).join(" ")].join(" ")), hayC=compact(hay);
+  const words=hay.split(/[^a-z0-9]+/).filter(w=>w.length>=3);
+  let sum=0;
+  groups.forEach(g=>{ sum+=Math.max(...g.map(t=>termScore(t,hay,hayC,words))); });
+  return sum/groups.length;
+}
+/* 成長速度：建立以來平均每天幾顆星（看出「年輕但爆紅」的專案） */
+function perDay(it){
+  const d=(Date.now()-Date.parse(it.created_at||""))/864e5;
+  return isFinite(d) ? it.stargazers_count/Math.max(1,d) : 0;
+}
+function fmtPerDay(v){ return v>=10 ? Math.round(v).toLocaleString() : v>=1 ? v.toFixed(1) : v.toFixed(2); }
+
 async function search(more,qArg,fromHistory){
   const q = more ? qLast : String(qArg!=null ? qArg : $("url").value).trim();
   if(q.length<2){ fail("關鍵字至少 2 個字。"); return; }
+  const fuzzy=$("fuzzy").checked, key=(fuzzy?"~":"")+q;
   if(!more){
-    // 同一個關鍵字已經有結果：直接顯示記憶體裡的，不再花搜尋額度
-    if(q===qLast && S.results && S.results.length){ showResults(); if(!fromHistory) pushView({v:"search",q:q}); return; }
-    qLast=q; S.page=1; S.results=[];
+    // 同一個關鍵字（同一種模式）已經有結果：直接顯示記憶體裡的，不再花搜尋額度
+    if(S.view==="search" && key===S.qKey && S.results && S.results.length){ showResults(); if(!fromHistory) pushView({v:"search",q:q}); return; }
+    qLast=q; S.qKey=key; S.page=1; S.results=[]; S.view="search"; S.filter="";
+    S.fzGroups=fzGroups(q); S.sort=fuzzy?"rel":"best"; markTrend("");
   }else S.page=(S.page||1)+1;
 
   const btn=$("more-btn");
   if(btn){ btn.textContent="載入中…"; btn.disabled=true; }
-  say("搜尋「"+q+"」…");
+  const apiQ=fuzzy?fuzzyQuery(q):q;
+  say("搜尋「"+apiQ+"」…");
   try{
-    const r=await getJSON("https://api.github.com/search/repositories?q="+
-      encodeURIComponent(q)+"&sort=stars&order=desc&per_page="+PER+"&page="+S.page);
+    // 模糊模式交給 GitHub 依相關度排；一般模式照星數
+    const r=await getJSON("https://api.github.com/search/repositories?q="+encodeURIComponent(apiQ)+
+      (fuzzy?"":"&sort=stars&order=desc")+"&per_page="+PER+"&page="+S.page);
     S.results=(S.results||[]).concat(r.items||[]);
     S.total=Math.min(r.total_count||0,1000);   // GitHub 搜尋最多只讓翻到第 1000 筆
     if(!more){ addRecent("q",q); if(!fromHistory) pushView({v:"search",q:q}); }
-    say("找到 "+Number(S.total).toLocaleString()+" 個專案，點一個開始掃描","✓");
+    say("找到 "+Number(S.total).toLocaleString()+" 個專案"+(fuzzy&&apiQ!==q?"（模糊：已放寬成 "+apiQ+"）":"")+"，點一個開始掃描","✓");
     showResults();
   }catch(e){
     if(!S.results||!S.results.length){
@@ -1431,44 +1522,101 @@ function fmtSize(kb){
   return (kb/1048576).toFixed(1)+" GB";
 }
 function showResults(){
-  paintResults(qLast);
+  paintResults();
   $("out").classList.remove("on");
   $("navrow").hidden=true;
 }
 function sortedIdx(){
-  const it=S.results||[], idx=it.map((_,i)=>i);
+  const it=S.results||[];
+  const fg=S.filter?fzGroups(S.filter):null;
+  // 篩選：每個詞都要「對得上」（含同義詞、拼錯、縮寫），在手機上算，不耗額度
+  let idx=it.map((_,i)=>i).filter(i=>!fg || fg.every(g=>fzScore([g],it[i])>=0.5));
+  const rel=i=>fzScore(S.fzGroups||[],it[i])*10+Math.log10(it[i].stargazers_count+1)*0.5;
   const by={
     stars:(a,b)=>it[b].stargazers_count-it[a].stargazers_count,
     updated:(a,b)=>String(it[b].pushed_at).localeCompare(String(it[a].pushed_at)),
     big:(a,b)=>it[b].size-it[a].size,
-    small:(a,b)=>it[a].size-it[b].size
+    small:(a,b)=>it[a].size-it[b].size,
+    grow:(a,b)=>perDay(it[b])-perDay(it[a]),
+    rel:(a,b)=>rel(b)-rel(a)
   }[S.sort];
-  return by ? idx.sort(by) : idx;   // best＝GitHub 原本的順序
+  return by ? idx.sort(by) : idx;   // best＝GitHub／清單原本的順序
 }
-function paintResults(q){
+function paintResults(){
   const items=S.results||[];
   if(!items.length){
     $("results").innerHTML='<button disabled style="color:var(--muted)">找不到符合的專案</button>';
     $("results").classList.add("on"); return;
   }
-  const opts=[["best","預設排序"],["stars","星數多→少"],["updated","最近更新"],["big","檔案大→小"],["small","檔案小→大"]]
+  const trend=S.view==="trend";
+  const opts=[["best",trend?"清單順序":"預設排序"],["rel","相關度（模糊）"],["stars","星數多→少"],["grow","成長速度（★/天）"],
+    ["updated","最近更新"],["big","檔案大→小"],["small","檔案小→大"]].filter(o=>!(trend&&o[0]==="rel"))
     .map(o=>'<option value="'+o[0]+'"'+(S.sort===o[0]?" selected":"")+'>'+o[1]+'</option>').join("");
-  const head='<div class="rhead"><span>「'+esc(q)+'」共 '+Number(S.total).toLocaleString()+
-    ' 個 · 已顯示 '+items.length+'</span><select id="rsort" aria-label="排序">'+opts+'</select></div>';
-  const rows=sortedIdx().map(i=>{
-    const it=items[i];
+  const label=trend ? '⭐ '+esc(S.trendTitle)+' · '+items.length+' 個（每天自動收集，不耗額度）'
+    : '「'+esc(qLast)+'」共 '+Number(S.total).toLocaleString()+' 個 · 已顯示 '+items.length;
+  const head='<div class="rhead"><span>'+label+'</span><select id="rsort" aria-label="排序">'+opts+'</select></div>'+
+    '<input class="rfilter" id="rfilter" type="search" autocomplete="off" placeholder="🌀 結果內模糊篩選（nvl、downlod、影片）不耗額度" value="'+esc(S.filter||"")+'">';
+  const more=(!trend && items.length<S.total && items.length<1000)
+    ? '<button id="more-btn" style="color:var(--cyan);font-family:var(--mono);font-size:12px;'+
+      'text-align:center;background:var(--panel-2)">載入更多（第 '+((S.page||1)+1)+' 頁）</button>' : "";
+  $("results").innerHTML=head+'<div id="rrows"></div>'+more;
+  $("results").classList.add("on");
+  paintRows();
+}
+/* 只重畫清單列：篩選框打字時不重建輸入框，鍵盤才不會一直收起來 */
+function paintRows(){
+  const items=S.results||[], idx=sortedIdx();
+  $("rrows").innerHTML = idx.length ? idx.map(i=>{
+    const it=items[i], pd=perDay(it);
     return '<button data-i="'+i+'"><div class="rr"><div class="rmain">'+
       '<span class="rn">'+esc(it.full_name)+'</span>'+
       '<div class="rd">'+esc(it.description||"（沒有描述）")+'</div>'+
       '<div class="rd" style="font-family:var(--mono);font-size:10px">★ '+Number(it.stargazers_count).toLocaleString()+
+      (it.gain_per_day?' <span class="gain">▲ +'+fmtPerDay(it.gain_per_day)+'★/天（最近）</span>':'')+
+      (pd?' · ≈'+fmtPerDay(pd)+'★/天':'')+
       (it.language?' · '+esc(it.language):'')+' · 更新 '+esc(String(it.pushed_at||"").slice(0,10))+'</div></div>'+
       '<div class="rz"><b>'+fmtSize(it.size)+'</b><span>檔案大小</span></div></div></button>';
-  }).join("");
-  const more=(items.length<S.total && items.length<1000)
-    ? '<button id="more-btn" style="color:var(--cyan);font-family:var(--mono);font-size:12px;'+
-      'text-align:center;background:var(--panel-2)">載入更多（第 '+((S.page||1)+1)+' 頁）</button>' : "";
-  $("results").innerHTML=head+rows+more;
-  $("results").classList.add("on");
+  }).join("") : '<button disabled style="color:var(--muted)">已載入的結果中沒有符合「'+esc(S.filter)+'」的，清空篩選或換個詞</button>';
+}
+
+/* ══ 熱門推薦：部署時每天由工作流收集成 trending.json（同網站的靜態檔，讀它不耗 GitHub 額度）。
+   檔案不存在（還沒部署過、收集失敗、本機開啟）就改成「點了才即時查詢」，會用 1 次搜尋額度。 */
+const TREND_FALLBACK=[
+  {id:"top",title:"歷來星數最高",q:()=>"stars:>50000"},
+  {id:"week",title:"本週新星",q:()=>"created:>"+daysAgo(7)},
+  {id:"month",title:"本月新星",q:()=>"created:>"+daysAgo(30)},
+  {id:"ai",title:"AI／大模型",q:()=>"topic:llm"}
+];
+function daysAgo(n){ return new Date(Date.now()-n*864e5).toISOString().slice(0,10); }
+S.trend=null;
+async function loadTrend(){
+  try{
+    const r=await fetch("trending.json",{cache:"no-cache"});
+    if(r.ok){ const d=await r.json(); if(d && d.lists && d.lists.length) S.trend=d; }
+  }catch(e){ /* 沒有就用即時查詢 */ }
+  paintTrend();
+}
+function paintTrend(){
+  const d=S.trend;
+  if(d){
+    const t=new Date(d.generated_at), when=isNaN(t)?"":(t.getMonth()+1)+"/"+t.getDate()+" "+String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
+    $("trend").innerHTML='⭐ 熱門推薦：'+d.lists.map(l=>'<a data-t="'+esc(l.id)+'">'+(l.id==="rising"?"🚀 ":"")+esc(l.title)+'</a>').join("")+
+      '<span class="tnote">每天自動收集・資料時間 '+esc(when)+(d.stale?'・⚠️ 這次收集失敗，顯示的是上一份':'')+'・讀這份清單不耗 API 額度</span>';
+  }else{
+    $("trend").innerHTML='⭐ 熱門推薦：'+TREND_FALLBACK.map(l=>'<a data-tq="'+l.id+'">'+esc(l.title)+'</a>').join("")+
+      '<span class="tnote">每天收集的清單還沒產生，點了會即時查詢（用 1 次搜尋額度）</span>';
+  }
+}
+function markTrend(id){ document.querySelectorAll("#trend a").forEach(a=>a.classList.toggle("on",a.dataset.t===id)); }
+function showTrend(id,fromHistory){
+  const l=S.trend && S.trend.lists.find(x=>x.id===id);
+  if(!l) return;
+  S.view="trend"; S.results=l.items.slice(); S.total=l.items.length; S.trendTitle=l.title+(l.stale?"（舊資料）":"");
+  S.trendId=id; S.sort="best"; S.filter=""; S.fzGroups=[]; S.qKey="";
+  markTrend(id);
+  say("⭐ "+l.title+"："+l.desc,"✓");
+  showResults();
+  if(!fromHistory) pushView({v:"trend",id:id});
 }
 
 /* ── 合併搜尋器：看起來像 repo 就掃描，否則當關鍵字搜尋 ── */
@@ -1486,7 +1634,8 @@ function go(){
 /* ── 上一步：用瀏覽器歷史紀錄（iPhone 左滑返回也有效），資料全從快取拿，不重新查詢 ── */
 function pushView(st){
   if(S.restoring) return;
-  const qs = st.v==="scan" ? "?repo="+encodeURIComponent(st.repo) : "?q="+encodeURIComponent(st.q);
+  const qs = st.v==="scan" ? "?repo="+encodeURIComponent(st.repo)
+    : st.v==="trend" ? "?t="+encodeURIComponent(st.id) : "?q="+encodeURIComponent(st.q);
   try{ history.pushState(st,"",qs); }catch(e){}
 }
 function restore(st){
@@ -1495,6 +1644,7 @@ function restore(st){
   try{
     if(st.v==="search"){ $("url").value=st.q; search(false,st.q,true); }
     else if(st.v==="scan"){ run(st.repo,true); }
+    else if(st.v==="trend"){ showTrend(st.id,true); }
   }finally{ S.restoring=false; }
 }
 window.addEventListener("popstate",e=>{
@@ -1705,17 +1855,30 @@ async function searchDocs(){
 $("dqgo").addEventListener("click",searchDocs);
 $("dq").addEventListener("keydown",e=>{ if(e.key==="Enter") searchDocs(); });
 $("results").addEventListener("change",e=>{
-  if(e.target.id==="rsort"){ S.sort=e.target.value; paintResults(qLast); }
+  if(e.target.id==="rsort"){ S.sort=e.target.value; paintRows(); }
 });
+$("results").addEventListener("input",e=>{
+  if(e.target.id==="rfilter"){ S.filter=e.target.value.trim(); paintRows(); }
+});
+$("trend").addEventListener("click",e=>{
+  const a=e.target.closest("a[data-t]");
+  if(a){ showTrend(a.dataset.t); return; }
+  const f=e.target.closest("a[data-tq]"); if(!f) return;
+  const l=TREND_FALLBACK.find(x=>x.id===f.dataset.tq);
+  $("url").value=l.q(); search(false,l.q());
+});
+$("fuzzy").addEventListener("change",()=>{ try{ localStorage.setItem("xray-fuzzy",$("fuzzy").checked?"1":"0"); }catch(e){} });
 $("results").addEventListener("click",e=>{
   if(e.target.closest("#more-btn")){ search(true); return; }
+  if(e.target.closest("#rfilter")) return;
   const b=e.target.closest("button[data-i]"); if(!b||!S.results) return;
   const it=S.results[+b.dataset.i];
   $("results").classList.remove("on");       // 收起來但保留在記憶體，「回到搜尋結果」不用重查
-  S.cache.set("https://api.github.com/repos/"+it.full_name,it); // 省掉一次 API 呼叫
+  // 搜尋結果就是完整的 repo 資料，直接塞進快取省一次 API；熱門清單是精簡版，不能拿來冒充
+  if(S.view==="search") S.cache.set("https://api.github.com/repos/"+it.full_name,it);
   run(it.html_url);                           // 輸入框保留原本的關鍵字
 });
-$("back").addEventListener("click",()=>{ showResults(); pushView({v:"search",q:qLast}); window.scrollTo(0,0); });
+$("back").addEventListener("click",()=>{ showResults(); pushView(S.view==="trend"?{v:"trend",id:S.trendId}:{v:"search",q:qLast}); window.scrollTo(0,0); });
 $("recent").addEventListener("click",e=>{
   if(e.target.closest("#clear-recent")){ try{ localStorage.removeItem("xray-recent"); }catch(err){} paintRecent(); return; }
   const a=e.target.closest("a[data-r]"); if(!a) return;
@@ -1761,9 +1924,12 @@ document.querySelectorAll("[data-s]").forEach(a=>a.addEventListener("click",e=>{
 }));
 
 paintRecent();
-(function(){
-  const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q");
-  if(r){ history.replaceState({v:"scan",repo:r},"",location.search); $("url").value=r; run(r,true); }
+try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}
+(async function(){
+  const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q"), t=p.get("t");
+  await loadTrend();
+  if(t && S.trend){ history.replaceState({v:"trend",id:t},"",location.search); showTrend(t,true); }
+  else if(r){ history.replaceState({v:"scan",repo:r},"",location.search); $("url").value=r; run(r,true); }
   else if(q){ history.replaceState({v:"search",q:q},"",location.search); $("url").value=q; search(false,q,true); }
 })();
 

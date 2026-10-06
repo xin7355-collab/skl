@@ -5,6 +5,9 @@ name: Deploy web page
   push:
     branches: [main]
   workflow_dispatch:
+  # 每天台灣時間 06:00 重新部署一次，讓 Repo X-Ray 的熱門推薦（trending.json）保持新鮮。
+  schedule:
+    - cron: '0 22 * * *'
 
 permissions:
   contents: read
@@ -22,6 +25,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       enabled: ${{ steps.pages.outputs.enabled }}
+      trending: ${{ steps.trending.outcome }}
     steps:
       # 「還沒開 Pages」是還沒設定，不是壞掉：只留提示、跳過部署，不讓工作流變紅燈。
       - name: Check GitHub Pages is enabled
@@ -48,6 +52,7 @@ jobs:
         run: |
           python3 web/build_catalog.py selftest
           python3 web/ai/check_ai_data.py selftest
+          python3 web/build_trending.py selftest
 
       - name: Build site
         run: |
@@ -64,6 +69,17 @@ jobs:
           grep -q 'noindex' _site/index.html
           grep -q 'noindex' _site/ai.html
           grep -q 'noindex' _site/xray.html
+
+      # 收集失敗不擋住整個網站部署（其他頁面照常更新）；但會在最後的 trending-check 亮紅燈。
+      # 上一份從線上網站拿：用來算「竄升最快」，查詢失敗時也能沿用。
+      - name: Collect trending repos
+        id: trending
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 web/build_trending.py --out _site/trending.json \
+            --prev "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/trending.json"
 
       - name: Upload artifact
         if: steps.pages.outputs.enabled == 'true'
@@ -83,3 +99,14 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  trending-check:
+    needs: [build, deploy]
+    if: always() && needs.build.outputs.trending == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Report trending collection failure
+        run: |
+          echo "::error::熱門推薦（trending.json）全部清單查詢失敗，網站已部署但熱門推薦沿用舊資料或改用即時查詢。看 build 工作的「Collect trending repos」步驟；GitHub 暫時故障的話，明天 06:00 會自動重試。"
+          exit 1
