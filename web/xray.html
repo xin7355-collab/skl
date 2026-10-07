@@ -756,20 +756,36 @@ async function runFleet(){
     }
   }
   out.sort((a,b)=>b.score-a.score);
-  S.fleet=out;
+  // 只留畫面要用的欄位（規則物件很大，存 id 和標題就夠）
+  S.fleetData={at:Date.now(),
+    out:out.map(o=>Object.assign({},o,{issues:o.issues.map(r=>({id:r.id,title:r.title}))})),
+    skipped:skipped.map(a=>a.repo),fails:fails,stopped:stopped};
+  try{ localStorage.setItem(FLEET_KEY,JSON.stringify(S.fleetData)); }catch(e){ /* 空間不足：這次照常顯示，只是不記住 */ }
+  paintFleet();
+  pushView({v:"fleet"});
+}
+/* 畫出健檢結果（剛跑完或從手機裡讀出上一次的）。只有再按「一鍵健檢」才會重新查。 */
+const FLEET_KEY="xray-fleet-v1";
+function paintFleet(){
+  const d=S.fleetData, box=$("fleet");
+  if(!d){ box.innerHTML=""; return; }
+  const out=d.out||[]; S.fleet=out;
+  const t=new Date(d.at), when=(t.getMonth()+1)+"/"+t.getDate()+" "+String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
   const max=Math.max(1,...out.map(o=>o.score));
-  let html='<div class="h" style="margin-top:14px"><u>🩺</u> 全部 App 健檢（分數越高越需要補強）</div><table>'+
+  let html='<div class="h" style="margin-top:14px"><u>🩺</u> 全部 App 健檢・上次檢查 '+esc(when)+'（分數越高越需要補強）</div><table>'+
     out.map((o,i)=>'<tr><td class="sc">'+o.score+'</td><td><span class="an">'+esc(o.full.split("/").pop())+'</span>'+
       (o.installed?' <span class="chip">已裝 '+o.installed+' 個技能</span>':'')+
       '<div class="iss">'+(o.issues.length?o.issues.map(r=>esc(r.title)).join("・"):"沒有明顯缺口 👍")+'</div>'+
       '<div class="fbar"><i style="width:'+Math.round(o.score/max*100)+'%"></i></div>'+
       '<button class="gq" data-fx="'+i+'">🔍 看詳細</button>'+
       (o.want.length?'<button class="gq" data-fi="'+i+'">📋 複製安裝 '+o.want.length+' 個技能</button>':'')+'</td></tr>').join("")+'</table>';
-  if(skipped.length) html+='<div class="hint">🔒 略過 '+skipped.length+' 個私人 App（'+skipped.map(a=>esc(a.repo.split("/").pop())).join("、")+'）：在下方「加上 Token」貼唯讀 Token 後再健檢一次。</div>';
-  if(fails.length) html+='<div class="hint" style="color:var(--red)">✕ '+fails.length+' 個掃描失敗：'+fails.map(f=>esc(f[0].split("/").pop())+'（'+esc(f[1])+'）').join("、")+'</div>';
-  if(stopped) html+='<div class="hint" style="color:var(--amber)">⏸ '+esc(stopped.msg)+' 還剩 '+stopped.left.length+' 個沒掃：'+stopped.left.map(r=>esc(r.split("/").pop())).join("、")+'。已掃過的有快取，1 小時內再按大多不用重花額度。</div>';
+  const sk=d.skipped||[], fl=d.fails||[], st=d.stopped;
+  if(sk.length) html+='<div class="hint">🔒 略過 '+sk.length+' 個私人 App（'+sk.map(r=>esc(r.split("/").pop())).join("、")+'）：在下方「加上 Token」貼唯讀 Token 後再健檢一次。</div>';
+  if(fl.length) html+='<div class="hint" style="color:var(--red)">✕ '+fl.length+' 個掃描失敗：'+fl.map(f=>esc(f[0].split("/").pop())+'（'+esc(f[1])+'）').join("、")+'</div>';
+  if(st) html+='<div class="hint" style="color:var(--amber)">⏸ '+esc(st.msg)+' 還剩 '+st.left.length+' 個沒掃：'+st.left.map(r=>esc(r.split("/").pop())).join("、")+'。已掃過的有快取，1 小時內再按大多不用重花額度。</div>';
   if(out.length) html+='<div class="acts"><button class="ghost" id="fleet-copy">📋 複製全部 App 的改善清單</button></div>';
   box.innerHTML=html;
+  const go=$("fleet-go"); if(go) go.textContent="🩺 重新健檢全部（約 "+((S.apps||[]).length*2)+" 次額度）";
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1973,22 +1989,33 @@ function go(){
 function pushView(st){
   if(S.restoring) return;
   const qs = st.v==="scan" ? "?repo="+encodeURIComponent(st.repo)
-    : st.v==="trend" ? "?t="+encodeURIComponent(st.id) : "?q="+encodeURIComponent(st.q);
+    : st.v==="trend" ? "?t="+encodeURIComponent(st.id)
+    : st.v==="fleet" ? "?fleet" : "?q="+encodeURIComponent(st.q);
   try{ history.pushState(st,"",qs); }catch(e){}
 }
-function restore(st){
-  if(!st) return;
-  S.restoring=true;
-  try{
-    if(st.v==="search"){ $("url").value=st.q; search(false,st.q,true); }
-    else if(st.v==="scan"){ run(st.repo,true); }
-    else if(st.v==="trend"){ showTrend(st.id,true); }
-  }finally{ S.restoring=false; }
+/* 返回時回到「離開前那個清單」：健檢清單展開、搜尋結果從快取顯示，並捲回離開時的位置（y）。 */
+function unfoldFleet(){ $("fleet").classList.remove("folded"); $("fleetbar").hidden=true; }
+function rememberScroll(){
+  try{ history.replaceState(Object.assign({},history.state||{},{y:Math.round(scrollY)}),"",location.search); }catch(e){}
 }
-window.addEventListener("popstate",e=>{
-  if(e.state) restore(e.state);
-  else{ $("results").classList.remove("on"); $("out").classList.remove("on"); }
-});
+function restore(st){
+  st=st||{};
+  S.restoring=true;
+  let p=null;
+  try{
+    unfoldFleet();
+    if(st.v==="search"){ $("url").value=st.q; p=search(false,st.q,true); }
+    else if(st.v==="scan"){ p=run(st.repo,true); }
+    else if(st.v==="trend"){ showTrend(st.id,true); }
+    else{ $("results").classList.remove("on"); $("out").classList.remove("on"); }   // 首頁或健檢清單
+  }finally{ S.restoring=false; }
+  // 等畫面排好（下一個 frame）再捲，否則頁面還沒長回來就捲不到原位
+  if(st.y!=null) Promise.resolve(p).then(()=>requestAnimationFrame(()=>window.scrollTo(0,st.y)));
+  else if(st.v==="fleet") $("fleet").scrollIntoView({block:"start"});
+}
+// 捲動位置由我們自己還原（瀏覽器的自動還原會在內容還沒畫回來前捲到錯的位置）
+try{ history.scrollRestoration="manual"; }catch(e){}
+window.addEventListener("popstate",e=>restore(e.state));
 
 /* ── 最近搜尋／掃描：點一下就回來，有快取時不花額度 ── */
 function loadRecent(){ try{ return JSON.parse(localStorage.getItem("xray-recent")||"[]"); }catch(e){ return []; } }
@@ -2233,6 +2260,7 @@ $("results").addEventListener("click",e=>{
   if(e.target.closest("#more-btn")){ search(true); return; }
   if(e.target.closest("#rfilter")) return;
   const b=e.target.closest("button[data-i]"); if(!b||!S.results) return;
+  rememberScroll();
   const it=S.results[+b.dataset.i];
   $("results").classList.remove("on");       // 收起來但保留在記憶體，「回到搜尋結果」不用重查
   // 搜尋結果就是完整的 repo 資料，直接塞進快取省一次 API；熱門清單是精簡版，不能拿來冒充
@@ -2268,6 +2296,7 @@ $("fleet").addEventListener("click",e=>{
   if(x){
     // 結果畫在清單下方，清單一長就在畫面外、看起來像沒反應：先收起清單、捲到結果，再給一顆返回鍵
     const o=f[+x.dataset.fx];
+    rememberScroll();
     $("fleet").classList.add("folded"); $("fleetbar").hidden=false;
     $("fleet-back").textContent="← 回到全部健檢（"+f.length+" 個 App）";
     $("url").value=o.full;
@@ -2288,9 +2317,9 @@ $("fleet").addEventListener("click",e=>{
       "\n請幫我排出最值得先處理的 3 個 App 和各自第一步要做什麼。");
 });
 $("fleet-back").addEventListener("click",()=>{
-  $("fleet").classList.remove("folded"); $("fleetbar").hidden=true;
-  $("out").classList.remove("on");
-  $("fleet").scrollIntoView({block:"start"});
+  // 跟 iPhone 左滑返回走同一條路，位置也一起還原
+  if(history.state && history.state.v==="scan"){ history.back(); return; }
+  unfoldFleet(); $("out").classList.remove("on"); $("fleet").scrollIntoView({block:"start"});
 });
 $("myapps").addEventListener("click",e=>{
   if(e.target.closest("#fleet-go")){ runFleet(); return; }
@@ -2380,9 +2409,12 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
   loadStatic("apps.json").then(d=>{
     const apps=(d&&d.apps)||[];
     S.apps=apps;
+    try{ S.fleetData=JSON.parse(localStorage.getItem(FLEET_KEY)||"null"); }catch(e){ S.fleetData=null; }
     $("myapps").innerHTML=apps.length?'🧭 我的 App（點了掃描＋顧問建議）：'+apps.map(x=>'<a data-app="'+esc(x.repo)+'">'+
       (x.private?"🔒 ":"")+esc(x.repo.split("/").pop())+'</a>').join("")+
       '<a id="fleet-go" style="border-color:var(--amber);color:var(--amber)">🩺 一鍵健檢全部（約 '+apps.length*2+' 次額度）</a>':"";
+    paintFleet();
+    if(new URLSearchParams(location.search).has("fleet") && S.fleetData) $("fleet").scrollIntoView({block:"start"});
   });
   if(t && S.trend){ history.replaceState({v:"trend",id:t},"",location.search); showTrend(t,true); }
   else if(r){ history.replaceState({v:"scan",repo:r},"",location.search); $("url").value=r; run(r,true); }
