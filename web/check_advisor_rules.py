@@ -39,6 +39,9 @@ def check(data, root=ROOT):
         for w in r.get("when", []):
             if w.lstrip("!") not in sig:
                 errs.append(f"{rid} 用了沒定義的訊號：{w}")
+        w = r.get("weight", 1)
+        if not isinstance(w, (int, float)) or w < 0:
+            errs.append(f"{rid} 的 weight 必須是 0 以上的數字")
         if not r.get("skills"):
             errs.append(f"{rid} 沒有推薦任何技能")
         for s in r.get("skills", []):
@@ -75,6 +78,9 @@ def selftest():
         bad = json.loads(json.dumps(good))
         bad["rules"].append(dict(bad["rules"][0]))
         t(any("重複" in e for e in check(bad, d)), "重複的規則 id 會被擋下")
+        bad = json.loads(json.dumps(good))
+        bad["rules"][0]["weight"] = -1
+        t(any("weight" in e for e in check(bad, d)), "weight 不合法會被擋下")
         bad = json.loads(json.dumps(good))
         bad["rules"][0]["skills"] = ["../etc"]
         t(any("不存在" in e for e in check(bad, d)), "擋掉 .. 路徑")

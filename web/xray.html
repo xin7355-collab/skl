@@ -258,6 +258,13 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .adv .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .myapps{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .myapps a{color:var(--text);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer}
+#fleet table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+#fleet td{border-top:1px solid var(--line);padding:8px 4px;vertical-align:top}
+#fleet td.sc{font-family:var(--mono);color:var(--amber);font-size:14px;text-align:center;width:36px}
+#fleet .an{font-family:var(--mono);color:var(--text);font-weight:600}
+#fleet .iss{color:var(--muted);margin-top:3px;line-height:1.5}
+#fleet .fbar{height:4px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
+#fleet .fbar i{display:block;height:100%;background:var(--amber)}
 .recent{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .recent a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .recent a i{font-style:normal;color:var(--muted)}
@@ -298,6 +305,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 <label class="fz"><input type="checkbox" id="zh"> 🈯 描述翻成繁體中文（Google 翻譯，免費；只送公開的專案描述）</label>
 <div class="trend" id="trend"></div>
 <div class="myapps" id="myapps"></div>
+<div class="adv" id="fleet"></div>
 <div class="navrow" id="navrow" hidden>
   <button class="ghost" id="back">← 回到搜尋結果</button>
 </div>
@@ -656,6 +664,13 @@ function signalsOf(res,pkg,repo,readme){
   };
 }
 function ruleHits(rules,sig){ return rules.filter(r=>(r.when||[]).every(w=>w[0]==="!"?!sig[w.slice(1)]:!!sig[w])); }
+const WANT_CAP=12;   // 一次建議太多技能反而沒人裝；依急迫程度取前 12 個
+function pickWant(hits,installed){
+  const bn=p=>p.replace(/\/+$/,"").split("/").pop(), want=[], why={};
+  hits.slice().sort((a,b)=>(b.weight==null?1:b.weight)-(a.weight==null?1:a.weight))
+    .forEach(r=>r.skills.forEach(p=>{ if(!installed.has(bn(p)) && want.indexOf(p)<0){ want.push(p); why[p]=r.title; } }));
+  return {want:want.slice(0,WANT_CAP),why:why,more:Math.max(0,want.length-WANT_CAP)};
+}
 /* 「找同類專案」：優先用主題標籤；沒有就從英文描述或名稱挑關鍵字 */
 function similarQuery(repo){
   const tp=(repo.topics||[]).filter(t=>!/^(hacktoberfest|github|javascript|typescript|python|html|css|hacktoberfest\d*)$/.test(t)).slice(0,2);
@@ -682,8 +697,7 @@ async function advise(res,pkg,repo,loc,ref,readme){
   }
   const zh={}; ((CAT&&CAT.skills)||[]).forEach(k=>{ zh[k.path]=k.zh||k.desc||""; });
   const base=p=>p.replace(/\/+$/,"").split("/").pop();
-  const hits=ruleHits(ADV.rules,sig), want=[], why={};
-  hits.forEach(r=>r.skills.forEach(p=>{ if(!installed.has(base(p)) && want.indexOf(p)<0){ want.push(p); why[p]=r.title; } }));
+  const hits=ruleHits(ADV.rules,sig), pw=pickWant(hits,installed), want=pw.want, why=pw.why;
   const on=Object.keys(ADV.signals).filter(k=>sig[k]);
   let html='<div class="sig">'+(on.length?on.map(k=>'<span class="chip">'+esc(ADV.signals[k])+'</span>').join(""):'<span class="chip">沒有特別的技術訊號</span>')+
     (installed.size?'<span class="chip">已裝 skl 技能 <b>'+installed.size+'</b></span>':'')+'</div>';
@@ -694,10 +708,61 @@ async function advise(res,pkg,repo,loc,ref,readme){
   const sim=similarQuery(repo);
   if(sim) html+='<div class="rule"><b>🔎 找同類的熱門專案參考</b><p>用它的主題或關鍵字搜尋，看別人怎麼做同樣的東西（點了會用 1 次搜尋額度）。</p>'+
     '<button class="gq" data-gq="'+esc(sim)+'">🔍 '+esc(sim)+'</button></div>';
-  html+='<div class="acts">'+(want.length?'<button class="ghost" id="adv-install">📋 複製：幫這個 App 裝建議的 '+want.length+' 個技能</button>':'<span class="hint">建議的技能都已經裝了 👍</span>')+
+  html+='<div class="acts">'+(want.length?'<button class="ghost" id="adv-install">📋 複製：幫這個 App 裝最急的 '+want.length+' 個技能</button>'+(pw.more?'<span class="hint">另有 '+pw.more+' 個次要建議，先裝這批</span>':''):'<span class="hint">建議的技能都已經裝了 👍</span>')+
     '<button class="ghost" id="adv-fix">🩺 複製：請 Claude 依診斷改善這個 App</button></div>';
   box.innerHTML=html;
   S.adv={full:loc.owner+"/"+loc.repo,want:want,why:why,hits:hits};
+}
+
+/* ══ 一鍵健檢全部 App：每個 App 只花 2 次 API（repo 資料＋檔案樹），其餘走 raw 不計額度。
+   依規則的 weight 加總成「急迫分數」排序。私人 App 沒 Token 就略過並標示（還沒設定，不算失敗）；
+   中途額度用完就停下，已完成的照樣顯示，並說還剩哪幾個、多久後恢復。 */
+async function analyzeLite(full){
+  const [owner,name]=full.split("/");
+  const repo=await getJSON("https://api.github.com/repos/"+owner+"/"+name);
+  const ref=repo.default_branch;
+  const tree=await getJSON("https://api.github.com/repos/"+owner+"/"+name+"/git/trees/"+encodeURIComponent(ref)+"?recursive=1");
+  const res=await scanTree(tree.tree||[]);
+  const base="https://raw.githubusercontent.com/"+owner+"/"+name+"/"+ref+"/";
+  let pkg=null;
+  if(res.manifests.has("package.json")){ const t=await getText(base+"package.json"); if(t) pkg=parsePkg(t,res); }
+  const [readme,vendor]=await Promise.all([res.readme?getText(base+res.readme):null, res.sklVendor?getText(base+res.sklVendor):null]);
+  const installed=new Set(); try{ (JSON.parse(vendor||"{}").skills||[]).forEach(n=>installed.add(n)); }catch(e){}
+  const sig=signalsOf(res,pkg,repo,readme);
+  const hits=ruleHits(ADV.rules,sig), pw=pickWant(hits,installed), want=pw.want, why=pw.why;
+  const score=hits.reduce((a,r)=>a+(r.weight==null?1:r.weight),0);
+  return {full:full,score:score,issues:hits.filter(r=>(r.weight==null?1:r.weight)>0),want:want,why:why,installed:installed.size};
+}
+async function runFleet(){
+  const box=$("fleet"), apps=S.apps||[];
+  if(!ADV) ADV=await loadStatic("advisor_rules.json");
+  if(!ADV){ box.innerHTML='<div class="hint">規則載入失敗，重新整理再試。</div>'; return; }
+  const todo=apps.filter(a=>!a.private||S.token), skipped=apps.filter(a=>a.private&&!S.token);
+  const out=[], fails=[];
+  let stopped=null;
+  for(let i=0;i<todo.length;i++){
+    box.innerHTML='<div class="hint">🩺 健檢中 '+(i+1)+'/'+todo.length+'：'+esc(todo[i].repo)+'（每個 App 約 2 次 API 額度）</div>';
+    try{ out.push(await analyzeLite(todo[i].repo)); }
+    catch(e){
+      if(e.code==="RATE"){ stopped={left:todo.slice(i).map(a=>a.repo),msg:e.message}; break; }
+      fails.push([todo[i].repo,e.message]);
+    }
+  }
+  out.sort((a,b)=>b.score-a.score);
+  S.fleet=out;
+  const max=Math.max(1,...out.map(o=>o.score));
+  let html='<div class="h" style="margin-top:14px"><u>🩺</u> 全部 App 健檢（分數越高越需要補強）</div><table>'+
+    out.map((o,i)=>'<tr><td class="sc">'+o.score+'</td><td><span class="an">'+esc(o.full.split("/").pop())+'</span>'+
+      (o.installed?' <span class="chip">已裝 '+o.installed+' 個技能</span>':'')+
+      '<div class="iss">'+(o.issues.length?o.issues.map(r=>esc(r.title)).join("・"):"沒有明顯缺口 👍")+'</div>'+
+      '<div class="fbar"><i style="width:'+Math.round(o.score/max*100)+'%"></i></div>'+
+      '<button class="gq" data-fx="'+i+'">🔍 看詳細</button>'+
+      (o.want.length?'<button class="gq" data-fi="'+i+'">📋 複製安裝 '+o.want.length+' 個技能</button>':'')+'</td></tr>').join("")+'</table>';
+  if(skipped.length) html+='<div class="hint">🔒 略過 '+skipped.length+' 個私人 App（'+skipped.map(a=>esc(a.repo.split("/").pop())).join("、")+'）：在下方「加上 Token」貼唯讀 Token 後再健檢一次。</div>';
+  if(fails.length) html+='<div class="hint" style="color:var(--red)">✕ '+fails.length+' 個掃描失敗：'+fails.map(f=>esc(f[0].split("/").pop())+'（'+esc(f[1])+'）').join("、")+'</div>';
+  if(stopped) html+='<div class="hint" style="color:var(--amber)">⏸ '+esc(stopped.msg)+' 還剩 '+stopped.left.length+' 個沒掃：'+stopped.left.map(r=>esc(r.split("/").pop())).join("、")+'。已掃過的有快取，1 小時內再按大多不用重花額度。</div>';
+  if(out.length) html+='<div class="acts"><button class="ghost" id="fleet-copy">📋 複製全部 App 的改善清單</button></div>';
+  box.innerHTML=html;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2190,7 +2255,22 @@ $("advisor").addEventListener("click",e=>{
       a.hits.filter(r=>r.id!=="always").map(r=>"- "+r.title+"："+r.why).join("\n")+
       "\n我用 iPhone、沒有電腦；做完要用實際資料或 Playwright 驗證，並分開回報驗過與沒驗到的部分。");
 });
+$("fleet").addEventListener("click",e=>{
+  const f=S.fleet||[];
+  const x=e.target.closest("[data-fx]"); if(x){ const o=f[+x.dataset.fx]; $("url").value=o.full; run(o.full); return; }
+  const y=e.target.closest("[data-fi]");
+  if(y){ const o=f[+y.dataset.fi];
+    copyText("請在這個 repo（"+o.full+"）安裝 skl 技能庫的技能：先執行 "+SKL_FETCH+"，再用 python3 "+SKL_TOOL+
+      " install --target . --skills "+o.want.join(",")+" 先加 --dry-run 試跑、確認後正式安裝。\n要裝的技能與原因：\n"+
+      o.want.map(p=>"- "+p+"（"+o.why[p]+"）").join("\n")+"\n裝完跑一次 app-guardrails-audit 健檢並回報結果，最後 commit。不適合的就跳過並說明原因。");
+    return; }
+  if(e.target.closest("#fleet-copy"))
+    copyText("我所有 App 的健檢結果（Repo X-Ray App 顧問，分數越高越需要補強）：\n"+
+      f.map(o=>"- "+o.full+"（"+o.score+" 分）："+(o.issues.map(r=>r.title).join("、")||"沒有明顯缺口")).join("\n")+
+      "\n請幫我排出最值得先處理的 3 個 App 和各自第一步要做什麼。");
+});
 $("myapps").addEventListener("click",e=>{
+  if(e.target.closest("#fleet-go")){ runFleet(); return; }
   const a=e.target.closest("a[data-app]"); if(!a) return;
   $("url").value=a.dataset.app; run(a.dataset.app); window.scrollTo(0,0);
 });
@@ -2255,8 +2335,10 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
   // 我的 App：skl 的 .github/apps.json 部署時複製成 apps.json；點一下就掃描並看 App 顧問
   loadStatic("apps.json").then(d=>{
     const apps=(d&&d.apps)||[];
+    S.apps=apps;
     $("myapps").innerHTML=apps.length?'🧭 我的 App（點了掃描＋顧問建議）：'+apps.map(x=>'<a data-app="'+esc(x.repo)+'">'+
-      (x.private?"🔒 ":"")+esc(x.repo.split("/").pop())+'</a>').join(""):"";
+      (x.private?"🔒 ":"")+esc(x.repo.split("/").pop())+'</a>').join("")+
+      '<a id="fleet-go" style="border-color:var(--amber);color:var(--amber)">🩺 一鍵健檢全部（約 '+apps.length*2+' 次額度）</a>':"";
   });
   if(t && S.trend){ history.replaceState({v:"trend",id:t},"",location.search); showTrend(t,true); }
   else if(r){ history.replaceState({v:"scan",repo:r},"",location.search); $("url").value=r; run(r,true); }
