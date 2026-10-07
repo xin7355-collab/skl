@@ -265,6 +265,7 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 #fleet .iss{color:var(--muted);margin-top:3px;line-height:1.5}
 #fleet .fbar{height:4px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
 #fleet .fbar i{display:block;height:100%;background:var(--amber)}
+#fleet.folded{display:none}
 .recent{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .recent a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .recent a i{font-style:normal;color:var(--muted)}
@@ -337,6 +338,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 <div id="status"></div>
 <div class="scanline" id="scan"><i></i></div>
 
+<div class="navrow" id="fleetbar" hidden><button class="ghost" id="fleet-back">← 回到全部健檢</button></div>
 <div id="out">
   <div class="verdict">
     <div class="eyebrow">判讀結果</div>
@@ -739,6 +741,7 @@ async function analyzeLite(full){
 }
 async function runFleet(){
   const box=$("fleet"), apps=S.apps||[];
+  box.classList.remove("folded"); $("fleetbar").hidden=true;
   if(!ADV) ADV=await loadStatic("advisor_rules.json");
   if(!ADV){ box.innerHTML='<div class="hint">規則載入失敗，重新整理再試。</div>'; return; }
   const todo=apps.filter(a=>!a.private||S.token), skipped=apps.filter(a=>a.private&&!S.token);
@@ -1355,7 +1358,7 @@ function sub(title,rows){
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 async function run(target,fromHistory){
-  if(S.busy) return;
+  if(S.busy){ toast("正在掃描另一個專案，等它完成再點"); return; }
   let loc;
   try{ loc=parseUrl(typeof target==="string" ? target : $("url").value); }catch(e){ fail(e.message); return; }
   if(!fromHistory) pushView({v:"scan",repo:loc.owner+"/"+loc.repo});
@@ -2261,7 +2264,18 @@ $("advisor").addEventListener("click",e=>{
 });
 $("fleet").addEventListener("click",e=>{
   const f=S.fleet||[];
-  const x=e.target.closest("[data-fx]"); if(x){ const o=f[+x.dataset.fx]; $("url").value=o.full; run(o.full); return; }
+  const x=e.target.closest("[data-fx]");
+  if(x){
+    // 結果畫在清單下方，清單一長就在畫面外、看起來像沒反應：先收起清單、捲到結果，再給一顆返回鍵
+    const o=f[+x.dataset.fx];
+    $("fleet").classList.add("folded"); $("fleetbar").hidden=false;
+    $("fleet-back").textContent="← 回到全部健檢（"+f.length+" 個 App）";
+    $("url").value=o.full;
+    $("fleetbar").scrollIntoView({block:"start"});
+    // 掃描完頁面才變長，這時再捲一次，讓「返回鍵＋判讀結果」排在畫面最上面
+    run(o.full).then(()=>$("fleetbar").scrollIntoView({block:"start"}));
+    return;
+  }
   const y=e.target.closest("[data-fi]");
   if(y){ const o=f[+y.dataset.fi];
     copyText("請在這個 repo（"+o.full+"）安裝 skl 技能庫的技能：先執行 "+SKL_FETCH+"，再用 python3 "+SKL_TOOL+
@@ -2272,6 +2286,11 @@ $("fleet").addEventListener("click",e=>{
     copyText("我所有 App 的健檢結果（Repo X-Ray App 顧問，分數越高越需要補強）：\n"+
       f.map(o=>"- "+o.full+"（"+o.score+" 分）："+(o.issues.map(r=>r.title).join("、")||"沒有明顯缺口")).join("\n")+
       "\n請幫我排出最值得先處理的 3 個 App 和各自第一步要做什麼。");
+});
+$("fleet-back").addEventListener("click",()=>{
+  $("fleet").classList.remove("folded"); $("fleetbar").hidden=true;
+  $("out").classList.remove("on");
+  $("fleet").scrollIntoView({block:"start"});
 });
 $("myapps").addEventListener("click",e=>{
   if(e.target.closest("#fleet-go")){ runFleet(); return; }
