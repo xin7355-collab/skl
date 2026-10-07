@@ -319,14 +319,17 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     <a data-s="https://github.com/tailwindlabs/tailwindcss.com">tailwindcss.com</a>
   </div>
   <details style="margin-left:auto">
-    <summary>加上 Token（額度 60/hr → 5000/hr）</summary>
+    <summary id="toksum">加上 Token（額度 60/hr → 5000/hr）</summary>
     <div class="tokenbox">
-      <input id="tok" type="password" autocomplete="off" placeholder="ghp_… 只存在這個分頁的記憶體">
+      <input id="tok" type="password" autocomplete="off" placeholder="github_pat_… 或 ghp_…">
       <button id="savetok">套用</button>
     </div>
+    <label class="fz"><input type="checkbox" id="remtok" checked> 記在這支手機（下次自動帶入，不用再貼）</label>
+    <div class="hint" id="tokstate">尚未設定 Token。</div>
     <div class="hint">
-      到 GitHub → Settings → Developer settings → Personal access tokens → 產生一組<b>不勾任何權限</b>的 token 即可。<br>
-      這支工具不會把 token 送到 GitHub 以外的任何地方，重新整理後就消失。
+      建議用<b>唯讀</b>的細粒度 Token（Contents：Read-only）。Token 只會送到 api.github.com，不會送到翻譯或其他網站；
+      勾「記在這支手機」時存在這支手機的瀏覽器裡，不會上傳、不會進 repo。換手機或清除 Safari 網站資料就要重貼。
+      <a id="forgettok" style="color:var(--red);cursor:pointer">忘記 Token</a>
     </div>
   </details>
 </div>
@@ -472,7 +475,8 @@ async function raw(url, tries){
   }
   if(isApi) showRate(r.headers);
 
-  if(r.status===404) throw new Fail("404","找不到這個 repo，或它是私有的。");
+  if(r.status===401 && S.token) throw new Fail("401","Token 無效或已過期：打開「Token」區按「忘記 Token」，到 GitHub 重新產生一組再貼上。");
+  if(r.status===404) throw new Fail("404", S.token ? "找不到這個 repo，或你的 Token 沒有開放這個私人 repo 的讀取權限。" : "找不到這個 repo，或它是私有的（私人 repo 要先加上 Token）。");
   if(r.status===403 || r.status===429){
     if(r.headers.get("x-ratelimit-remaining")==="0"){
       const t=+r.headers.get("x-ratelimit-reset")*1000;
@@ -2316,16 +2320,37 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("viewer").classL
 
 $("go").addEventListener("click",go);
 $("url").addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
-$("savetok").addEventListener("click",()=>{
-  S.token=$("tok").value.trim();
-  $("rate").textContent=S.token?"5000/hr 已授權":"—";
+/* Token：使用者要求記在自己手機，不想每次重貼。存 localStorage（只在這支手機這個瀏覽器）。
+   注意同一個 github.io 網域下的其他頁面也讀得到，所以只建議放唯讀 Token；畫面上只顯示末 4 碼。 */
+const TOK_KEY="xray-token-v1";
+function paintTok(){
+  let saved=""; try{ saved=localStorage.getItem(TOK_KEY)||""; }catch(e){}
+  const t=S.token;
+  $("rate").textContent=t?"5000/hr 已授權":"—";
   $("gauge").className="gauge";
+  $("toksum").textContent=t?"🔑 Token 已啟用（…"+t.slice(-4)+"）":"加上 Token（額度 60/hr → 5000/hr）";
+  $("tokstate").textContent=t?("已啟用，結尾 …"+t.slice(-4)+"・"+(saved===t?"已記在這支手機，下次自動帶入":"只在這個分頁，重新整理就消失")):"尚未設定 Token。";
+}
+$("savetok").addEventListener("click",()=>{
+  const t=$("tok").value.trim();
+  if(!t){ toast("先貼上 Token"); return; }
+  if(!/^(github_pat_|ghp_|gho_|ghu_|ghs_)[A-Za-z0-9_]{20,}$/.test(t)){ toast("看起來不是 GitHub Token，請確認有完整複製"); return; }
+  S.token=t; $("tok").value="";            // 不讓 Token 留在輸入框
+  try{ if($("remtok").checked) localStorage.setItem(TOK_KEY,t); else localStorage.removeItem(TOK_KEY); }
+  catch(e){ toast("這個瀏覽器不能儲存（無痕模式？），只在這個分頁有效"); }
+  paintTok(); toast("Token 已套用");
+});
+$("forgettok").addEventListener("click",()=>{
+  S.token=""; try{ localStorage.removeItem(TOK_KEY); }catch(e){}
+  paintTok(); toast("已忘記 Token");
 });
 document.querySelectorAll("[data-s]").forEach(a=>a.addEventListener("click",e=>{
   e.preventDefault(); $("url").value=a.dataset.s; run();
 }));
 
 paintRecent();
+try{ S.token=localStorage.getItem(TOK_KEY)||""; }catch(e){ S.token=""; }
+paintTok();
 try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}
 // 中文翻譯預設開；使用者關過就記住
 try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").checked=true; }
