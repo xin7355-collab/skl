@@ -26,3 +26,7 @@
 # Dated citation: Computer Use shipped on Claude 3.5 Sonnet, and the "+ later"
 # is the point of the sentence.
 */notebooklm/references/browser_automation_canon.md :: Computer Use documentation
+
+# ai-model-router 用「已下架的模型名稱」當例子，說明為什麼不能寫死；點名舊型號正是重點。
+xin-toolkit/skills/ai-model-router/SKILL.md :: 不再寫死模型名稱
+xin-toolkit/skills/ai-model-router/SKILL.md :: 已被 Google 停用
