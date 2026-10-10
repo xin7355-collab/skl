@@ -156,6 +156,12 @@ details.adv-more>summary::-webkit-details-marker{display:none}
 .logf a{color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 8px;cursor:pointer}
 .logf a.on{background:var(--cyan);color:#12151B;border-color:var(--cyan)}
 #log.folded{display:none}
+/* 說明文件清單：檔名下面直接給一句中文說明，不用一個個點開 */
+.docs .dr{display:block !important;cursor:pointer}
+.docs .dn{font-family:var(--mono);font-size:13px;color:var(--amber);font-weight:600}
+.docs .dp{font-family:var(--mono);font-size:10px;color:#5D6877;margin-left:6px;word-break:break-all}
+.docs .dsum{display:block;font-family:var(--body);font-size:13px;color:var(--text);line-height:1.55;margin-top:3px}
+.docs .dsum.wait{color:var(--muted)}
 #logq{width:100%;margin-bottom:8px;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:8px 10px;font-size:16px}
 
 /* 路由 */
@@ -204,7 +210,7 @@ details.adv-more>summary::-webkit-details-marker{display:none}
 .vbody img{max-width:100%;height:auto;display:block;background:#fff;border-radius:3px}
 
 /* 檔案檢視器 */
-.viewer{position:fixed;inset:0;background:rgba(8,10,14,.93);z-index:50;display:none;
+.viewer{position:fixed;inset:0;background:var(--ink);z-index:50;display:none;
   flex-direction:column;padding:0}
 .viewer.on{display:flex}
 .vhead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);
@@ -2361,6 +2367,8 @@ function download(name,text){
    ══════════════════════════════════════════════════════════════ */
 function renderDocs(res){
   S.docs=res.docs||[];
+  S.docTok=(S.docTok||0)+1; S.docSums=null; S.docPaint=null;   // 換專案時讓舊的摘要讀取停下來
+  if(S.docObs){ S.docObs.disconnect(); S.docObs=null; }
   if(!S.docs.length){ $("sec-docs").style.display="none"; return; }
   $("sec-docs").style.display="";
   $("doc-hits").innerHTML="";
@@ -2368,11 +2376,134 @@ function renderDocs(res){
     const ra=/readme/i.test(a)?0:1, rb=/readme/i.test(b)?0:1;
     return ra-rb || a.split("/").length-b.split("/").length || a.localeCompare(b);
   });
-  $("doc-list").innerHTML='<div class="h" style="margin-top:0;font-size:10px">'+
-    order.length+' 份文件 · 點檔名直接看內容</div><div class="routes">'+
-    order.map(d=>'<div><span class="p" data-f="'+esc(d)+'">'+esc(d)+'</span></div>').join("")+'</div>';
+  S.docOrder=order;
+  const skills=order.filter(d=>/(^|\/)SKILL\.md$/i.test(d)).length;
+  $("doc-list").innerHTML='<div class="h" style="margin-top:0;font-size:10px">'+order.length+' 份文件'+
+    (skills?'（其中 '+skills+' 個是 AI 技能）':'')+' · 每份下面是它在做什麼，點了看全文</div>'+
+    '<div class="routes docs">'+order.map((d,i)=>{
+      const n=docName(d);
+      return '<div class="dr" data-f="'+esc(d)+'"><span class="dn">'+esc(n.name)+'</span>'+
+        (n.dir?'<span class="dp">'+esc(n.dir)+'</span>':'')+
+        '<span class="dsum wait" id="ds'+i+'">捲到這裡才讀取說明…</span></div>';
+    }).join("")+'</div>'+
+    '<div class="acts" style="display:flex;gap:8px;margin-top:10px"><button class="ghost" id="doc-copy">📋 複製「全部文件在做什麼」清單</button></div>';
+  // 使用者捲到清單才讀（不看就不花流量）；走 raw，不吃 API 額度
+  const tok=S.docTok, el=$("doc-list");
+  if("IntersectionObserver" in window){
+    S.docObs=new IntersectionObserver(es=>{
+      if(es.some(e=>e.isIntersecting)){ S.docObs.disconnect(); S.docObs=null; loadDocSums(tok); }
+    });
+    S.docObs.observe(el);
+  } else loadDocSums(tok);
 }
-
+/* 顯示名稱：SKILL.md 用技能資料夾名稱（agent-transcript），其他用檔名 */
+function docName(path){
+  const parts=path.split("/"), file=parts.pop();
+  if(/^SKILL\.md$/i.test(file) && parts.length) { const name=parts.pop(); return {name:"🧩 "+name,dir:parts.join("/")}; }
+  return {name:"📄 "+file,dir:parts.join("/")};
+}
+/* 一句話說明：SKILL.md 取 frontmatter 的 description（支援 "..."、> 與 | 多行寫法）；
+   一般文件取第一段正文（跳過標題、徽章圖片、HTML、程式碼區塊） */
+function docSummary(txt){
+  if(!txt) return "";
+  const lines=String(txt).slice(0,30000).replace(/\r/g,"").split("\n");
+  let i=0, fm=false;
+  if(lines[0]&&lines[0].trim()==="---"){
+    fm=true;
+    for(i=1;i<lines.length&&lines[i].trim()!=="---";i++){
+      const m=lines[i].match(/^description:\s*(.*)$/);
+      if(!m) continue;
+      let v=m[1].trim();
+      if(/^[>|][-+]?$/.test(v)||v===""){             // 多行：收集後面縮排的行
+        const buf=[];
+        for(let j=i+1;j<lines.length&&/^\s+\S|^\s*$/.test(lines[j])&&lines[j].trim()!=="---";j++){ if(lines[j].trim()) buf.push(lines[j].trim()); }
+        v=buf.join(" ");
+      }
+      v=v.replace(/^["']|["']$/g,"").replace(/\\"/g,'"');
+      if(v) return clip(v);
+    }
+    i++;
+  }
+  let inCode=false; const para=[];
+  for(;i<lines.length;i++){
+    const l=lines[i].trim();
+    if(/^(```|~~~)/.test(l)){ inCode=!inCode; if(para.length) break; continue; }
+    if(inCode) continue;
+    if(!l){ if(para.length) break; continue; }
+    if(/^#|^!\[|^\[!\[|^<|^\||^[-*_]{3,}$|^>\s*\[!/.test(l)) { if(para.length) break; continue; }
+    para.push(l.replace(/^[-*+]\s+|^\d+\.\s+|^>\s*/,""));
+    if(para.join(" ").length>240) break;
+  }
+  return clip(para.join(" ").replace(/!\[[^\]]*\]\([^)]*\)/g,"").replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").replace(/[*_`]{1,3}/g,"").replace(/\s+/g," ").trim());
+}
+function clip(t){ t=String(t).trim(); return t.length>220 ? t.slice(0,218)+"…" : t; }
+/* 摘要快取在手機（同一個 commit 的檔案內容不會變），重看同一個專案不用再抓 */
+const DS_KEY="xray-docsum-v1", DS_MAX=800;
+function dsAll(){ if(S.dsMem) return S.dsMem; try{ S.dsMem=JSON.parse(localStorage.getItem(DS_KEY)||"{}")||{}; }catch(e){ S.dsMem={}; } return S.dsMem; }
+function dsSave(){
+  const d=dsAll(), ks=Object.keys(d);
+  if(ks.length>DS_MAX) ks.slice(0,ks.length-DS_MAX).forEach(k=>delete d[k]);   // 物件鍵依加入順序：先丟最舊的
+  try{ localStorage.setItem(DS_KEY,JSON.stringify(d)); }catch(e){ /* 空間滿：這次照樣顯示 */ }
+}
+async function loadDocSums(tok){
+  const c=S.ctx, order=S.docOrder||[];
+  if(!c) return;
+  const base="https://raw.githubusercontent.com/"+c.owner+"/"+c.repo+"/"+c.ref+"/";
+  const cache=dsAll(), sums=new Array(order.length);
+  let fails=0;
+  const paint=()=>{
+    const zh=zhOn();
+    order.forEach((d,i)=>{
+      const el=$("ds"+i); if(!el||sums[i]===undefined) return;
+      const t=sums[i];
+      el.classList.toggle("wait",!t);
+      el.textContent = t ? (zh&&!isZh(t)&&zhOf(t)!==undefined ? zhOf(t) : t) : (t===null?"讀取失敗，點檔名看全文":"（沒有文字說明，點檔名看內容）");
+    });
+  };
+  // 一批 6 份、同時最多 2 個（共用限流佇列），每批完成就先畫出來，不用等 80 份全部抓完。
+  // 不用 getText／raw()：getText 會把整份文件留在記憶體（80 份大文件對 1GB 手機太重），
+  // raw() 遇到 5xx 會退避重試到 9 秒，一份壞檔就卡住整份清單；摘要讀不到就算了，只再試一次。
+  const one=async url=>{
+    for(let t=0;t<2;t++){
+      try{ const r=await fetch(url); if(r.ok) return await r.text(); if(r.status===404) return null; }catch(e){}
+      await sleep(700);
+    }
+    return null;
+  };
+  const todo=[];
+  order.forEach((d,i)=>{ const key=c.owner+"/"+c.repo+"@"+c.ref+":"+d; if(cache[key]!==undefined) sums[i]=cache[key]; else todo.push([i,key]); });
+  paint();
+  for(let k=0;k<todo.length;k+=6){
+    const chunk=todo.slice(k,k+6);
+    chunk.forEach(x=>{ const el=$("ds"+x[0]); if(el) el.textContent="讀取中…"; });
+    await Promise.all(chunk.map(async x=>{
+      const txt=await enqueue(()=>one(base+order[x[0]].split("/").map(encodeURIComponent).join("/")));
+      if(txt===null){ sums[x[0]]=null; fails++; }
+      else { sums[x[0]]=docSummary(txt); cache[x[1]]=sums[x[0]]; }
+    }));
+    if(tok!==S.docTok) return;                     // 已經換到別的專案
+    paint();
+  }
+  dsSave(); paint();
+  S.docSums={order:order,sums:sums};
+  S.docPaint=async()=>{                            // 切換「翻成繁中」時重畫，缺的譯文補翻一次
+    if(tok!==S.docTok) return;
+    paint();
+    if(!zhOn()) return;
+    const todo=[...new Set(sums.filter(t=>t&&!isZh(t)&&zhOf(t)===undefined&&!trBad.has(t)))];
+    if(todo.length){ await translateMany(todo); paint(); }
+  };
+  if(zhOn()){
+    const todo=[...new Set(sums.filter(t=>t&&!isZh(t)&&zhOf(t)===undefined))];
+    if(todo.length){
+      const f=await translateMany(todo);
+      if(tok!==S.docTok) return;
+      if(f) toast("有 "+f+" 段說明翻譯失敗，先顯示原文");
+      paint();
+    }
+  }
+  if(fails) toast(fails+" 份文件讀取失敗（網路不穩），點檔名可以再試");
+}
 let docBusy=false;
 async function searchDocs(){
   const kw=$("dq").value.trim();
@@ -2416,6 +2547,14 @@ async function searchDocs(){
 
 /* ── 事件綁定 ── */
 $("dqgo").addEventListener("click",searchDocs);
+$("doc-list").addEventListener("click",e=>{
+  if(!e.target.closest("#doc-copy")) return;
+  const d=S.docSums;
+  if(!d){ toast("說明還在讀取，等一下再按"); return; }
+  copyText("GitHub 專案 https://github.com/"+S.ctx.owner+"/"+S.ctx.repo+" 裡的文件與工具：\n"+
+    d.order.map((p,i)=>{ const t=d.sums[i]; const z=t&&zhOn()?(zhOf(t)||t):t; return "- "+docName(p).name.replace(/^\S+\s/,"")+"（"+p+"）："+(z||"沒有說明"); }).join("\n")+
+    "\n請用白話告訴我哪些對我有用（我用 iPhone、App 放 GitHub Pages＋Actions），以及怎麼拿來用。");
+});
 $("dq").addEventListener("keydown",e=>{ if(e.key==="Enter") searchDocs(); });
 $("results").addEventListener("change",e=>{
   if(e.target.id==="rsort"){ S.sort=e.target.value; paintRows(); }
@@ -2567,6 +2706,7 @@ $("zh").addEventListener("change",()=>{
   try{ localStorage.setItem("xray-zh",$("zh").checked?"1":"0"); }catch(e){}
   if($("rrows")) paintRows();
   if(S.descRaw!==undefined) paintDesc();
+  if(S.docPaint) S.docPaint();
 });
 $("refclaude").addEventListener("click",()=>{
   const l=S.last; if(!l) return;

@@ -76,6 +76,7 @@
     繁中翻譯（Google 免費端點，熱門清單部署時預翻）、專案類型判斷與「參考它做我的 App」提示。
     分三個分頁（探索 GitHub／我的 App／紀錄）；App 顧問只給自己的 App（apps.json 或 xin7355-collab 帳號），外部專案不跑。
     看過／下載過／收藏紀錄存 localStorage `xray-hist-v1`；「白話重點」取代技術指紋、API 端點、檔案類型分佈。
+    說明文件清單每份附一句中文說明（SKILL.md description／第一段，摘要快取 `xray-docsum-v1`）。
     「我的 App」＋「App 顧問」：規則在 `web/advisor_rules.json`（推薦技能路徑必須存在，`web/check_advisor_rules.py` 檢查），
     部署時複製 `.github/apps.json` 成 `apps.json`。新增 App 就加進 apps.json。
     Token 可勾「記在這支手機」存 localStorage（使用者要求；只建議唯讀 Token，畫面只顯示末 4 碼，只送 api.github.com）。
