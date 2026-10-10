@@ -156,6 +156,26 @@ details.adv-more>summary::-webkit-details-marker{display:none}
 .logf a{color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 8px;cursor:pointer}
 .logf a.on{background:var(--cyan);color:#12151B;border-color:var(--cyan)}
 #log.folded{display:none}
+/* 批次勾選：清單每列左邊的勾選框、底部的勾選列與整理面板 */
+.pk{flex:none;width:30px;height:30px;margin:-2px 2px 0 -4px;border:1.5px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#12151B;cursor:pointer}
+.pk.on{background:var(--cyan);border-color:var(--cyan)}
+.pk.on::after{content:"✓";font-weight:700}
+.pickbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:40;display:none;gap:8px;align-items:center;
+  background:var(--cyan);color:#12151B;border-radius:99px;padding:10px 16px;font-family:var(--mono);font-size:13px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.45);cursor:pointer;white-space:nowrap}
+.pickbar.on{display:flex}
+.sheet{position:fixed;inset:0;background:var(--ink);z-index:55;display:none;flex-direction:column}
+.sheet.on{display:flex}
+.sheet .sbody{flex:1;overflow:auto;padding:14px 16px calc(24px + env(safe-area-inset-bottom))}
+.sheet .prow{display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--line);padding:9px 0}
+.sheet .prow .pn{font-family:var(--mono);font-size:13px;color:var(--amber);font-weight:600;word-break:break-all}
+.sheet .prow .pd{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.sheet .px{margin-left:auto;flex:none;background:transparent;border:1px solid var(--line);color:var(--red);border-radius:4px;padding:2px 8px;font-size:12px}
+.sheet label.sl{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);margin:16px 0 6px}
+.sheet select,.sheet textarea{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:9px 10px;font-size:16px;font-family:var(--body)}
+.sheet textarea{min-height:190px;line-height:1.55}
+.purp{display:flex;flex-wrap:wrap;gap:6px}
+.purp a{font-size:13px;border:1px solid var(--line);border-radius:4px;padding:6px 10px;cursor:pointer;color:var(--text)}
+.purp a.on{background:var(--amber);border-color:var(--amber);color:#12151B;font-weight:700}
 /* 說明文件清單：檔名下面直接給一句中文說明，不用一個個點開 */
 .docs .dr{display:block !important;cursor:pointer}
 .docs .dn{font-family:var(--mono);font-size:13px;color:var(--amber);font-weight:600}
@@ -303,7 +323,7 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .results .rz span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
 .results .rhead{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--panel-2);font-family:var(--mono);font-size:11px;color:var(--muted)}
 .results select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:3px;font-family:var(--mono);font-size:12px;padding:4px 6px}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--ink);font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:99px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--ink);font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:99px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
 .toast.show{opacity:.95}
 footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line-height:1.9}
 
@@ -394,7 +414,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     <div id="v-type"></div>
     <div id="v-quick"></div>
     <div id="v-live"></div>
-    <div class="navrow"><button class="ghost" id="favbtn">☆ 收藏</button><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="refclaude">🧩 複製「參考它做我的 App」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
+    <div class="navrow"><button class="ghost" id="pickbtn">☐ 勾選</button><button class="ghost" id="favbtn">☆ 收藏</button><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="refclaude">🧩 複製「參考它做我的 App」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
   </div>
 
   <section id="sec-advisor" class="adv">
@@ -468,6 +488,26 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="pickbar" id="pickbar" role="button">☑ 已勾選 <span id="pickn">0</span> 個 ・ 整理並複製 ›</div>
+<div class="sheet" id="picksheet">
+  <div class="vhead"><span class="vp">☑ 批次勾選的專案</span><button id="pick-close">關閉</button></div>
+  <div class="sbody">
+    <div id="pick-list"></div>
+    <label class="sl">要用在哪個 App（Claude 會拿你的程式來對照）</label>
+    <select id="pick-app"></select>
+    <label class="sl">要 Claude 做什麼</label>
+    <div class="purp" id="pick-purp"></div>
+    <label class="sl">要求內容（可以改，改過會記住）。{APP} 會換成上面選的 App；{DOMAIN} 在股票類專案會自動補上回測與預測模型的檢查重點</label>
+    <textarea id="pick-tpl"></textarea>
+    <div class="acts" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+      <button id="pick-copy">📋 複製網址＋要求</button>
+      <button class="ghost" id="pick-urls">🔗 只複製網址</button>
+      <button class="ghost" id="pick-reset">還原預設要求</button>
+      <button class="ghost" id="pick-clear" style="color:var(--red)">清空勾選</button>
+    </div>
+    <div class="hint" style="margin-top:10px">貼到那個 App 的 Claude Code 對話。勾選會記在這支手機，換頁、重新整理都還在。</div>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -1707,7 +1747,7 @@ function paintLog(){
   let html='<div class="logf">'+tabs.map(t=>'<a data-lf="'+t[0]+'"'+(f===t[0]?' class="on"':'')+'>'+esc(t[1])+'</a>').join("")+'</div>'+
     '<input class="rfilter" id="logq" type="search" autocomplete="off" placeholder="在紀錄裡找（名稱、描述、類型）" value="'+esc(S.logQ||"")+'">';
   html+= list.length ? '<div class="results on" style="display:block">'+list.slice(0,200).map(e=>
-      '<button data-h="'+esc(e.f)+'"'+(isMine(e.f)?' class="was"':'')+'><div class="rr"><div class="rmain"><span class="rn">'+esc(e.f)+'</span>'+
+      '<button data-h="'+esc(e.f)+'"'+(isMine(e.f)?' class="was"':'')+'><div class="rr">'+pickBox(e.f)+'<div class="rmain"><span class="rn">'+esc(e.f)+'</span>'+
       '<div class="rd">'+(e.ty?'<span class="tb">'+esc(e.ty)+'</span>':'')+esc(e.d||"")+'</div>'+
       '<div class="rd">'+histBadges(e.f)+(e.st!=null?'<span class="hb">★ '+Number(e.st).toLocaleString()+'</span>':'')+'</div></div>'+
       '<div class="rz"><b>'+mdDay(e.t)+'</b><span>最後動作</span></div></div></button>').join("")+'</div>'
@@ -1716,6 +1756,81 @@ function paintLog(){
     '<button class="ghost" id="log-copy">📋 複製收藏清單給 Claude</button>'+
     '<button class="ghost" id="log-clear" style="color:var(--red)">清除紀錄（保留收藏）</button></div>';
   $("log").innerHTML=html;
+}
+
+/* ── 批次勾選：在清單勾幾個專案 → 一次複製網址＋「要拿它們做什麼」給 Claude。
+   比只貼網址好的地方：每個專案附上 X-Ray 已知的類型／星數／授權／描述（Claude 不用先摸索），
+   指定要對照的 App（Claude 會拿你現有的程式比），股票類自動補「回測要注意的偏誤」，
+   並要求標出處、授權、難度、先後順序，先列給你看再動手。勾選記在手機（localStorage）。 */
+const PICK_KEY="xray-pick-v1", PICK_TPL_KEY="xray-pick-tpl-v1", PICK_MAX=20;
+let pickMem=null;
+function picks(){ if(pickMem) return pickMem; try{ pickMem=JSON.parse(localStorage.getItem(PICK_KEY)||"[]")||[]; }catch(e){ pickMem=[]; } return pickMem; }
+function pickSave(){ try{ localStorage.setItem(PICK_KEY,JSON.stringify(picks())); }catch(e){} paintPickbar(); }
+function picked(full){ const k=String(full).toLowerCase(); return picks().some(p=>p.f.toLowerCase()===k); }
+function pickBox(full){ return '<span class="pk'+(picked(full)?' on':'')+'" data-pk="'+esc(full)+'" role="checkbox" aria-checked="'+picked(full)+'" aria-label="勾選 '+esc(full)+'"></span>'; }
+/* 從畫面上已有的資料湊出專案資訊（搜尋結果、熱門清單、紀錄、目前掃描的專案），不另外打 API */
+function pickInfo(full){
+  const k=full.toLowerCase(), it=(S.results||[]).find(x=>x.full_name.toLowerCase()===k), h=histGet(full), l=S.last&&S.last.full.toLowerCase()===k?S.last:null;
+  const d=it?(it.description_zh||(it.description&&zhOf(it.description))||it.description):(l?l.desc:h&&h.d);
+  const ty=l&&l.typeIcon || (it&&TYPES[quickType(it)]?TYPES[quickType(it)].i+" "+TYPES[quickType(it)].n:"") || (h&&h.ty) || "";
+  return {f:full,d:String(d||"").slice(0,140),ty:ty,st:it?it.stargazers_count:(h&&h.st),lang:it&&it.language||"",
+          lic:l?l.license:(it&&(typeof it.license==="string"?it.license:it.license&&it.license.spdx_id))||""};
+}
+function togglePick(full){
+  const ps=picks(), k=full.toLowerCase(), i=ps.findIndex(p=>p.f.toLowerCase()===k);
+  if(i>=0) ps.splice(i,1);
+  else { if(ps.length>=PICK_MAX){ toast("最多勾 "+PICK_MAX+" 個，一次太多 Claude 也看不仔細"); return false; } ps.push(pickInfo(full)); }
+  pickSave();
+  document.querySelectorAll('[data-pk]').forEach(el=>{ if(el.dataset.pk.toLowerCase()===k){ el.classList.toggle("on",i<0); el.setAttribute("aria-checked",String(i<0)); } });
+  paintPickBtn();
+  return true;
+}
+function paintPickbar(){ const n=picks().length; $("pickn").textContent=n; $("pickbar").classList.toggle("on",n>0); }
+function paintPickBtn(){ const l=S.last; if(l) $("pickbtn").textContent=picked(l.full)?"☑ 已勾選":"☐ 勾選"; }
+const STOCK_RE=/stock|trad(e|ing)|quant|backtest|finance|price|twse|invest|股|量化|回測|行情|選股|期貨|ETF/i;
+const PURPOSES=[
+  {id:"improve",n:"🔧 參考改進我的 App",t:"請把上面每個專案 git clone --depth 1 下來讀程式（不要只看 README），對照{APP}現在的程式，列出：\n1. 可以參考或直接升級的程式與架構\n2. 更好的邏輯或演算法\n3. 介面調整：怎麼讓操作和檢視更方便（手機優先）\n{DOMAIN}每一項都標出：出自哪個專案的哪個檔案、對我的好處、要改我哪裡、難度（小／中／大）、授權能不能直接複製程式碼。\n最後排出最值得先做的 3 項。先列出來給我看，等我說要做再動手。"},
+  {id:"compare",n:"⚖️ 比較挑一個",t:"請比較上面這些專案（clone 下來看程式，不要只看 README）：各自的做法、優缺點、維護活躍度、授權限制，{APP_CMP}用表格整理，最後推薦一個最值得參考的並說明理由。只比較，不要改程式。"},
+  {id:"skill",n:"🧩 收錄成技能",t:"請評估上面的專案能不能收進我的 skl 技能庫（https://github.com/xin7355-collab/skl）：先跑 skill-security-auditor 安全掃描並逐行檢查有沒有自動更新、外連、推銷，確認授權允許，再照 community/README.md 的方式收錄、補 zh.json 與說明。不適合的說明原因並跳過。"},
+  {id:"safety",n:"🛡️ 安全／授權檢查",t:"請檢查上面每個專案：授權（能不能商用、能不能修改後放進我的公開 repo、要保留哪些標示）、安全疑慮（外連、遙測、自動更新、要求的權限與金鑰）、維護狀態（最後更新、未解決的重大 issue）。用表格列出，標紅燈／黃燈／綠燈。只檢查，不要改程式。"}
+];
+function pickTpl(id){ let c={}; try{ c=JSON.parse(localStorage.getItem(PICK_TPL_KEY)||"{}"); }catch(e){} return c[id]!=null?c[id]:PURPOSES.find(p=>p.id===id).t; }
+function pickTplSave(id,t){
+  let c={}; try{ c=JSON.parse(localStorage.getItem(PICK_TPL_KEY)||"{}"); }catch(e){}
+  if(t===PURPOSES.find(p=>p.id===id).t) delete c[id]; else c[id]=t;
+  try{ localStorage.setItem(PICK_TPL_KEY,JSON.stringify(c)); }catch(e){}
+}
+function openPickSheet(){
+  const ps=picks();
+  $("pick-list").innerHTML=ps.length?ps.map(p=>'<div class="prow"><div><div class="pn">'+esc(p.f)+'</div><div class="pd">'+
+      esc([p.ty,p.st!=null&&p.st!==""?"★ "+Number(p.st).toLocaleString():"",p.lang,p.lic?"授權 "+p.lic:""].filter(Boolean).join("・"))+(p.d?"<br>"+esc(p.d):"")+'</div></div>'+
+      '<button class="px" data-unpick="'+esc(p.f)+'">移除</button></div>').join("")
+    : '<div class="empty">還沒有勾選。在搜尋結果、熱門推薦或紀錄的每一列左邊點方框。</div>';
+  const apps=(S.apps||[]).map(a=>a.repo);
+  let last=""; try{ last=localStorage.getItem("xray-pick-app")||""; }catch(e){}
+  $("pick-app").innerHTML='<option value="">（不指定，只看這些專案）</option>'+apps.map(r=>'<option value="'+esc(r)+'"'+(r===last?" selected":"")+'>'+esc(r.split("/").pop())+'</option>').join("");
+  S.pickPurp=S.pickPurp||"improve";
+  $("pick-purp").innerHTML=PURPOSES.map(p=>'<a data-purp="'+p.id+'"'+(p.id===S.pickPurp?' class="on"':'')+'>'+esc(p.n)+'</a>').join("");
+  $("pick-tpl").value=pickTpl(S.pickPurp);
+  $("picksheet").classList.add("on");
+}
+/* 組出要貼給 Claude 的文字 */
+function pickPrompt(withAsk){
+  const ps=picks(), app=$("pick-app").value;
+  const urls=ps.map(p=>"https://github.com/"+p.f);
+  if(!withAsk) return urls.join("\n");
+  const lines=ps.map((p,i)=>(i+1)+". https://github.com/"+p.f+"\n   "+
+    [p.ty,p.st!=null&&p.st!==""?"★ "+Number(p.st).toLocaleString():"",p.lang,p.lic&&p.lic!=="NOASSERTION"?"授權 "+p.lic:"授權未知（請看 LICENSE）"].filter(Boolean).join("・")+
+    (p.d?"\n   "+p.d:""));
+  const stock=STOCK_RE.test(app+" "+ps.map(p=>p.f+" "+p.d).join(" "));
+  const domain=stock?"4. 適合拿來回測的交易策略：寫清楚進出場規則、需要哪些資料、怎麼回測，並檢查有沒有未來函數、倖存者偏差、沒算手續費／證交稅／滑價\n"+
+    "5. 預測模型實際可不可信：有沒有樣本外驗證、跟「買進持有」比的結果，不要只看作者宣稱的準確率\n":"";
+  const ask=$("pick-tpl").value
+    .replace(/\{APP\}/g,app?"我的 App（https://github.com/"+app+"）":"我的 App")
+    .replace(/\{APP_CMP\}/g,app?"並說明哪個最適合放進我的 App（https://github.com/"+app+"），":"")
+    .replace(/\{DOMAIN\}/g,domain);
+  return "我在 Repo X-Ray 勾選了 "+ps.length+" 個 GitHub 專案"+(app?"，要用在我的 App https://github.com/"+app:"")+"：\n\n"+
+    lines.join("\n")+"\n\n"+ask+"\n\n我用 iPhone、沒有電腦，回覆用繁體中文；看不到程式的部分要說「沒驗到」，不要猜。";
 }
 
 /* ── 分頁 ── */
@@ -1933,7 +2048,7 @@ function render(res,pkg,repo,loc,ref,live,x){
   S.last={full:loc.owner+"/"+loc.repo,title:v.title,kind:v.kind,desc:repo.description||"",
           type:T?T.n:"",typeIcon:T?T.i+" "+T.n:"",license:licText(repo.license)};
   // 外部專案不用 skl 技能健檢（使用者要求）；只有自己的 App 才看顧問，外部專案改給「參考它做我的 App」
-  paintFav();
+  paintFav(); paintPickBtn();
   const mine=isMine(full);
   $("sec-advisor").style.display=mine?"":"none";
   $("refclaude").style.display=mine?"none":"";
@@ -2117,7 +2232,7 @@ function paintRows(){
       if(t!==undefined) shown=t; else if(n<40) missing.push(d);
     }
     const hb=histBadges(it.full_name,it.pushed_at);
-    return '<button data-i="'+i+'"'+(hb?' class="was"':'')+'><div class="rr"><div class="rmain">'+
+    return '<button data-i="'+i+'"'+(hb?' class="was"':'')+'><div class="rr">'+pickBox(it.full_name)+'<div class="rmain">'+
       '<span class="rn">'+esc(it.full_name)+'</span>'+(hb?'<div class="rd">'+hb+'</div>':'')+
       '<div class="rd">'+typeBadge(quickType(it))+esc(shown||"（沒有描述）")+'</div>'+
       '<div class="rd" style="font-family:var(--mono);font-size:10px">★ '+Number(it.stargazers_count).toLocaleString()+
@@ -2638,6 +2753,29 @@ $("recent").addEventListener("click",e=>{
   if(x.t==="q") search(false,x.v); else run(x.v);
 });
 $("v-tr").addEventListener("click",translateDoc);
+// 勾選框在清單列（<button>）裡面：用捕捉階段先攔下來，點方框只勾選、不會打開專案
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-pk]"); if(!b) return;
+  e.preventDefault(); e.stopPropagation();
+  togglePick(b.dataset.pk);
+},true);
+$("pickbar").addEventListener("click",openPickSheet);
+$("pickbtn").addEventListener("click",()=>{ if(S.last && togglePick(S.last.full)) toast(picked(S.last.full)?"已勾選，下方按「整理並複製」":"已取消勾選"); });
+$("pick-close").addEventListener("click",()=>$("picksheet").classList.remove("on"));
+$("picksheet").addEventListener("click",e=>{
+  const u=e.target.closest("[data-unpick]");
+  if(u){ togglePick(u.dataset.unpick); if(!picks().length) $("picksheet").classList.remove("on"); else openPickSheet(); return; }
+  const p=e.target.closest("[data-purp]");
+  if(p){ S.pickPurp=p.dataset.purp; document.querySelectorAll("#pick-purp a").forEach(a=>a.classList.toggle("on",a===p)); $("pick-tpl").value=pickTpl(S.pickPurp); return; }
+  if(e.target.closest("#pick-copy")){ if(!picks().length){ toast("還沒有勾選"); return; } copyText(pickPrompt(true)); return; }
+  if(e.target.closest("#pick-urls")){ if(!picks().length){ toast("還沒有勾選"); return; } copyText(pickPrompt(false)); return; }
+  if(e.target.closest("#pick-reset")){ pickTplSave(S.pickPurp,PURPOSES.find(x=>x.id===S.pickPurp).t); $("pick-tpl").value=pickTpl(S.pickPurp); toast("已還原預設"); return; }
+  if(e.target.closest("#pick-clear")){ if(!confirm("清空全部 "+picks().length+" 個勾選？")) return;
+    pickMem=[]; pickSave(); document.querySelectorAll("[data-pk].on").forEach(el=>{ el.classList.remove("on"); el.setAttribute("aria-checked","false"); });
+    paintPickBtn(); $("picksheet").classList.remove("on"); }
+});
+$("pick-tpl").addEventListener("input",()=>pickTplSave(S.pickPurp,$("pick-tpl").value));
+$("pick-app").addEventListener("change",()=>{ try{ localStorage.setItem("xray-pick-app",$("pick-app").value); }catch(e){} });
 $("tabs").addEventListener("click",e=>{
   const a=e.target.closest("a[data-tab]"); if(!a) return;
   if(a.dataset.tab===S.tab) return;
@@ -2827,6 +2965,7 @@ document.querySelectorAll("[data-s]").forEach(a=>a.addEventListener("click",e=>{
 
 paintRecent();
 paintLogCount();
+paintPickbar();
 try{ S.token=localStorage.getItem(TOK_KEY)||""; }catch(e){ S.token=""; }
 paintTok();
 try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}

@@ -54,6 +54,10 @@ def slim(item):
     out = {k: item.get(k) for k in KEEP}
     out["description"] = (out["description"] or "")[:200]
     out["topics"] = (item.get("topics") or [])[:5]
+    # 授權只留代號（MIT、AGPL-3.0…）：X-Ray 批次勾選時要告訴 Claude 能不能複製程式碼
+    lic = (item.get("license") or {}).get("spdx_id")
+    if lic:
+        out["license"] = lic
     return out
 
 
@@ -297,7 +301,8 @@ def selftest():
     def repo(name, stars, **kw):
         d = {"full_name": name, "stargazers_count": stars, "description": "x" * 300, "language": "Python",
              "pushed_at": "2026-10-05", "created_at": "2026-01-01", "size": 10, "html_url": "u",
-             "topics": list("abcdefg"), "owner": {"login": "secret-extra-field"}}
+             "topics": list("abcdefg"), "owner": {"login": "secret-extra-field"},
+             "license": {"spdx_id": "MIT", "name": "MIT License", "url": "x"}}
         d.update(kw)
         return d
 
@@ -312,6 +317,7 @@ def selftest():
     check("created%3A%3E2026-09-29" in calls[1], "日期換成 7 天前（2026-09-29）")
     it = data["lists"][0]["items"][0]
     check("owner" not in it and len(it["description"]) == 200 and len(it["topics"]) == 5, "只留需要的欄位、描述截斷")
+    check(it.get("license") == "MIT", "授權只留代號")
     check(data["snapshot"]["a/one"] == 500 and data["lists"][0]["id"] != "rising", "第一次沒有前一份 → 不出竄升榜")
 
     prev = dict(data, generated_at=(now - dt.timedelta(days=2)).isoformat())
