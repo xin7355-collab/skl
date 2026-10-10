@@ -73,6 +73,7 @@
       "ecc/skills/python-patterns",
       "ecc/skills/python-testing",
       "ecc/skills/data-scraper-agent",
+      "xin-toolkit/skills/web-to-markdown",
       "ecc/skills/error-handling"
     ]
   },
@@ -81,7 +82,8 @@
     "skills": [
       "community/skills/oil-ui",
       "community/skills/hairline-create",
-      "community/skills/live-panel"
+      "community/skills/live-panel",
+      "community/skills/huashu-art-motion"
     ]
   },
   "ai": {

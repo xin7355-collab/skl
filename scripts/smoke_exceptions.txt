@@ -89,3 +89,16 @@ engineering/book-to-skill/skills/book-to-skill/scripts/book_to_skill/parsers/doc
 engineering/book-to-skill/skills/book-to-skill/scripts/book_to_skill/parsers/epub.py  # internal module
 engineering/book-to-skill/skills/book-to-skill/scripts/book_to_skill/parsers/html_text.py  # internal module
 engineering/book-to-skill/skills/book-to-skill/scripts/book_to_skill/parsers/rtf.py  # internal module
+
+# huashu-art-motion：原作者用 uv run 自帶依賴（numpy／Pillow／opencv／playwright／fontTools），CI 沒裝這些套件
+community/skills/huashu-art-motion/scripts/analyze/breakdown.py  # 需要 numpy（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/audio/synth_艺术史速通.py  # 需要 numpy（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/deliver.py  # 需要 cv2（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/engine/compare.py  # 需要 PIL（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/engine/render.py  # 需要 playwright（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/film_gate.py  # 需要 cv2（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/font_subset.py  # 需要 fontTools（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/key_green.py  # 需要 numpy（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/key_split.py  # 需要 numpy（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/qa.py  # 需要 numpy（uv run 時才安裝）
+community/skills/huashu-art-motion/scripts/subzone_gate.py  # 需要 numpy（uv run 時才安裝）

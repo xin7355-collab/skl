@@ -581,7 +581,16 @@ function trPut(pairs){
   try{ localStorage.setItem(TR.key,JSON.stringify(all)); }catch(e){ /* 空間不足：少了快取而已 */ }
 }
 /* 已經是中文（中日韓字占三成以上）就不翻，省請求 */
-function isZh(t){ const m=String(t).match(/[㐀-鿿]/g); return !!m && m.length/String(t).replace(/\s/g,"").length>0.3; }
+/* 「已經是繁體中文」才不送翻譯。簡體（例如中國作者的技能說明）也要送，Google 會轉成繁體；
+   簡體字表只放繁體不會用到的字（要跟 web/build_trending.py 的 SIMP 一致），
+   短句 1 個、長句 2 個以上才算，避免把繁體誤判成簡體。 */
+const SIMP_RE=/[这们说时来为对动画艺术与视频复语组织过还没发现问题进实开关传输网络数据库图标样设计让请记录区页书产业经济个国会学员长东车间门应该选择从电话总务边头乐历亲观觉讨论认识词译读写课谁谅调谈讲诉证评试详误变乱买卖宝审宠军农决况凤刘则刚创删别剧劳势华单卫厂厅压厉县参双叹吗听启响围园团坏块坚场坛坟壮声处备够夺奋妇妈婴宁宽寿导层岁岛币师带帮广庆庙废异张弹强归彻径忆态怀恋恶悬惊惧惨惯戏战户扑执扩扫扬扰抚抢护报担拟拥挂挡挣挤挥损换摄摆摇撑断无旧显暂机杀杂权条杨极构枪柜栏树桥档梦检楼欢气汉汤沟泪泽洁浅测浑浓涛润涨渐渔温湾湿满灭灯灵灾炉点炼烟烦烧热爱爷牵犹独狮猎猪献环玛琐畅疗盘监盖矿码础确碍礼种积称稳窃竞笔笼筑签简类粮紧纠红纤约级纪纬纯纱纲纳纵纷纸纹纺线练细终绍绑结绕绘给绝统继绩绪续维绵综绿缓编缘缝缩罗罚罢职联聪肃肠肤肿胀胆胜脉脑脚脸腾舰艰节芦苏苹荐荡荣药莲获营萧萨蓝虑虚虽蚀蛮补衬袭见规览触誉订训议讯许访诗诚诞询谊谋谓谢谣谦谨谱贝负贡财责贤败货质贩贪贫购贯贱贴贵贷贸费贺贼资赋赌赏赔赖赚赛赞赠赢赵赶趋跃践踪轨转轮软轰轻载较辅辆辈辉辞辩辽达迁迈运远违连迟适逊递逻遗邓邮邻郑酱释针钓钟钢钥钩钱钻铁铃铜银铺链销锁锅锋错锦键锻镇镜闪闭闯闲闷闹闻阀阁阅阔队阳阴阵阶际陆陈险随隐难雾静须顶项顺顾顿颁预领颖颜额风飞饥饭饮饰饱饼馆驱驶驻驾验骂骑骗鱼鲁鲜鸟鸡鸣鸭鹅麦黄齐齿龄龙]/g;
+function isZh(t){
+  t=String(t); const m=t.match(/[㐀-鿿]/g);
+  if(!m || m.length/t.replace(/\s/g,"").length<=0.3) return false;
+  const sc=(t.match(SIMP_RE)||[]).length;
+  return !(sc>=2 || (sc>=1 && m.length<12));
+}
 const trQueue=(()=>{ let p=Promise.resolve(); return fn=>{ const r=p.then(fn); p=r.catch(()=>{}); return r; }; })();
 async function trFetch(text,tries){
   tries=tries||0;
@@ -593,27 +602,44 @@ async function trFetch(text,tries){
   const d=await r.json();
   return (d[0]||[]).map(x=>x[0]||"").join("");
 }
-/* 一次翻一批：用換行串起來送（每批 ≤ 1800 字，網址才不會太長），回來再依換行拆開；
-   行數對不上就整批放棄（寧可顯示原文，也不要把 A 的譯文配到 B 上）。 */
-const trBad=new Set();   // 這次開啟頁面中翻譯失敗過的句子：不重送，直接顯示原文
+/* 一次翻一批：用換行串起來送，回來再依換行拆開。
+   一批失敗（被限流、網路斷、行數對不上）不整批放棄：拆成兩半再試，最後只剩真的翻不了的那幾句；
+   寧可那幾句顯示原文，也不要把 A 的譯文配到 B 上。批與批之間停一下，避免一次送太多被 Google 擋。 */
+const trBad=new Set();   // 這次開啟頁面中拆到單句仍失敗的句子：不重送，直接顯示原文
+// Google 會把常見技術縮寫翻成別的意思（LLM→法學碩士）；原文有這個縮寫時換回來
+const TR_FIX=[[/法學碩士(學位)?/g,"LLM",/LLM/],[/拉取請求/g,"PR",/\bPR\b/]];
+function trFix(src,out){ TR_FIX.forEach(f=>{ if(f[2].test(src)) out=out.replace(f[0],f[1]); }); return out; }
 async function translateMany(texts){
   const uniq=[...new Set(texts.map(t=>String(t||"").replace(/\s*\n\s*/g," ").trim()))]
     .filter(t=>t && !isZh(t) && trGet(t)===undefined && !trBad.has(t));
-  let batch=[], len=0, failed=0;
-  const flush=async()=>{
-    if(!batch.length) return;
-    const b=batch; batch=[]; len=0;
-    try{
-      const out=(await trQueue(()=>trFetch(b.join("\n")))).split("\n");
-      if(out.length===b.length) trPut(b.map((t,i)=>[t,out[i].trim()]));
-      else{ failed+=b.length; b.forEach(t=>trBad.add(t)); S.trErr="譯文行數對不上"; }
-    }catch(e){ failed+=b.length; b.forEach(t=>trBad.add(t)); S.trErr=e.message; }
+  let failed=0, sent=0;
+  const one=async b=>{
+    if(sent++) await sleep(250);
+    let out=null;
+    try{ out=(await trQueue(()=>trFetch(b.join("\n")))).split("\n"); }
+    catch(e){ S.trErr=e.message; }
+    if(out && out.length===b.length){
+      // 原樣傳回的英文句：Google 有時整批當成別的語言而不翻；多句時拆開重送，單句才接受（可能本來就是專有名詞）
+      const same=b.filter((t,i)=>b.length>1 && /[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t) && out[i].trim()===t);
+      trPut(b.map((t,i)=>[t,trFix(t,out[i].trim())]).filter(x=>same.indexOf(x[0])<0));
+      for(const t of same) await one([t]);
+      return;
+    }
+    if(out) S.trErr="譯文行數對不上";
+    if(b.length>1){ const h=Math.ceil(b.length/2); await one(b.slice(0,h)); await one(b.slice(h)); return; }
+    failed++; trBad.add(b[0]);
   };
-  for(const t of uniq){
-    if(len+t.length>1800) await flush();
-    batch.push(t.slice(0,1800)); len+=t.length+1;
+  // 每批最多 8 句、1200 字（中文網址編碼後會變好幾倍長，太長的網址會被拒）。
+  // 簡體中文和英文分開送：混在同一批時 Google 自動偵測成中文，英文句就原樣傳回、看起來像沒翻。
+  const cjk=t=>/[㐀-鿿]/.test(t);
+  const ordered=uniq.filter(cjk).concat(uniq.filter(t=>!cjk(t)));
+  let batch=[], len=0;
+  for(const t of ordered){
+    if(batch.length && cjk(batch[0])!==cjk(t)){ await one(batch); batch=[]; len=0; }
+    if(batch.length && (len+t.length>1200 || batch.length>=8)){ await one(batch); batch=[]; len=0; }
+    batch.push(t.slice(0,1200)); len+=t.length+1;
   }
-  await flush();
+  if(batch.length) await one(batch);
   return failed;
 }
 function zhOn(){ return $("zh").checked; }
@@ -624,6 +650,8 @@ function zhOf(t){ const k=String(t||"").replace(/\s*\n\s*/g," ").trim(); return 
 const TYPES={
   skills:{i:"🧠",n:"AI 技能包",what:"給 Claude Code／Codex 等 AI 代理用的技能說明書（SKILL.md），不是網站也不是 App。",
     why:"它是放進 AI 工具裡用的文字指令，本來就不需要網址。",use:"把需要的技能資料夾複製到你 App 的 .claude/skills/，或請 Claude 用 app-bootstrap 幫你裝。"},
+  agent:{i:"🦾",n:"AI 代理工具",what:"會自己讀寫檔案、跑指令、上網的 AI 助理程式（跟 Claude Code 同一類）。",
+    why:"它在電腦或伺服器上跑、要接 AI 的 API 金鑰，不是網站。",use:"電腦裝 Node／Python 後執行；手機上直接用 Claude Code 就有同樣能力。要跑記得放在容器或虛擬機，並關掉遙測。"},
   mcp:{i:"🔌",n:"MCP 伺服器",what:"讓 AI 連到外部服務（資料庫、網站、工具）的小程式。",
     why:"它在背景跑、給 AI 呼叫，不是給人看的頁面。",use:"在 Claude 的連接器（Connectors）加入，或請 Claude Code 幫你的專案設定。"},
   list:{i:"📚",n:"資源清單",what:"一份整理好的連結清單（awesome list），內容幾乎都在 README。",
@@ -651,6 +679,7 @@ function quickType(it){
   const has=re=>re.test(t);
   if(has(/\bawesome\b|curated list|awesome-list/)) return "list";
   if(has(/\bskills?\b/) && has(/claude|agent|codex|cursor|copilot/)) return "skills";
+  if(has(/agent harness|coding agent|ai agent\b|autonomous agent|agent framework|personal ai assistant|ai assistant that/)) return "agent";
   if(has(/\bmcp\b|model context protocol/)) return "mcp";
   if(has(/browser[- ]extension|chrome[- ]extension|firefox[- ]add-?on|userscript/)) return "ext";
   if(has(/dotfiles/)) return "dotfiles";
@@ -667,8 +696,15 @@ function quickType(it){
 }
 function deepType(res,pkg,repo,readme){
   const h=n=>res.hits.has(n);
-  if(res.skillMd) return "skills";
-  if(/model context protocol|\bmcp server\b/i.test(readme||"") || (pkg && pkg.deps && pkg.deps["@modelcontextprotocol/sdk"])) return "mcp";
+  // awesome 清單常提到 MCP、也可能附幾個 SKILL.md，先認清單
+  if(quickType(repo)==="list") return "list";
+  // 大型產品（firecrawl、openclaw、各種 agent 框架）也會附幾個給自己開發用的 SKILL.md，
+  // 只有技能放在上層、或程式碼不多（每個技能 ≤ 15 支程式）才算「AI 技能包」
+  const code=res.codeFiles||0;
+  if(res.skillRoot || res.skillMd && (res.skillTop && code<=Math.max(120,res.skillMd*15) || code<=res.skillMd*15)) return "skills";
+  // README 只要「提到」MCP 不算（很多 AI 專案都會提）；開頭就自稱 MCP server 或依賴 MCP SDK 才算
+  const head=String(readme||"").slice(0,1500);
+  if(/\bmcp server\b|model context protocol server/i.test(head) || (pkg && pkg.deps && pkg.deps["@modelcontextprotocol/sdk"])) return "mcp";
   if(h("Electron")||h("Tauri")||h("Expo / React Native")||h("原生 Android 專案")||h("原生 iOS 專案")) return "app";
   const md=(res.exts.get("md")||0)+(res.exts.get("mdx")||0);
   if(res.files>2 && md/res.files>0.6) return quickType(repo)==="list" ? "list" : "docs";
@@ -1036,7 +1072,12 @@ async function scanTree(nodes){
         if(!res.indexHtml || depth(path)<depth(res.indexHtml)) res.indexHtml=path;
       } else if(/\.html?$/.test(low)) res.htmlCount++;
       if(!res.readme && /(^|\/)readme(\.md|\.markdown|\.txt)?$/.test(low)) res.readme=path;
-      if(/(^|\/)skill\.md$/.test(low)) res.skillMd=(res.skillMd||0)+1;   // AI 技能包的最強證據
+      if(/(^|\/)skill\.md$/.test(low)){
+        res.skillMd=(res.skillMd||0)+1;                                   // AI 技能包的最強證據
+        if(low==="skill.md") res.skillRoot=true;                          // 根目錄就是 SKILL.md：整個 repo 就是一個技能
+        if(low.split("/").length<=3) res.skillTop=true;                   // skills/x/SKILL.md：技能放在上層
+      }
+      if(/\.(js|mjs|cjs|ts|tsx|jsx|py|go|rs|java|kt|swift|rb|php|cs|c|cc|cpp|vue|svelte)$/.test(low)) res.codeFiles=(res.codeFiles||0)+1;
       /* App 顧問用的訊號：有沒有自動化、測試、工作守則、已裝 skl、資料庫檔、Docker */
       if(low.indexOf(".github/workflows/")===0 && /\.ya?ml$/.test(low)) res.workflows=(res.workflows||0)+1;
       if(/(^|\/)(tests?|__tests__|e2e|spec)\//.test(low) || /\.(test|spec)\.[jt]sx?$/.test(low) || /(^|\/)test_[^\/]*\.py$/.test(low)) res.tests=(res.tests||0)+1;
@@ -1357,7 +1398,7 @@ function verdict(res,pkg,repo){
   else head=repo.language||"未知類型";
 
   parts.push(head);
-  if(has("TypeScript")) parts.push("TypeScript");
+  if(has("TypeScript") && head!=="TypeScript") parts.push("TypeScript");   // 主要語言就是 TS 時不重複寫兩次
   if(noBuild && ui && head.indexOf("靜態")>-1) parts.push(ui.replace(" (CDN)",""));
   if(css) parts.push(css.replace(" (CDN)",""));
   if(has("Google Apps Script 後端")) parts.push("Google Apps Script");
@@ -1702,12 +1743,19 @@ function showOut(){
 }
 
 /* ── 渲染 ── */
+/* GitHub 認不出的授權（自訂、CC 系列）會回 NOASSERTION；直接寫出來使用者看不懂，也會讓 Claude 以為沒授權 */
+function licText(l){
+  const id=l&&l.spdx_id;
+  if(!id) return "未標示（沒有 LICENSE 檔：預設保留所有權利，只能看不能拿來用）";
+  if(id==="NOASSERTION") return "GitHub 認不出（可能是自訂或 CC 授權，要看 LICENSE 檔）";
+  return id;
+}
 function render(res,pkg,repo,loc,ref,live,x){
   x=x||{};
   const v=verdict(res,pkg,repo);
   const dt=deepType(res,pkg,repo,x.readme), T=TYPES[dt];
   // 框架指紋認不出來時（「未知類型」「函式庫／工具」），改用類型判斷的白話說法
-  if(T && (v.title.indexOf("未知類型")>-1 || v.kind==="函式庫 / 工具" || v.kind==="專案"))
+  if(T && (v.title.indexOf("未知類型")>-1 || v.kind==="函式庫 / 工具" || v.kind==="專案" || dt==="skills" || dt==="list" || dt==="agent"))
     // 括號只補有資訊量的技術組合；只是語言名稱（Python、Python 專案）就不重複講
     $("v-title").innerHTML="這是一個 <em>"+T.i+" "+esc(T.n)+"</em>"+
       (v.title.indexOf("未知類型")>-1 || v.title===repo.language || /專案$/.test(v.title) ? "" : "（"+esc(v.title)+"）")+"。";
@@ -1729,7 +1777,7 @@ function render(res,pkg,repo,loc,ref,live,x){
   meta.push(["檔案",res.files.toLocaleString()]);
   if(pkg) meta.push(["依賴",pkg.count+" 個"]);
   if(repo.size!=null) meta.push(["大小",fmtSize(repo.size)]);
-  if(repo.license&&repo.license.spdx_id) meta.push(["授權",repo.license.spdx_id]);
+  meta.push(["授權",repo.license&&repo.license.spdx_id&&repo.license.spdx_id!=="NOASSERTION"?repo.license.spdx_id:licText(repo.license).split("（")[0]+"（看 LICENSE）"]);
   const full=loc.owner+"/"+loc.repo, prev=histGet(full);
   // 先顯示「之前」的紀錄再記這一次，才看得出是不是重複點開
   $("v-meta").innerHTML=(prev&&(prev.n||prev.g||prev.dl)?'<div style="width:100%;margin-bottom:4px">'+histBadges(full,repo.pushed_at)+'</div>':'')+
@@ -1883,7 +1931,7 @@ function render(res,pkg,repo,loc,ref,live,x){
 
   $("out").classList.add("on");
   S.last={full:loc.owner+"/"+loc.repo,title:v.title,kind:v.kind,desc:repo.description||"",
-          type:T?T.n:"",typeIcon:T?T.i+" "+T.n:"",license:(repo.license&&repo.license.spdx_id)||"未標示"};
+          type:T?T.n:"",typeIcon:T?T.i+" "+T.n:"",license:licText(repo.license)};
   // 外部專案不用 skl 技能健檢（使用者要求）；只有自己的 App 才看顧問，外部專案改給「參考它做我的 App」
   paintFav();
   const mine=isMine(full);
@@ -2719,7 +2767,7 @@ $("refclaude").addEventListener("click",()=>{
 });
 $("askclaude").addEventListener("click",()=>{
   const l=S.last; if(!l) return;
-  copyText("請幫我分析 GitHub 專案 https://github.com/"+l.full+"（Repo X-Ray 判讀："+l.title+" 的"+l.kind+"）。"+
+  copyText("請幫我分析 GitHub 專案 https://github.com/"+l.full+"（Repo X-Ray 判讀："+(l.type||l.title+" 的"+l.kind)+"；授權 "+l.license+"）。"+
     "用白話說明：它能做什麼、適合誰用、怎麼在手機上試用或部署、有沒有安全或授權要注意的地方；"+
     "如果適合拿來改成我自己的 App，列出最少步驟。");
 });

@@ -65,6 +65,8 @@
   - `xin-toolkit/skills/file-intake`：使用者上傳檔案要「做出來」時的標準流程。
   - `xin-toolkit/skills/ai-model-router`：App 呼叫 AI 的自動挑模型模組（`scripts/model_router.py`、`assets/model_router.js`，
     兩邊規則要一致；selftest 都在 CI 跑）。組合 `ai`。
+  - `xin-toolkit/skills/web-to-markdown`：網頁轉 Markdown（firecrawl 的免費替代，純內建模組、robots.txt＋限流）；
+    真實網路驗證用 `Web to markdown smoke test` 工作流（改到技能時自動跑）。組合 `python`。
   - `xin-toolkit/skills/auto-video-edit`：全自動影片剪輯（ffmpeg）；`Video auto edit` 工作流每 30 分鐘處理
     以 video 開頭的「草稿 Release」裡的影片，成品傳回同一個草稿（草稿不公開）。
   - `web/ai.html`＋`web/ai/models.json`、`web/ai/features.json`：AI 模型與功能指南（含 Cowork 分頁：分區對照、範例只放通用情境，不放工作單位等敏感資訊）。資料由每週 Routine 自動
@@ -77,13 +79,15 @@
     分三個分頁（探索 GitHub／我的 App／紀錄）；App 顧問只給自己的 App（apps.json 或 xin7355-collab 帳號），外部專案不跑。
     看過／下載過／收藏紀錄存 localStorage `xray-hist-v1`；「白話重點」取代技術指紋、API 端點、檔案類型分佈。
     說明文件清單每份附一句中文說明（SKILL.md description／第一段，摘要快取 `xray-docsum-v1`）。
+    翻譯：簡體也送去轉繁體、簡體與英文分批送（混送時英文會原樣傳回）；簡體字表在 xray.html 的 SIMP_RE 與
+    build_trending.py 的 SIMP，兩邊要一致。
     「我的 App」＋「App 顧問」：規則在 `web/advisor_rules.json`（推薦技能路徑必須存在，`web/check_advisor_rules.py` 檢查），
     部署時複製 `.github/apps.json` 成 `apps.json`。新增 App 就加進 apps.json。
     Token 可勾「記在這支手機」存 localStorage（使用者要求；只建議唯讀 Token，畫面只顯示末 4 碼，只送 api.github.com）。
   - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
     使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
-  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（oil-ui、hairline-create、live-panel，MIT）；來源、版本與修改
-    記在 `community/README.md`（oil-ui 已移除自動更新與推銷）。組合 `visual`。
+  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（oil-ui、hairline-create、live-panel、huashu-art-motion、humanizer，MIT）；來源、版本與修改
+    記在 `community/README.md`（oil-ui 已移除自動更新與推銷；huashu-art-motion 的字型不進 repo，用 fetch_fonts.py 下載驗證）。組合 `visual`。
   - `xin-toolkit/skills/app-bootstrap/assets/security-reviewed.json`：掃描 FAIL 但人工審查為誤判的技能清單，
     以內容指紋（`bootstrap_app.py hash <路徑>`）綁定；技能一改就失效、要重審。不要為了「裝得上」隨便加。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。

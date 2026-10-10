@@ -21,6 +21,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import sys
 import tempfile
 import time
@@ -80,9 +81,26 @@ def http_json(url, token, tries=4):
             time.sleep(2 ** (i + 1))
 
 
+# 簡體字表（只放繁體不會用到的字）：要跟 web/xray.html 的 SIMP_RE 一致。簡體描述也要送翻譯轉成繁體。
+SIMP = set("这们说时来为对动画艺术与视频复语组织过还没发现问题进实开关传输网络数据库图标样设计让请记录区页书产业经济个国会学员长东车间门应该选择从电话总务边头乐历亲观觉讨论认识词译读写课谁谅调谈讲诉证评试详误变乱买卖宝审宠军农决况凤刘则刚创删别剧劳势华单卫厂厅压厉县参双叹吗听启响围园团坏块坚场坛坟壮声处备够夺奋妇妈婴宁宽寿导层岁岛币师带帮广庆庙废异张弹强归彻径忆态怀恋恶悬惊惧惨惯戏战户扑执扩扫扬扰抚抢护报担拟拥挂挡挣挤挥损换摄摆摇撑断无旧显暂机杀杂权条杨极构枪柜栏树桥档梦检楼欢气汉汤沟泪泽洁浅测浑浓涛润涨渐渔温湾湿满灭灯灵灾炉点炼烟烦烧热爱爷牵犹独狮猎猪献环玛琐畅疗盘监盖矿码础确碍礼种积称稳窃竞笔笼筑签简类粮紧纠红纤约级纪纬纯纱纲纳纵纷纸纹纺线练细终绍绑结绕绘给绝统继绩绪续维绵综绿缓编缘缝缩罗罚罢职联聪肃肠肤肿胀胆胜脉脑脚脸腾舰艰节芦苏苹荐荡荣药莲获营萧萨蓝虑虚虽蚀蛮补衬袭见规览触誉订训议讯许访诗诚诞询谊谋谓谢谣谦谨谱贝负贡财责贤败货质贩贪贫购贯贱贴贵贷贸费贺贼资赋赌赏赔赖赚赛赞赠赢赵赶趋跃践踪轨转轮软轰轻载较辅辆辈辉辞辩辽达迁迈运远违连迟适逊递逻遗邓邮邻郑酱释针钓钟钢钥钩钱钻铁铃铜银铺链销锁锅锋错锦键锻镇镜闪闭闯闲闷闹闻阀阁阅阔队阳阴阵阶际陆陈险随隐难雾静须顶项顺顾顿颁预领颖颜额风飞饥饭饮饰饱饼馆驱驶驻驾验骂骑骗鱼鲁鲜鸟鸡鸣鸭鹅麦黄齐齿龄龙")
+
+
+def tr_fix(src, out):
+    """Google 把技術縮寫翻成別的意思（LLM→法學碩士）時換回來；規則要跟 web/xray.html 的 TR_FIX 一致。"""
+    if "LLM" in src:
+        out = re.sub(r"法學碩士(學位)?", "LLM", out)
+    if re.search(r"\bPR\b", src):
+        out = out.replace("拉取請求", "PR")
+    return out
+
+
 def is_zh(t):
+    """已經是繁體中文才不送翻譯；短句 1 個、長句 2 個以上簡體字就當簡體。"""
     n = sum(1 for c in t if "\u3400" <= c <= "\u9fff")
-    return n > 0 and n / max(1, len(t.replace(" ", ""))) > 0.3
+    if n == 0 or n / max(1, len(t.replace(" ", ""))) <= 0.3:
+        return False
+    sc = sum(1 for c in t if c in SIMP)
+    return not (sc >= 2 or (sc >= 1 and n < 12))
 
 
 def google_translate(text, tries=3):
@@ -128,7 +146,9 @@ def translate_lists(lists, prev, translate, sleep=time.sleep):
         try:
             out = translate("\n".join(batch)).split("\n")
             if len(out) == len(batch):
-                known.update({a: b.strip() for a, b in zip(batch, out)})
+                # 原樣傳回的英文句不記（Google 誤判語言時會這樣），留給手機端單句重翻
+                known.update({a: tr_fix(a, b.strip()) for a, b in zip(batch, out)
+                              if not (b.strip() == a and re.search(r"[A-Za-z]{3,}\s+[A-Za-z]{3,}", a))})
                 streak = 0
             else:
                 failed += len(batch)
@@ -139,8 +159,12 @@ def translate_lists(lists, prev, translate, sleep=time.sleep):
         batch, size = [], 0
         sleep(1)
 
+    # 簡體中文和英文分開送：混在同一批時 Google 會整批當中文，英文句原樣傳回
+    def cjk(t):
+        return any("\u3400" <= c <= "\u9fff" for c in t)
+    todo = [d for d in todo if cjk(d)] + [d for d in todo if not cjk(d)]
     for d in todo:
-        if size + len(d) > 1800:
+        if size + len(d) > 1800 or (batch and cjk(batch[0]) != cjk(d)):
             flush()
         batch.append(d)
         size += len(d) + 1
@@ -339,6 +363,15 @@ def selftest():
     its = L[0]["items"]
     check(f == 0 and its[0]["description_zh"] == "譯Hello" and its[1]["description_zh"] == "譯World", "描述預先翻成中文")
     check("description_zh" not in its[2] and len(sent) == 1, "已是中文不送、多筆合成一批")
+    sent.clear()
+    L2 = [{"items": [{"description": "Hello there friend"}, {"description": "视频下载工具"}, {"description": "Fast LLM gateway"}]}]
+    translate_lists(L2, None, lambda t: (sent.append(t), "\n".join("法學碩士" if "LLM" in x else ("譯" + x if "视" in x else x) for x in t.split("\n")))[1], nosleep)
+    i2 = L2[0]["items"]
+    check(len(sent) == 2 and "视频" in sent[0] and "Hello" in sent[1], "簡體與英文分開送")
+    check("description_zh" not in i2[0] and i2[2]["description_zh"] == "LLM" and i2[1]["description_zh"].startswith("譯"),
+          "英文原樣傳回不記、LLM 不被翻成法學碩士")
+    check(is_zh("已經是繁體中文的描述") and not is_zh("艺术与视频动画：拆解复刻动画") and not is_zh("视频下载")
+          and not is_zh("Hello world") and is_zh("拆解與刻畫的工具，支援多種風格"), "簡體要送翻譯、繁體不送、繁簡共用字不誤判")
     P = {"lists": [{"items": [{"description": "Hello", "description_zh": "舊譯"}]}]}
     L2 = [{"items": [{"description": "Hello"}]}]
     sent.clear()

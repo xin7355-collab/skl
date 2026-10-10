@@ -158,6 +158,7 @@
    "why": "沒有限流和指數退避很容易被封；失敗要說清楚是哪幾筆。",
    "skills": [
     "engineering/universal-scraping-architect/skills/universal-scraping-architect",
+    "xin-toolkit/skills/web-to-markdown",
     "ecc/skills/data-scraper-agent",
     "ecc/skills/error-handling",
     "xin-toolkit/skills/app-guardrails-audit"

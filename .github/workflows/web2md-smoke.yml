@@ -1,0 +1,48 @@
+---
+# 在 GitHub 的真實網路上跑 web-to-markdown：確認抓得到、轉得出正文、錯誤訊息正確。
+# 只做驗證，不保存資料。改到 web2md.py 時自動跑一次，也可以手動執行。
+name: Web to markdown smoke test
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'xin-toolkit/skills/web-to-markdown/**'
+      - '.github/workflows/web2md-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Convert real pages
+        run: |
+          set -o pipefail
+          cat > /tmp/urls.txt <<'URLS'
+          # 英文文件、中文百科、會被 robots.txt 擋或需要 JS 的頁面各一個
+          https://docs.python.org/3/library/urllib.request.html
+          https://zh.wikipedia.org/wiki/Markdown
+          https://www.python.org/about/
+          URLS
+          python3 xin-toolkit/skills/web-to-markdown/scripts/web2md.py batch /tmp/urls.txt --out-dir /tmp/md 2>&1 | tee /tmp/log.txt
+
+      - name: Check output
+        run: |
+          python3 - <<'PY'
+          import os
+          files = sorted(os.listdir("/tmp/md"))
+          print("產生檔案：", files)
+          if len(files) < 2:
+              raise SystemExit("成功轉換的頁面少於 2 個，看上一步的錯誤訊息")
+          for f in files:
+              t = open(os.path.join("/tmp/md", f), encoding="utf-8").read()
+              print(f"\n===== {f}（{len(t)} 字）=====\n" + t[:1500])
+              if len(t) < 800 or "url: " not in t:
+                  raise SystemExit(f"{f} 內容太少或缺少來源資訊")
+          PY

@@ -94,6 +94,8 @@
  "commercial/skills/pricing-strategist": "協助設計產品定價模式與價格區間，包含訂閱制、用量制或方案分級",
  "commercial/skills/rfp-responder": "協助拆解並回覆投標書要求，整理證明點並評估投標勝率",
  "community/skills/hairline-create": "畫一張會跟著手指／滑鼠轉動的等角線條插圖，輸出成單一 HTML 檔，適合網站首頁或功能說明圖。",
+ "community/skills/huashu-art-motion": "用程式碼畫動畫：35 種藝術風格（洞穴壁畫、莫內、浮世繪、8-bit…）、9 種解說動畫語法（Kurzgesagt、Vox、3b1b、白板、財經圖表），從鏡頭表到成片與品質檢查一條龍（簡體中文說明，需 Python＋Playwright＋ffmpeg）。",
+ "community/skills/humanizer": "把「AI 味」很重的文字改寫得像真人寫的：抓出「不是 X 而是 Y」、三連排比、滿篇破折號、浮誇用詞等 AI 痕跡，只改寫法、不增減事實（以英文寫作規則為主）。",
  "community/skills/live-panel": "把系統或 AI 代理架構做成「終端機監控面板」風格的動態架構圖，用 JSON 設定，輸出 mp4 或可直接開的網頁。",
  "community/skills/oil-ui": "介面設計與評審：先定設計方向、多風格同屏比較、視覺層級與實際截圖迭代，交付設計說明或可執行介面。",
  "compliance-os/skills/ai-act-readiness": "用六個關鍵問題檢查AI系統是否符合歐盟AI法案規定",
@@ -435,5 +437,6 @@
  "xin-toolkit/skills/app-guardrails-audit": "依低資源 App 防禦準則審計專案，檢查記憶體、資料庫鎖、金鑰外洩、逾時等常見風險",
  "xin-toolkit/skills/auto-video-edit": "全自動剪影片：去掉沒講話的空白、挑精華剪成指定長度、做直式短影音；手機上傳到 GitHub 草稿就會自動剪好傳回",
  "xin-toolkit/skills/file-intake": "把你上傳的檔案（zip、規格、程式）做成新技能、可用的網頁 App，或整合進既有 App，含安全掃描與驗證",
- "xin-toolkit/skills/tw-stock": "用證交所與櫃買中心官方資料，每天收集台股行情、估值、月營收，並做有出處的個股分析（非投資建議）"
+ "xin-toolkit/skills/tw-stock": "用證交所與櫃買中心官方資料，每天收集台股行情、估值、月營收，並做有出處的個股分析（非投資建議）",
+ "xin-toolkit/skills/web-to-markdown": "把網頁轉成乾淨的 Markdown 給 AI 讀或存進 App，只用 Python 內建模組、GitHub Actions 免費排程；遵守 robots.txt、限流與重試（firecrawl 的免費替代）。"
 }

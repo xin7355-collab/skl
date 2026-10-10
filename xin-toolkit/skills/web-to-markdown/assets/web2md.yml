@@ -1,0 +1,38 @@
+---
+# 範本：放到你的 App 的 .github/workflows/web2md.yml。
+# 每天（或手動）把 urls.txt 裡的網頁轉成 Markdown，存進 pages/ 並 commit。
+# 需要：把 web2md.py 複製到 scripts/web2md.py；在 repo 根目錄放 urls.txt（一行一個網址）。
+name: Web pages to markdown
+
+'on':
+  workflow_dispatch:
+  schedule:
+    - cron: '17 22 * * *'   # 台灣時間每天 06:17（避開整點擁擠）
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web2md
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Convert pages
+        run: |
+          set -o pipefail
+          python3 scripts/web2md.py batch urls.txt --out-dir pages --delay 2 2>&1 | tee web2md.log
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages
+          if git diff --cached --quiet; then echo "沒有變化"; exit 0; fi
+          git commit -m "更新網頁 Markdown（$(ls pages | wc -l) 份）"
+          for i in 1 2 3 4; do git pull --rebase -q && git push && break; sleep $((2**i)); done

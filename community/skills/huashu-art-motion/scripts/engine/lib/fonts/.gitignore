@@ -1,0 +1,3 @@
+# 字型不進 repo（16MB）；用 fetch_fonts.py 從原作者固定 commit 下載並驗證雜湊
+*.woff
+*.part

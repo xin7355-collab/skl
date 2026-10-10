@@ -88,6 +88,8 @@ jobs:
           python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py selftest
           python3 xin-toolkit/skills/ai-model-router/scripts/model_router.py selftest
           node xin-toolkit/skills/ai-model-router/assets/model_router.js selftest
+          python3 xin-toolkit/skills/web-to-markdown/scripts/web2md.py selftest
+          python3 community/skills/huashu-art-motion/scripts/engine/lib/fonts/fetch_fonts.py selftest
           python3 ops/weekly_report.py selftest
           python3 web/ai/check_ai_data.py selftest
           python3 xin-toolkit/skills/auto-video-edit/scripts/video_auto_edit.py selftest

@@ -45,6 +45,16 @@
    ],
    "verdict_at_review": "FAIL",
    "note": "render-graphs.js 用 execFileSync 呼叫 graphviz 產生圖（2026-09-24）"
+  },
+  "community/skills/huashu-art-motion": {
+   "sha256": "8c2412b8b8b584ae6fde14d7c7e9a62c54ffd823a1e07138d13533fe21f7a490",
+   "categories": [
+    "CODE-EXEC",
+    "FS-ABUSE",
+    "OBFUSCATION"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "base64 是瀏覽器截圖 PNG 與 TTS 回傳的音訊；.exec() 是正規表達式；unlink 只刪自己的暫存檔。唯一外連是使用者主動啟用的火山引擎語音（預設關閉）與 skl 加的 fetch_fonts.py（固定 commit＋sha256 驗證）（2026-10-10）"
   }
  }
 }
