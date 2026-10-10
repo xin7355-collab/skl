@@ -83,5 +83,13 @@
       "community/skills/hairline-create",
       "community/skills/live-panel"
     ]
+  },
+  "ai": {
+    "desc": "App 裡有呼叫 AI：自動挑模型與下架自動換、控管費用、優化提示詞",
+    "skills": [
+      "xin-toolkit/skills/ai-model-router",
+      "ecc/skills/cost-aware-llm-pipeline",
+      "ecc/skills/prompt-optimizer"
+    ]
   }
 }

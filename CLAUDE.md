@@ -40,6 +40,7 @@
 - 註解寫「為什麼」與避開了什麼失敗情境，不重述程式在做什麼。
 - commit 訊息寫：問題、根本原因、怎麼修、怎麼驗證。
 - 不寫死外部 API 的模型名稱（常改名下架）；能自動挑就自動挑，也能用環境變數指定。
+  呼叫 AI 時用 skl 的 `ai-model-router`（只寫等級 fast／smart／best／auto，下架自動換、不合格自動升級）。
 - 範圍外的問題簡短提出，不擅自擴大範圍。
 - 不留死碼；改名、搬檔後全專案搜一次舊名稱的殘留參照。
 
@@ -62,6 +63,8 @@
     比對上游（基準在 `.github/upstream-sync.json`）、檢查中文說明覆蓋率 → 只寫數量的 Issue。
     同步上游後要更新 upstream-sync.json 的 commit。
   - `xin-toolkit/skills/file-intake`：使用者上傳檔案要「做出來」時的標準流程。
+  - `xin-toolkit/skills/ai-model-router`：App 呼叫 AI 的自動挑模型模組（`scripts/model_router.py`、`assets/model_router.js`，
+    兩邊規則要一致；selftest 都在 CI 跑）。組合 `ai`。
   - `xin-toolkit/skills/auto-video-edit`：全自動影片剪輯（ffmpeg）；`Video auto edit` 工作流每 30 分鐘處理
     以 video 開頭的「草稿 Release」裡的影片，成品傳回同一個草稿（草稿不公開）。
   - `web/ai.html`＋`web/ai/models.json`、`web/ai/features.json`：AI 模型與功能指南（含 Cowork 分頁：分區對照、範例只放通用情境，不放工作單位等敏感資訊）。資料由每週 Routine 自動

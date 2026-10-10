@@ -430,6 +430,7 @@
  "superpowers/skills/verification-before-completion": "在宣稱工作完成、要送出或建 PR 前，先實際跑驗證指令確認結果，而不是憑感覺說完成了。",
  "superpowers/skills/writing-plans": "手上已有需求規格、要處理多步驟任務時，先寫出完整實作計畫再動手改程式碼。",
  "superpowers/skills/writing-skills": "建立新技能、修改既有技能，或在技能正式上線前先驗證它真的能運作。",
+ "xin-toolkit/skills/ai-model-router": "讓 App 呼叫 AI 時自動挑模型、模型下架自動換、難的工作自動升級，不再寫死模型名稱（Groq、Gemini、Claude）",
  "xin-toolkit/skills/app-bootstrap": "把 skl 技能庫挑好的技能組合與工作守則一鍵複製進另一個 App 的 repo，方便新專案快速套用",
  "xin-toolkit/skills/app-guardrails-audit": "依低資源 App 防禦準則審計專案，檢查記憶體、資料庫鎖、金鑰外洩、逾時等常見風險",
  "xin-toolkit/skills/auto-video-edit": "全自動剪影片：去掉沒講話的空白、挑精華剪成指定長度、做直式短影音；手機上傳到 GitHub 草稿就會自動剪好傳回",

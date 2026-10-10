@@ -86,6 +86,8 @@ jobs:
           python3 web/check_advisor_rules.py selftest
           python3 web/check_advisor_rules.py
           python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py selftest
+          python3 xin-toolkit/skills/ai-model-router/scripts/model_router.py selftest
+          node xin-toolkit/skills/ai-model-router/assets/model_router.js selftest
           python3 ops/weekly_report.py selftest
           python3 web/ai/check_ai_data.py selftest
           python3 xin-toolkit/skills/auto-video-edit/scripts/video_auto_edit.py selftest

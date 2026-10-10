@@ -243,8 +243,9 @@
     "llm"
    ],
    "title": "有呼叫 AI：控管費用與品質",
-   "why": "依難度挑模型、快取、設預算上限；模型名稱不要寫死。",
+   "why": "模型名稱不要寫死（供應商一下架就 404），依工作難度自動挑等級、不合格再升級；付費 API 要設預算上限。",
    "skills": [
+    "xin-toolkit/skills/ai-model-router",
     "ecc/skills/cost-aware-llm-pipeline",
     "engineering/llm-cost-optimizer/skills/llm-cost-optimizer",
     "ecc/skills/prompt-optimizer",
@@ -256,7 +257,7 @@
      "why": "AI 花費追蹤"
     }
    ],
-   "weight": 1
+   "weight": 2
   },
   {
    "id": "api",
