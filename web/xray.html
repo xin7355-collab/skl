@@ -123,17 +123,40 @@ section{margin-top:26px}
 .h::after{content:"";flex:1;height:1px;background:var(--line)}
 .h u{text-decoration:none;color:var(--line)}
 
-/* 指紋牆 */
-.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
-.cell{
-  border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:10px 11px;
-  opacity:0;transform:translateY(4px);animation:pop .3s ease forwards;
-}
-@keyframes pop{to{opacity:1;transform:none}}
-.cell .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.cell .v{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);margin-top:4px;word-break:break-word}
-.cell.c .v{color:var(--cyan)}
-.cell .e{font-family:var(--mono);font-size:10px;color:#5D6877;margin-top:4px;word-break:break-all}
+/* 分頁：探索 GitHub／我的 App／紀錄 分開，不再混在同一個畫面 */
+.tabs{display:flex;gap:6px;margin:14px 0 6px;position:sticky;top:0;z-index:20;background:var(--ink);padding:6px 0;border-bottom:1px solid var(--line)}
+.tabs a{flex:1;text-align:center;font-family:var(--mono);font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:9px 4px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.tabs a.on{background:var(--amber);color:#12151B;border-color:var(--amber);font-weight:700}
+.tabs a i{font-style:normal;font-size:10px;opacity:.8;margin-left:3px}
+.pane{display:none}
+.pane.on{display:block}
+.pane>.hint:first-child{margin-top:4px}
+
+/* 白話重點：取代原本的技術指紋牆、API 端點、檔案類型分佈 */
+.plain{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:4px 12px}
+.plain .pr{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--panel-2);font-size:13px;line-height:1.6}
+.plain .pr:last-child{border-bottom:0}
+.plain .pk{flex:none;width:78px;font-family:var(--mono);font-size:11px;color:var(--muted);padding-top:2px}
+.plain .pv{flex:1;min-width:0;word-break:break-word}
+.plain .pv code{font-family:var(--mono);font-size:11px;color:var(--amber)}
+.plain .warn{color:var(--amber)}
+.plain .ok{color:var(--cyan)}
+details.adv-more{margin-top:26px}
+details.adv-more>summary{cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--cyan);list-style:none;padding:8px 0}
+details.adv-more>summary::-webkit-details-marker{display:none}
+
+/* 紀錄：看過／下載過／收藏 */
+.hb{display:inline-block;font-family:var(--mono);font-size:10px;border-radius:3px;padding:0 5px;margin-right:4px;vertical-align:1px;border:1px solid var(--line);color:var(--muted)}
+.hb.seen{color:var(--cyan);border-color:rgba(72,211,192,.35)}
+.hb.dl{color:var(--amber);border-color:rgba(242,169,59,.4)}
+.hb.fav{color:#12151B;background:var(--amber);border-color:var(--amber)}
+.hb.new{color:var(--red);border-color:rgba(224,104,95,.45)}
+.results button.was{border-left:3px solid rgba(72,211,192,.5)}
+.logf{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;font-family:var(--mono);font-size:11px}
+.logf a{color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 8px;cursor:pointer}
+.logf a.on{background:var(--cyan);color:#12151B;border-color:var(--cyan)}
+#log.folded{display:none}
+#logq{width:100%;margin-bottom:8px;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:8px 10px;font-size:16px}
 
 /* 路由 */
 .routes{border:1px solid var(--line);border-radius:3px;background:var(--panel);overflow:hidden}
@@ -145,9 +168,7 @@ section{margin-top:26px}
 .routes .f{color:#5D6877;margin-left:auto;font-size:10px;text-align:right;word-break:break-all}
 .more{font-family:var(--mono);font-size:11px;color:var(--muted);padding:8px 11px !important}
 
-/* 依賴 / 檔案統計 */
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:640px){.cols{grid-template-columns:1fr}}
+/* 依賴 / 目錄統計 */
 .list{border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:4px 0}
 .list div{font-family:var(--mono);font-size:12px;padding:5px 11px;display:flex;gap:10px}
 .list .n{color:var(--text)}
@@ -282,7 +303,6 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 
 @media(prefers-reduced-motion:reduce){
   *{animation:none !important;transition:none !important}
-  .cell{opacity:1;transform:none}
 }
 </style>
 </head>
@@ -296,30 +316,51 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
   <div class="tag" style="width:100%;text-transform:none;letter-spacing:.04em"><a href="./" style="color:var(--cyan);text-decoration:none">← 技能庫</a> · <a href="ai.html" style="color:var(--cyan);text-decoration:none">AI 指南</a></div>
 </header>
 
+<nav class="tabs" id="tabs">
+  <a data-tab="explore">🔍 探索 GitHub</a>
+  <a data-tab="mine">🧭 我的 App</a>
+  <a data-tab="log">📚 紀錄<i id="logn"></i></a>
+</nav>
+
+<div class="pane" data-pane="explore">
 <div class="bar">
   <input id="url" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" spellcheck="false"
          placeholder="貼 GitHub 網址／owner/repo，或輸入關鍵字搜尋">
   <button id="go">開始</button>
 </div>
-<div class="hint">貼網址 → 直接掃描；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。</div>
+<div class="hint">貼網址 → 直接掃描；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。看過、下載過的專案會標 <span class="hb seen">👁 看過</span><span class="hb dl">⤓ 下載過</span>。</div>
 <label class="fz"><input type="checkbox" id="fuzzy"> 🌀 模糊搜尋：中文自動加英文同義詞、拼錯也找得到、依相關度排序（一樣只用 1 次額度）</label>
 <label class="fz"><input type="checkbox" id="zh"> 🈯 描述翻成繁體中文（Google 翻譯，免費；只送公開的專案描述）</label>
 <div class="trend" id="trend"></div>
-<div class="myapps" id="myapps"></div>
-<div class="adv" id="fleet"></div>
 <div class="navrow" id="navrow" hidden>
   <button class="ghost" id="back">← 回到搜尋結果</button>
 </div>
 <div class="results" id="results"></div>
 <div class="recent" id="recent"></div>
-
 <div class="subbar">
   <div class="samples">
     <a data-s="https://github.com/shadcn-ui/ui">shadcn/ui</a>
     <a data-s="https://github.com/nuxt/nuxt">nuxt</a>
     <a data-s="https://github.com/tailwindlabs/tailwindcss.com">tailwindcss.com</a>
   </div>
-  <details style="margin-left:auto">
+</div>
+</div>
+
+<div class="pane" data-pane="mine">
+<div class="hint">只有這裡會用 skl 技能幫你的 App 健檢（外部專案不做）。點 App 名稱看單一 App 的顧問建議，或一次健檢全部。</div>
+<div class="myapps" id="myapps"></div>
+<div class="adv" id="fleet"></div>
+<div class="navrow" id="fleetbar" hidden><button class="ghost" id="fleet-back">← 回到全部健檢</button></div>
+</div>
+
+<div class="pane" data-pane="log">
+<div class="hint">看過（掃描或開 GitHub 頁面）、下載過、收藏的專案都記在這支手機，不上傳。點一下重看（1 小時內有快取不花額度）。</div>
+<div id="log"></div>
+<div class="navrow" id="logbar" hidden><button class="ghost" id="log-back">← 回到紀錄</button></div>
+</div>
+
+<div class="subbar">
+  <details>
     <summary id="toksum">加上 Token（額度 60/hr → 5000/hr）</summary>
     <div class="tokenbox">
       <input id="tok" type="password" autocomplete="off" placeholder="github_pat_… 或 ghp_…">
@@ -338,7 +379,6 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 <div id="status"></div>
 <div class="scanline" id="scan"><i></i></div>
 
-<div class="navrow" id="fleetbar" hidden><button class="ghost" id="fleet-back">← 回到全部健檢</button></div>
 <div id="out">
   <div class="verdict">
     <div class="eyebrow">判讀結果</div>
@@ -348,11 +388,11 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     <div id="v-type"></div>
     <div id="v-quick"></div>
     <div id="v-live"></div>
-    <div class="navrow"><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="refclaude">🧩 複製「參考它做我的 App」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
+    <div class="navrow"><button class="ghost" id="favbtn">☆ 收藏</button><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="refclaude">🧩 複製「參考它做我的 App」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
   </div>
 
   <section id="sec-advisor" class="adv">
-    <div class="h"><u>00</u> 🧭 App 顧問：skl 能幫它什麼</div>
+    <div class="h"><u>🧭</u> App 顧問：skl 能幫它什麼（只看你自己的 App）</div>
     <div id="advisor"><div class="hint">掃描完成後，這裡會列出建議安裝的技能、該去 GitHub 找的東西與一鍵複製的安裝指令。</div></div>
   </section>
 
@@ -367,29 +407,18 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 
   <div id="risk"></div>
 
+  <section id="sec-plain">
+    <div class="h"><u>02</u> 🧾 白話重點：要準備什麼、怎麼跑</div>
+    <div class="plain" id="plain"></div>
+  </section>
+
   <section id="sec-app">
-    <div class="h"><u>02</u> App 身分證</div>
+    <div class="h"><u>03</u> App 身分證</div>
     <div id="app-card"></div>
   </section>
 
-  <section id="sec-wall">
-    <div class="h"><u>03</u> 技術指紋</div>
-    <div id="lang-fallback"></div>
-    <div class="wall" id="wall"></div>
-  </section>
-
-  <section id="sec-api">
-    <div class="h"><u>04</u> API 端點與外部服務</div>
-    <div id="api-box"></div>
-  </section>
-
-  <section id="sec-routes">
-    <div class="h"><u>05</u> 路由地圖</div>
-    <div class="routes" id="routes"></div>
-  </section>
-
   <section id="sec-docs">
-    <div class="h"><u>06</u> 說明文件</div>
+    <div class="h"><u>04</u> 說明文件</div>
     <div class="bar" style="margin-bottom:10px">
       <input id="dq" type="search" autocomplete="off" placeholder="搜尋所有 .md 的內容（例如：安裝、API、部署）">
       <button id="dqgo" style="background:var(--panel-2);color:var(--text);border:1px solid var(--line)">搜尋</button>
@@ -398,18 +427,21 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     <div id="doc-list"></div>
   </section>
 
-  <section id="sec-skel">
-    <div class="h"><u>07</u> 專案結構</div>
-    <div id="skel-box"></div>
-  </section>
-
-  <section>
-    <div class="h"><u>08</u> 依賴與檔案分佈</div>
-    <div class="cols">
+  <details class="adv-more" id="sec-more">
+    <summary>▸ 進階：路由、目錄結構、依賴清單、README 大綱（寫程式時才需要）</summary>
+    <section id="sec-routes">
+      <div class="h"><u>05</u> 路由地圖</div>
+      <div id="routes"></div>
+    </section>
+    <section id="sec-skel">
+      <div class="h"><u>06</u> 專案結構</div>
+      <div id="skel-box"></div>
+    </section>
+    <section id="sec-deps">
+      <div class="h"><u>07</u> 直接依賴</div>
       <div class="list" id="deps"></div>
-      <div class="list" id="exts"></div>
-    </div>
-  </section>
+    </section>
+  </details>
 </div>
 
 <div class="viewer" id="viewer">
@@ -1377,6 +1409,7 @@ async function run(target,fromHistory){
   if(S.busy){ toast("正在掃描另一個專案，等它完成再點"); return; }
   let loc;
   try{ loc=parseUrl(typeof target==="string" ? target : $("url").value); }catch(e){ fail(e.message); return; }
+  S.outTab=S.tab; showOut();
   if(!fromHistory) pushView({v:"scan",repo:loc.owner+"/"+loc.repo});
   addRecent("repo",loc.owner+"/"+loc.repo);
   $("results").classList.remove("on");        // 掃描時收起搜尋結果（仍留在記憶體）
@@ -1391,14 +1424,18 @@ async function run(target,fromHistory){
     S.ctx={owner:loc.owner,repo:loc.repo,ref:ref};
 
     say("抓取完整檔案樹（單一請求）…","[2/4]");
-    const tree=await getJSON("https://api.github.com/repos/"+loc.owner+"/"+loc.repo+
-                             "/git/trees/"+encodeURIComponent(ref)+"?recursive=1");
+    const treeUrl="https://api.github.com/repos/"+loc.owner+"/"+loc.repo+"/git/trees/"+encodeURIComponent(ref)+"?recursive=1";
+    const tree=await getJSON(treeUrl);
     let nodes=tree.tree||[];
     if(loc.sub) nodes=nodes.filter(n=>n.path.indexOf(loc.sub+"/")===0||n.path===loc.sub);
 
     say("分批掃描 "+nodes.length.toLocaleString()+" 個節點…","[3/4]");
     const res=await scanTree(nodes);
-    nodes=null; tree.tree=null;   // 主動釋放，避免大 repo 佔住記憶體
+    // 大 repo 的檔案樹不留在記憶體（1GB 手機也要撐得住）；小的留著，從紀錄／返回重看才不用重花額度。
+    // 不能直接清空 tree.tree：那是快取裡的同一個物件，清了之後重看同一個專案會變成 0 個檔案。
+    const treeTrunc=tree.truncated;
+    if((tree.tree||[]).length>20000) S.cache.delete(treeUrl);
+    nodes=null;
 
     say("解析套件清單…","[4/4]");
     const base="https://raw.githubusercontent.com/"+loc.owner+"/"+loc.repo+"/"+ref+"/";
@@ -1476,13 +1513,186 @@ async function run(target,fromHistory){
 
     render(res,pkg,repo,loc,ref,live,{pwa:pwa,appId:appId,envKeys:envKeys,langs:langs,
                                       release:release,outline:readmeOutline(readmeTxt),cmds:cmds,readme:readmeTxt});
-    say("完成 · "+res.files.toLocaleString()+" 個檔案 · "+res.hits.size+" 項指紋"+
-        (tree.truncated?" · 註：檔案樹過大已被 GitHub 截斷":""),"✓");
+    say("完成 · "+res.files.toLocaleString()+" 個檔案 · 認出 "+res.hits.size+" 項技術"+
+        (treeTrunc?" · 註：檔案樹過大已被 GitHub 截斷":""),"✓");
   }catch(e){
     fail(e.message||"發生未預期的錯誤。");
   }finally{
     S.busy=false; $("go").disabled=false; $("scan").classList.remove("on");
   }
+}
+
+/* ── 白話重點 ── */
+// 只認得出名字的服務才列（徽章、文件、社群網址是雜訊）；AI／金流特別標出來，因為要金鑰、可能收費
+const SVC=[[/(^|\.)(openai\.com|anthropic\.com|groq\.com|openrouter\.ai|deepseek\.com|mistral\.ai|cohere\.(ai|com)|replicate\.com|huggingface\.co)$|generativelanguage\.googleapis/i,"AI 服務",1],
+  [/stripe\.com|paypal\.com|ecpay\.com\.tw|newebpay\.com/i,"金流",1],
+  [/firebase|firebaseio\.com|supabase\.(co|com)|mongodb\.net|upstash\.io|neon\.tech/i,"雲端資料庫",1],
+  [/twilio\.com|sendgrid\.(com|net)|mailgun|resend\.com|api\.line\.me|notify-api\.line\.me|api\.telegram\.org|hooks\.slack\.com/i,"通知／訊息",1],
+  [/maps\.googleapis\.com|mapbox\.com/i,"地圖",1],
+  [/(^|\.)(twse\.com\.tw|tpex\.org\.tw|data\.gov\.tw)$|openapi\./i,"官方開放資料",0]];
+const HOST_NOISE=/shields\.io|badge|githubusercontent|github\.(io|com)|npmjs|pypi\.org|readthedocs|wikipedia|youtube|youtu\.be|twitter|(^|\.)x\.com$|discord\.(gg|com)|fonts\.(googleapis|gstatic)|cdn|unpkg|jsdelivr|opensource\.org|creativecommons|codecov|coveralls|travis-ci|star-history|gitter|medium\.com|reddit|stackoverflow|(^|\.)(google|apple|microsoft|mozilla|w3)\.(com|org)$|vercel\.com|netlify\.com|buymeacoffee|ko-fi|patreon|paypal\.me|img\./i;
+const TECH_GROUP=[["畫面",["框架","UI 函式庫","樣式","動畫","狀態管理","路由","視覺化"]],["後端",["後端","資料層"]],
+  ["資料",["資料庫","爬蟲","資料處理"]],["部署",["部署"]],["測試",["測試"]]];
+function paintPlain(res,pkg,x){
+  const rows=[], hit=[...res.hits.entries()];
+  const names=cats=>hit.filter(h=>cats.indexOf(h[1].cat)>-1).map(h=>h[0]);
+  // 1. 用到的技術：分組講，一行看完
+  const tech=TECH_GROUP.map(g=>[g[0],names(g[1])]).filter(g=>g[1].length);
+  let techH=tech.map(g=>'<b>'+esc(g[0])+'</b>：'+esc(g[1].slice(0,5).join("、"))).join("<br>");
+  if(x.langs && Object.keys(x.langs).length){
+    const tot=Object.values(x.langs).reduce((a,b)=>a+b,0)||1;
+    techH+=(techH?"<br>":"")+'<b>語言</b>：'+Object.entries(x.langs).sort((a,b)=>b[1]-a[1]).slice(0,4)
+      .map(l=>esc(l[0])+" "+Math.round(l[1]/tot*100)+"%").join("、");
+  }
+  rows.push(["用到什麼",techH||"認不出常見框架（可能是單純的腳本或文件）"]);
+
+  // 2. 會連到誰：只列認得的服務，其餘只講數量
+  const svc={}, data=[]; let other=0, paid=false;
+  [...res.hosts.keys()].forEach(h=>{
+    if(HOST_NOISE.test(h)) return;
+    const m=SVC.find(r=>r[0].test(h));
+    if(m){ (svc[m[1]]=svc[m[1]]||[]).push(h); if(m[2]) paid=true; }
+    else if(/^api\.|\.gov(\.|$)/.test(h)) data.push(h);
+    else other++;
+  });
+  const sv=Object.keys(svc).map(k=>'<b>'+esc(k)+'</b>：'+esc(svc[k].slice(0,4).join("、")));
+  if(data.length) sv.push('<b>資料來源 API</b>：'+esc(data.slice(0,5).join("、"))+(data.length>5?" 等 "+data.length+" 個":""));
+  rows.push(["會連到誰",(sv.join("<br>")||"沒看到要呼叫的外部服務")+
+    (other?'<br><span style="color:var(--muted)">另有 '+other+' 個一般網址（多半是說明連結或爬蟲目標）</span>':"")]);
+
+  // 3. 要準備的金鑰：沒有 .env.example 也提醒「認得的付費服務要金鑰」
+  const ek=x.envKeys||[];
+  rows.push(["要準備",ek.length
+    ? '<span class="warn">'+ek.length+' 個設定／金鑰</span>：'+ek.slice(0,10).map(k=>'<code>'+esc(k)+'</code>').join(" ")+
+      (ek.length>10?" …":"")+'<br>放 repo Secrets 或主機的環境變數，不要寫進程式；只列鍵名，不讀真正的 .env。'
+    : paid ? '<span class="warn">沒有 .env.example，但有用到要金鑰的服務</span>，看 README 怎麼設定。'
+    : '<span class="ok">看起來不用金鑰</span>']);
+  if(paid) rows.push(["費用",'<span class="warn">有 AI／付費服務</span>：用之前到供應商後台設<b>預算上限</b>。']);
+
+  // 4. 能放哪裡跑：使用者只有 GitHub Pages＋Actions，先回答「能不能直接放」
+  const back=names(["後端"]).filter(n=>n!=="OpenAPI 規格"), db=names(["資料庫"]).filter(n=>!/sqlite/i.test(n));
+  const web=!!(res.indexHtml||names(["框架"]).length);
+  rows.push(["放哪裡跑", back.length||res.apiRoutes.length||db.length
+    ? '<span class="warn">需要後端伺服器</span>（'+esc(back.concat(db).slice(0,3).join("、")||"有 API 路由")+'），不能只放 GitHub Pages；'+
+      '免費替代：Cloudflare Workers，或改成 Actions 定時產出資料檔讓網頁讀。'
+    : web ? '<span class="ok">純前端，可以直接放 GitHub Pages</span>'
+    : '不是網站：在 GitHub Actions 排程跑，或下載到電腦執行']);
+
+  // 5. 怎麼跑起來：README 指令＋npm scripts，一鍵複製
+  const cmds=(x.cmds||[]).slice(0,6);
+  if(pkg && pkg.scripts.length){
+    const pick=["dev","start","build","test"].filter(k=>pkg.scripts.indexOf(k)>-1);
+    if(!cmds.some(c=>/npm (i|install|ci)\b/.test(c))) cmds.push("npm install");
+    pick.forEach(k=>cmds.push("npm run "+k));
+  }
+  S.plainCmds=cmds.filter((c,i)=>cmds.indexOf(c)===i);
+  cmds.length=0; S.plainCmds.forEach(c=>cmds.push(c));
+  rows.push(["怎麼跑", cmds.length
+    ? cmds.map(c=>'<code>$ '+esc(c)+'</code>').join("<br>")+'<br><button class="gq" id="plain-copy" style="margin-top:6px">📋 複製這些指令</button>'
+    : "README 沒寫安裝指令；開「說明文件」或請 Claude 看"]);
+
+  // 6. 規模：決定要不要叫 Claude 整包讀
+  const f=res.files, dep=pkg?pkg.count:0;
+  rows.push(["規模",f.toLocaleString()+" 個檔案"+(dep?"、"+dep+" 個依賴":"")+"・"+
+    (f<150?'<span class="ok">小型</span>：Claude 一次讀得完，可以整包參考'
+     : f<1500?'中型：請 Claude 先看 README 和主要資料夾'
+     : '<span class="warn">大型</span>：請 Claude 只看你要的那個資料夾，不要整包讀')]);
+
+  $("plain").innerHTML=rows.map(r=>'<div class="pr"><span class="pk">'+esc(r[0])+'</span><span class="pv">'+r[1]+'</span></div>').join("");
+}
+
+/* ── 紀錄：看過／下載過／收藏（使用者要知道有沒有重複點開）。只存在這支手機的 localStorage。 */
+const HIST_KEY="xray-hist-v1", HIST_MAX=400;
+let histMem=null;
+function histAll(){ if(histMem) return histMem; try{ histMem=JSON.parse(localStorage.getItem(HIST_KEY)||"{}")||{}; }catch(e){ histMem={}; } return histMem; }
+function histGet(full){ return full ? histAll()[String(full).toLowerCase()] : undefined; }
+function histSave(){
+  const h=histAll(), ks=Object.keys(h);
+  if(ks.length>HIST_MAX)       // 太多就丟掉最久沒碰的（收藏永遠保留）
+    ks.filter(k=>!h[k].fav).sort((a,b)=>(h[a].t||0)-(h[b].t||0)).slice(0,ks.length-HIST_MAX).forEach(k=>delete h[k]);
+  try{ localStorage.setItem(HIST_KEY,JSON.stringify(h)); }catch(e){ /* 空間滿或無痕模式：這次照樣顯示 */ }
+  paintLogCount();
+}
+/* kind：seen＝掃描過、gh＝開過 GitHub 頁面、dl＝下載過；info 帶描述等，讓紀錄頁不用再打 API */
+function histMark(full,kind,info){
+  if(!full) return;
+  const k=String(full).toLowerCase(), h=histAll(), e=h[k]||(h[k]={f:full,n:0,g:0,dl:0});
+  const now=Date.now();
+  if(kind==="seen"){ e.n++; e.s=now; }
+  else if(kind==="gh"){ e.g++; e.gs=now; }
+  else if(kind==="dl"){ e.dl++; e.ds=now; }
+  e.t=now;
+  if(info) Object.keys(info).forEach(x=>{ if(info[x]!=null&&info[x]!=="") e[x]=info[x]; });
+  histSave();
+}
+function histFav(full,info){
+  const k=String(full).toLowerCase(), h=histAll(), e=h[k]||(h[k]={f:full,n:0,g:0,dl:0,t:Date.now()});
+  e.fav=!e.fav;
+  if(info) Object.keys(info).forEach(x=>{ if(info[x]!=null&&info[x]!=="") e[x]=info[x]; });
+  histSave(); return e.fav;
+}
+function mdDay(ts){ const t=new Date(ts); return (t.getMonth()+1)+"/"+t.getDate(); }
+/* 清單列上的小徽章；pushed 是這次清單裡的最後更新時間，比上次看的時候新就提示 */
+function histBadges(full,pushed){
+  const e=histGet(full); if(!e) return "";
+  let b="";
+  if(e.fav) b+='<span class="hb fav">⭐ 收藏</span>';
+  if(e.n||e.g) b+='<span class="hb seen">👁 看過'+((e.n+e.g)>1?" "+(e.n+e.g)+" 次":"")+"・"+mdDay(Math.max(e.s||0,e.gs||0))+'</span>';
+  if(e.dl) b+='<span class="hb dl">⤓ 下載過'+(e.dl>1?" "+e.dl+" 次":"")+"・"+mdDay(e.ds)+'</span>';
+  if(pushed && e.p && String(pushed)>String(e.p) && e.n) b+='<span class="hb new">🆕 看過後有更新</span>';
+  return b;
+}
+function paintLogCount(){
+  const n=Object.keys(histAll()).length;
+  if($("logn")) $("logn").textContent=n?" "+n:"";
+}
+S.logF="all";
+function paintLog(){
+  const h=histAll(), f=S.logF, q=nz(S.logQ||"");
+  let list=Object.values(h);
+  if(f==="fav") list=list.filter(e=>e.fav);
+  else if(f==="dl") list=list.filter(e=>e.dl);
+  else if(f==="ext") list=list.filter(e=>!isMine(e.f));
+  if(q) list=list.filter(e=>nz(e.f+" "+(e.d||"")+" "+(e.ty||"")).indexOf(q)>-1);
+  list.sort((a,b)=>(b.t||0)-(a.t||0));
+  const all=Object.values(h), cnt=k=>all.filter(k).length;
+  const tabs=[["all","全部 "+all.length],["fav","⭐ 收藏 "+cnt(e=>e.fav)],["dl","⤓ 下載過 "+cnt(e=>e.dl)],["ext","外部專案 "+cnt(e=>!isMine(e.f))]];
+  let html='<div class="logf">'+tabs.map(t=>'<a data-lf="'+t[0]+'"'+(f===t[0]?' class="on"':'')+'>'+esc(t[1])+'</a>').join("")+'</div>'+
+    '<input class="rfilter" id="logq" type="search" autocomplete="off" placeholder="在紀錄裡找（名稱、描述、類型）" value="'+esc(S.logQ||"")+'">';
+  html+= list.length ? '<div class="results on" style="display:block">'+list.slice(0,200).map(e=>
+      '<button data-h="'+esc(e.f)+'"'+(isMine(e.f)?' class="was"':'')+'><div class="rr"><div class="rmain"><span class="rn">'+esc(e.f)+'</span>'+
+      '<div class="rd">'+(e.ty?'<span class="tb">'+esc(e.ty)+'</span>':'')+esc(e.d||"")+'</div>'+
+      '<div class="rd">'+histBadges(e.f)+(e.st!=null?'<span class="hb">★ '+Number(e.st).toLocaleString()+'</span>':'')+'</div></div>'+
+      '<div class="rz"><b>'+mdDay(e.t)+'</b><span>最後動作</span></div></div></button>').join("")+'</div>'
+    : '<div class="empty">'+(all.length?"沒有符合的紀錄":"還沒有紀錄。掃描專案、點「GitHub 頁面」或「下載 ZIP」後就會記在這裡。")+'</div>';
+  if(all.length) html+='<div class="acts" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'+
+    '<button class="ghost" id="log-copy">📋 複製收藏清單給 Claude</button>'+
+    '<button class="ghost" id="log-clear" style="color:var(--red)">清除紀錄（保留收藏）</button></div>';
+  $("log").innerHTML=html;
+}
+
+/* ── 分頁 ── */
+const MY_OWNER=SKL_REPO.split("/")[3].toLowerCase();
+// 「我的 App」＝跟 skl 同一個帳號，或列在 .github/apps.json；只有這些才跑 App 顧問
+function isMine(full){
+  full=String(full||"").toLowerCase();
+  return full.split("/")[0]===MY_OWNER || (S.apps||[]).some(a=>String(a.repo).toLowerCase()===full);
+}
+const TAB_KEY="xray-tab";
+function setTab(t,keepOut){
+  if(["explore","mine","log"].indexOf(t)<0) t="explore";
+  S.tab=t;
+  document.querySelectorAll("#tabs a").forEach(a=>a.classList.toggle("on",a.dataset.tab===t));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.dataset.pane===t));
+  try{ localStorage.setItem(TAB_KEY,t); }catch(e){}
+  if(t==="log"){ $("log").classList.remove("folded"); $("logbar").hidden=true; paintLog(); }
+  // 掃描結果屬於開始掃描的那個分頁；切到別的分頁就先藏起來，切回來還在
+  if(!keepOut) showOut();
+}
+function showOut(){
+  const vis=!S.outTab||S.outTab===S.tab;
+  $("out").style.display=vis?"":"none";
+  $("status").style.display=vis?"":"none";
 }
 
 /* ── 渲染 ── */
@@ -1514,7 +1724,11 @@ function render(res,pkg,repo,loc,ref,live,x){
   if(pkg) meta.push(["依賴",pkg.count+" 個"]);
   if(repo.size!=null) meta.push(["大小",fmtSize(repo.size)]);
   if(repo.license&&repo.license.spdx_id) meta.push(["授權",repo.license.spdx_id]);
-  $("v-meta").innerHTML=meta.map(m=>'<span class="chip">'+esc(m[0])+' <b>'+esc(m[1])+'</b></span>').join("");
+  const full=loc.owner+"/"+loc.repo, prev=histGet(full);
+  // 先顯示「之前」的紀錄再記這一次，才看得出是不是重複點開
+  $("v-meta").innerHTML=(prev&&(prev.n||prev.g||prev.dl)?'<div style="width:100%;margin-bottom:4px">'+histBadges(full,repo.pushed_at)+'</div>':'')+
+    meta.map(m=>'<span class="chip">'+esc(m[0])+' <b>'+esc(m[1])+'</b></span>').join("");
+  histMark(full,"seen",{d:String(repo.description||"").slice(0,140),st:repo.stargazers_count,ty:T?T.i+" "+T.n:"",p:repo.pushed_at});
 
   live=live||[];
   $("v-live").innerHTML=live.length
@@ -1526,9 +1740,9 @@ function render(res,pkg,repo,loc,ref,live,x){
   {
     const gh="https://github.com/"+loc.owner+"/"+loc.repo;
     const zip=gh+"/archive/refs/heads/"+encodeURIComponent(ref)+".zip";
-    const links='<a class="chip" href="'+esc(gh)+'" target="_blank" rel="noopener" '+
+    const links='<a class="chip" data-hk="gh" href="'+esc(gh)+'" target="_blank" rel="noopener" '+
       'style="text-decoration:none;color:var(--cyan);border-color:rgba(72,211,192,.3)">↗ GitHub 頁面</a>'+
-      '<a class="chip" href="'+esc(zip)+'" target="_blank" rel="noopener" '+
+      '<a class="chip" data-hk="dl" href="'+esc(zip)+'" target="_blank" rel="noopener" '+
       'style="text-decoration:none;color:var(--cyan);border-color:rgba(72,211,192,.3)">⤓ 下載整包 ZIP</a>';
     const quick=[[res.readme,"README"],
                  [res.manifests.has("package.json")?"package.json":null,"package.json"],
@@ -1592,7 +1806,7 @@ function render(res,pkg,repo,loc,ref,live,x){
     if(assets.length){
       h+='<div class="row" style="margin-top:12px"><span class="chip">最新 Release <b>'+
          esc(rel.tag_name||"")+'</b></span></div>'+
-         assets.slice(0,6).map(a=>'<a class="dl" href="'+esc(a.browser_download_url)+
+         assets.slice(0,6).map(a=>'<a class="dl" data-hk="dl" href="'+esc(a.browser_download_url)+
            '" target="_blank" rel="noopener">⤓ '+esc(a.name)+' · '+
            Math.round(a.size/1048576)+'MB · '+(a.download_count||0)+' 次下載</a><br>').join("");
     }
@@ -1600,50 +1814,23 @@ function render(res,pkg,repo,loc,ref,live,x){
     $("sec-app").style.display="";
   } else $("sec-app").style.display="none";
 
-  // ── API 端點與外部服務 ──
-  const hosts=[...res.hosts.entries()].sort((a,b)=>b[1].count-a[1].count).slice(0,14);
-  const ar=res.apiRoutes.slice(0,20), cl=res.calls.slice(0,20), ek=x.envKeys||[];
-  if(ar.length||cl.length||hosts.length||ek.length||res.openapi){
-    let h="";
-    if(res.openapi) h+='<div class="empty" style="text-align:left;border-style:solid;margin-bottom:10px">'+
-      '有完整的 OpenAPI 規格檔：<b>'+esc(res.openapi)+'</b> — 這份檔案就是這個服務的端點總表，直接開它最快。</div>';
-    if(ar.length) h+=sub("自有 API 路由（"+res.apiRoutes.length+"）",
-        ar.map(r=>[r.path,r.file]));
-    if(cl.length) h+=sub("原始碼裡呼叫的相對端點",cl.map(c=>[c.path,c.file]));
-    if(hosts.length) h+=sub("程式碼與 README 裡出現的外部網址（爬蟲專案＝目標站台）",
-      hosts.map(hh=>[hh[0],hh[1].ev+" · "+hh[1].count+" 次"]));
-    if(ek.length) h+='<div class="h" style="margin-top:14px;font-size:10px">.env.example 需要的設定鍵</div>'+
-      '<div class="meta">'+ek.map(k=>'<span class="chip">'+esc(k)+'</span>').join("")+'</div>'+
-      '<div class="hint">只列鍵名。值本來就是佔位符，這裡不會去讀真正的 .env。</div>';
-    $("api-box").innerHTML=h; $("sec-api").style.display="";
-  } else $("sec-api").style.display="none";
-
-  // 指紋牆：依類別排序
-  const ORDER=["框架","UI 函式庫","語言","樣式","動畫","狀態管理","資料層","爬蟲","資料處理",
-               "後端","資料庫","路由","視覺化","工具","建置","套件管理","部署","測試","結構","型態"];
-  const items=[...res.hits.entries()].sort((a,b)=>{
-    const d=ORDER.indexOf(a[1].cat)-ORDER.indexOf(b[1].cat);
-    return d!==0?d:a[0].localeCompare(b[0]);
-  });
-  $("wall").innerHTML=items.map((it,i)=>{
-    const primary=["框架","UI 函式庫","樣式","語言"].indexOf(it[1].cat)>-1;
-    return '<div class="cell'+(primary?"":" c")+'" style="animation-delay:'+Math.min(i*22,600)+'ms">'+
-      '<div class="k">'+esc(it[1].cat)+'</div>'+
-      '<div class="v">'+esc(it[0])+'</div>'+
-      '<div class="e"'+fa(it[1].ev)+'>'+esc(it[1].ev)+'</div></div>';
-  }).join("") || '<div class="empty">沒有辨識出已知的技術指紋</div>';
+  // ── 白話重點：取代技術指紋牆／API 端點／檔案類型分佈（使用者回饋看不懂、用不到）。
+  //    只回答「我要準備什麼、放哪裡跑、會連到誰、怎麼跑起來、Claude 讀不讀得完」。
+  paintPlain(res,pkg,x);
 
   // 路由
   const rs=res.routes.slice().sort((a,b)=>a.path.length-b.path.length||a.path.localeCompare(b.path));
   const show=rs.slice(0,60);
-  $("routes").innerHTML = show.length
-    ? show.map(r=>'<div><span class="p">'+esc(r.path).replace(/(:|\*)[\w-]+/g,'<b>$&</b>')+
+  const ar=res.apiRoutes.slice(0,20);
+  $("routes").innerHTML = (show.length
+    ? '<div class="routes">'+show.map(r=>'<div><span class="p">'+esc(r.path).replace(/(:|\*)[\w-]+/g,'<b>$&</b>')+
         '</span><span class="f"'+fa(r.file)+'>'+esc(r.file)+'</span></div>').join("")+
       ((rs.length>show.length||res.truncatedRoutes)
-        ? '<div class="more">…另有 '+(rs.length-show.length)+(res.truncatedRoutes?"+":"")+' 條路由未列出</div>':"")+
-      (res.apiRoutes.length?'<div class="more">＋ '+res.apiRoutes.length+' 個 API endpoint（見上一節）</div>':"")
-    : '<div class="empty">沒有偵測到檔案式路由（可能是 SPA 用程式碼定義路由，或這不是網站專案）</div>';
-  $("sec-routes").style.display = show.length ? "" : "none";
+        ? '<div class="more">…另有 '+(rs.length-show.length)+(res.truncatedRoutes?"+":"")+' 條路由未列出</div>':"")+'</div>'
+    : "")+
+    (ar.length?sub("自有 API 路由（"+res.apiRoutes.length+"）",ar.map(r=>[r.path,r.file])):"")+
+    (res.calls.length?sub("前端呼叫的自家端點",res.calls.slice(0,20).map(c=>[c.path,c.file])):"");
+  $("sec-routes").style.display = show.length||ar.length||res.calls.length ? "" : "none";
 
   // 直接依賴
   const dl=$("deps");
@@ -1651,7 +1838,8 @@ function render(res,pkg,repo,loc,ref,live,x){
     dl.innerHTML='<div><span class="n" style="color:var(--muted)">直接依賴（前 12）</span><span class="x">'+pkg.direct.length+' 個</span></div>'+
       pkg.direct.slice(0,12).map(n=>'<div><span class="n">'+esc(n)+'</span><span class="x">'+
         esc(String(pkg.deps[n])) +'</span></div>').join("");
-  } else dl.innerHTML='<div><span class="n" style="color:var(--muted)">沒有 package.json</span></div>';
+  }
+  $("sec-deps").style.display = pkg&&pkg.direct.length ? "" : "none";
 
   renderDocs(res);
 
@@ -1670,21 +1858,11 @@ function render(res,pkg,repo,loc,ref,live,x){
             '<div class="bar-mini"><i style="width:'+Math.round(d[1].n/mx*100)+'%"></i></div></div>';
         }).join("")+'</div>';
     }
-    if(pkg && pkg.scripts.length){
-      h+='<div class="h" style="margin-top:14px;font-size:10px">怎麼跑起來（package.json scripts）</div>'+
-        '<div class="meta">'+pkg.scripts.slice(0,14).map(k=>
-          '<span class="chip">npm run <b>'+esc(k)+'</b></span>').join("")+'</div>';
-    }
     if(res.imgs.length){
       h+='<div class="h" style="margin-top:14px;font-size:10px">圖片素材（'+res.imgs.length+
         '）· 點檔名直接預覽</div><div class="meta">'+
         res.imgs.map(f=>'<span class="chip" data-f="'+esc(f)+'" style="cursor:pointer;color:var(--cyan);'+
           'border-color:rgba(72,211,192,.3)">▣ '+esc(f.split("/").pop())+'</span>').join("")+'</div>';
-    }
-    if(x.cmds && x.cmds.length){
-      h+='<div class="h" style="margin-top:14px;font-size:10px">README 裡的安裝與執行指令</div>'+
-        '<div class="routes">'+x.cmds.map(c=>
-          '<div><span class="p">$ '+esc(c)+'</span></div>').join("")+'</div>';
     }
     if(x.outline && x.outline.length){
       h+='<div class="h" style="margin-top:14px;font-size:10px">README 章節（作者自己列的功能表）</div><div class="routes">'+
@@ -1695,29 +1873,17 @@ function render(res,pkg,repo,loc,ref,live,x){
     $("sec-skel").style.display = h ? "" : "none";
   }
 
-  // 語言統計保底：指紋掃不出東西時，至少給 GitHub 官方的語言比例
-  if(x.langs && Object.keys(x.langs).length){
-    const tot=Object.values(x.langs).reduce((a,b)=>a+b,0)||1;
-    const ls=Object.entries(x.langs).sort((a,b)=>b[1]-a[1]).slice(0,6);
-    $("lang-fallback").innerHTML=
-      '<div class="empty" style="text-align:left;border-style:solid;margin-bottom:10px">'+
-      '框架指紋不足，補上 GitHub 語言統計：'+
-      ls.map(l=>esc(l[0])+" "+Math.round(l[1]/tot*100)+"%").join(" · ")+'</div>';
-  } else $("lang-fallback").innerHTML="";
-
-  // 副檔名分佈
-  const ex=[...res.exts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
-  const max=ex.length?ex[0][1]:1;
-  $("exts").innerHTML='<div><span class="n" style="color:var(--muted)">檔案類型分佈</span><span class="x">'+
-    res.files.toLocaleString()+' 檔 / '+res.dirs.toLocaleString()+' 夾</span></div>'+
-    ex.map(e=>'<div style="display:block"><span class="n">.'+esc(e[0])+
-      '</span><span class="x" style="float:right">'+e[1]+'</span>'+
-      '<div class="bar-mini"><i style="width:'+Math.round(e[1]/max*100)+'%"></i></div></div>').join("");
+  $("sec-more").style.display = show.length||res.apiRoutes.length||res.calls.length||(pkg&&pkg.direct.length)||$("skel-box").innerHTML ? "" : "none";
 
   $("out").classList.add("on");
   S.last={full:loc.owner+"/"+loc.repo,title:v.title,kind:v.kind,desc:repo.description||"",
-          type:T?T.n:"",license:(repo.license&&repo.license.spdx_id)||"未標示"};
-  advise(res,pkg,repo,loc,ref,x.readme);
+          type:T?T.n:"",typeIcon:T?T.i+" "+T.n:"",license:(repo.license&&repo.license.spdx_id)||"未標示"};
+  // 外部專案不用 skl 技能健檢（使用者要求）；只有自己的 App 才看顧問，外部專案改給「參考它做我的 App」
+  paintFav();
+  const mine=isMine(full);
+  $("sec-advisor").style.display=mine?"":"none";
+  $("refclaude").style.display=mine?"none":"";
+  if(mine) advise(res,pkg,repo,loc,ref,x.readme); else { S.adv=null; S.advTok=(S.advTok||0)+1; }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1805,6 +1971,7 @@ function fmtPerDay(v){ return v>=10 ? Math.round(v).toLocaleString() : v>=1 ? v.
 
 async function search(more,qArg,fromHistory){
   const q = more ? qLast : String(qArg!=null ? qArg : $("url").value).trim();
+  S.outTab="explore"; if(S.tab!=="explore") setTab("explore"); else showOut();
   if(q.length<2){ fail("關鍵字至少 2 個字。"); return; }
   const fuzzy=$("fuzzy").checked, key=(fuzzy?"~":"")+q;
   if(!more){
@@ -1895,8 +2062,9 @@ function paintRows(){
       const t=it.description_zh||zhOf(d);
       if(t!==undefined) shown=t; else if(n<40) missing.push(d);
     }
-    return '<button data-i="'+i+'"><div class="rr"><div class="rmain">'+
-      '<span class="rn">'+esc(it.full_name)+'</span>'+
+    const hb=histBadges(it.full_name,it.pushed_at);
+    return '<button data-i="'+i+'"'+(hb?' class="was"':'')+'><div class="rr"><div class="rmain">'+
+      '<span class="rn">'+esc(it.full_name)+'</span>'+(hb?'<div class="rd">'+hb+'</div>':'')+
       '<div class="rd">'+typeBadge(quickType(it))+esc(shown||"（沒有描述）")+'</div>'+
       '<div class="rd" style="font-family:var(--mono);font-size:10px">★ '+Number(it.stargazers_count).toLocaleString()+
       (it.gain_per_day?' <span class="gain">▲ +'+fmtPerDay(it.gain_per_day)+'★/天（最近）</span>':'')+
@@ -1965,6 +2133,7 @@ function markTrend(id){ document.querySelectorAll("#trend a").forEach(a=>a.class
 function showTrend(id,fromHistory){
   const l=S.trend && S.trend.lists.find(x=>x.id===id);
   if(!l) return;
+  S.outTab="explore"; if(S.tab!=="explore") setTab("explore"); else showOut();
   S.view="trend"; S.results=l.items.slice(); S.total=l.items.length; S.trendTitle=l.title+(l.stale?"（舊資料）":"");
   S.trendId=id; S.sort="best"; S.filter=""; S.fzGroups=[]; S.qKey="";
   markTrend(id);
@@ -1990,7 +2159,9 @@ function pushView(st){
   if(S.restoring) return;
   const qs = st.v==="scan" ? "?repo="+encodeURIComponent(st.repo)
     : st.v==="trend" ? "?t="+encodeURIComponent(st.id)
-    : st.v==="fleet" ? "?fleet" : "?q="+encodeURIComponent(st.q);
+    : st.v==="fleet" ? "?fleet"
+    : st.v==="home" ? "?tab="+encodeURIComponent(S.tab) : "?q="+encodeURIComponent(st.q);
+  st=Object.assign({tab:S.tab},st);
   try{ history.pushState(st,"",qs); }catch(e){}
 }
 /* 返回時回到「離開前那個清單」：健檢清單展開、搜尋結果從快取顯示，並捲回離開時的位置（y）。 */
@@ -2003,11 +2174,15 @@ function restore(st){
   S.restoring=true;
   let p=null;
   try{
-    unfoldFleet();
+    unfoldFleet(); $("log").classList.remove("folded"); $("logbar").hidden=true;
+    setTab(st.tab || (st.v==="fleet"?"mine":st.v==="scan"&&isMine(st.repo)?"mine":"explore"));
     if(st.v==="search"){ $("url").value=st.q; p=search(false,st.q,true); }
-    else if(st.v==="scan"){ p=run(st.repo,true); }
+    else if(st.v==="scan"){
+      foldFor(S.tab);
+      p=run(st.repo,true);
+    }
     else if(st.v==="trend"){ showTrend(st.id,true); }
-    else{ $("results").classList.remove("on"); $("out").classList.remove("on"); }   // 首頁或健檢清單
+    else{ $("results").classList.remove("on"); $("out").classList.remove("on"); $("status").textContent=""; }   // 首頁或健檢清單
   }finally{ S.restoring=false; }
   // 等畫面排好（下一個 frame）再捲，否則頁面還沒長回來就捲不到原位
   if(st.y!=null) Promise.resolve(p).then(()=>requestAnimationFrame(()=>window.scrollTo(0,st.y)));
@@ -2276,6 +2451,65 @@ $("recent").addEventListener("click",e=>{
   if(x.t==="q") search(false,x.v); else run(x.v);
 });
 $("v-tr").addEventListener("click",translateDoc);
+$("tabs").addEventListener("click",e=>{
+  const a=e.target.closest("a[data-tab]"); if(!a) return;
+  if(a.dataset.tab===S.tab) return;
+  setTab(a.dataset.tab);
+  // 換分頁算一步：iPhone 左滑返回會回到上一個分頁，而不是改到別的掃描結果
+  pushView({v:"home"});
+});
+/* 紀錄分頁：篩選、搜尋、點了重看（跟健檢清單一樣先收起清單，結果才不會在畫面外） */
+$("log").addEventListener("click",e=>{
+  const f=e.target.closest("[data-lf]");
+  if(f){ S.logF=f.dataset.lf; paintLog(); return; }
+  if(e.target.closest("#log-clear")){
+    if(!confirm("清除看過／下載過的紀錄？收藏會保留。")) return;
+    const h=histAll(); Object.keys(h).forEach(k=>{ if(!h[k].fav) delete h[k]; else { h[k].n=0; h[k].g=0; h[k].dl=0; } });
+    histSave(); paintLog(); toast("已清除（收藏保留）"); return;
+  }
+  if(e.target.closest("#log-copy")){
+    const fav=Object.values(histAll()).filter(x=>x.fav);
+    if(!fav.length){ toast("還沒有收藏：掃描專案後按「☆ 收藏」"); return; }
+    copyText("這些是我在 GitHub 收藏、想參考的專案：\n"+fav.map(x=>"- https://github.com/"+x.f+(x.ty?"（"+x.ty+"）":"")+(x.d?"："+x.d:"")).join("\n")+
+      "\n請比較它們各自適合拿來做什麼、哪個最適合參考來做我的 App（我用 iPhone、App 放 GitHub Pages＋Actions），並說明授權限制。");
+    return;
+  }
+  const b=e.target.closest("button[data-h]"); if(!b) return;
+  rememberScroll();
+  $("log").classList.add("folded"); $("logbar").hidden=false;
+  $("url").value=b.dataset.h;
+  window.scrollTo(0,0);
+  run(b.dataset.h);
+});
+$("log").addEventListener("input",e=>{
+  if(e.target.id!=="logq") return;
+  S.logQ=e.target.value.trim();
+  // 只重畫清單、保留輸入框，iPhone 鍵盤才不會一直收起來
+  const pos=e.target.selectionStart; paintLog(); const q=$("logq"); q.focus(); try{ q.setSelectionRange(pos,pos); }catch(err){}
+});
+$("log-back").addEventListener("click",()=>{
+  if(history.state && history.state.v==="scan"){ history.back(); return; }
+  $("log").classList.remove("folded"); $("logbar").hidden=true; S.outTab=null; $("out").classList.remove("on"); $("status").textContent=""; showOut(); paintLog();
+});
+/* 看單一專案時把該分頁的長清單收起來、顯示返回鍵（探索分頁的搜尋結果由 run() 自己收） */
+function foldFor(tab){
+  if(tab==="log"){ $("log").classList.add("folded"); $("logbar").hidden=false; }
+  else if(tab==="mine"){ $("fleet").classList.add("folded"); $("fleetbar").hidden=false; }
+}
+function paintFav(){
+  const l=S.last, e=l&&histGet(l.full);
+  $("favbtn").textContent=e&&e.fav?"★ 已收藏":"☆ 收藏";
+}
+$("favbtn").addEventListener("click",()=>{
+  const l=S.last; if(!l) return;
+  const on=histFav(l.full,{d:l.desc.slice(0,140),ty:l.typeIcon});
+  paintFav(); toast(on?"已收藏，在「📚 紀錄」找得到":"已取消收藏");
+});
+// 開 GitHub 頁面、下載 ZIP／Release 都記下來（使用者要知道有沒有重複下載）
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-hk]");
+  if(a && S.last) histMark(S.last.full,a.dataset.hk);
+});
 $("advisor").addEventListener("click",e=>{
   const g=e.target.closest("[data-gq]");
   if(g){ $("url").value=g.dataset.gq; search(false,g.dataset.gq); window.scrollTo(0,0); return; }
@@ -2294,15 +2528,7 @@ $("fleet").addEventListener("click",e=>{
   const f=S.fleet||[];
   const x=e.target.closest("[data-fx]");
   if(x){
-    // 結果畫在清單下方，清單一長就在畫面外、看起來像沒反應：先收起清單、捲到結果，再給一顆返回鍵
-    const o=f[+x.dataset.fx];
-    rememberScroll();
-    $("fleet").classList.add("folded"); $("fleetbar").hidden=false;
-    $("fleet-back").textContent="← 回到全部健檢（"+f.length+" 個 App）";
-    $("url").value=o.full;
-    $("fleetbar").scrollIntoView({block:"start"});
-    // 掃描完頁面才變長，這時再捲一次，讓「返回鍵＋判讀結果」排在畫面最上面
-    run(o.full).then(()=>$("fleetbar").scrollIntoView({block:"start"}));
+    openMine(f[+x.dataset.fx].full);
     return;
   }
   const y=e.target.closest("[data-fi]");
@@ -2316,6 +2542,17 @@ $("fleet").addEventListener("click",e=>{
       f.map(o=>"- "+o.full+"（"+o.score+" 分）："+(o.issues.map(r=>r.title).join("、")||"沒有明顯缺口")).join("\n")+
       "\n請幫我排出最值得先處理的 3 個 App 和各自第一步要做什麼。");
 });
+/* 結果畫在清單下方，清單一長就在畫面外、看起來像沒反應：先收起清單、捲到結果，再給一顆返回鍵 */
+function openMine(full){
+  rememberScroll();
+  setTab("mine");
+  $("fleet").classList.add("folded"); $("fleetbar").hidden=false;
+  $("fleet-back").textContent=S.fleet&&S.fleet.length?"← 回到全部健檢（"+S.fleet.length+" 個 App）":"← 回到我的 App";
+  $("url").value=full;
+  $("fleetbar").scrollIntoView({block:"start"});
+  // 掃描完頁面才變長，這時再捲一次，讓「返回鍵＋判讀結果」排在畫面最上面
+  run(full).then(()=>$("fleetbar").scrollIntoView({block:"start"}));
+}
 $("fleet-back").addEventListener("click",()=>{
   // 跟 iPhone 左滑返回走同一條路，位置也一起還原
   if(history.state && history.state.v==="scan"){ history.back(); return; }
@@ -2324,7 +2561,7 @@ $("fleet-back").addEventListener("click",()=>{
 $("myapps").addEventListener("click",e=>{
   if(e.target.closest("#fleet-go")){ runFleet(); return; }
   const a=e.target.closest("a[data-app]"); if(!a) return;
-  $("url").value=a.dataset.app; run(a.dataset.app); window.scrollTo(0,0);
+  openMine(a.dataset.app);
 });
 $("zh").addEventListener("change",()=>{
   try{ localStorage.setItem("xray-zh",$("zh").checked?"1":"0"); }catch(e){}
@@ -2353,6 +2590,9 @@ $("sharebtn").addEventListener("click",async()=>{
   if(navigator.share){ try{ await navigator.share({url:u}); return; }catch(e){ if(e.name==="AbortError") return; } }
   copyText(u);
 });
+$("plain").addEventListener("click",e=>{
+  if(e.target.closest("#plain-copy") && S.plainCmds) copyText(S.plainCmds.join("\n"));
+});
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-f]");
   if(t) openFile(t.dataset.f);
@@ -2361,6 +2601,7 @@ $("v-close").addEventListener("click",()=>$("viewer").classList.remove("on"));
 $("v-mode").addEventListener("click",()=>{ S.rendered=!S.rendered; paintFile(); });
 $("v-dl").addEventListener("click",()=>{
   const c=S.cur;
+  if(S.last) histMark(S.last.full,"dl");
   if(c) download(c.path.split("/").pop(), c.txt);
   else window.open($("v-gh").href,"_blank","noopener");   // 圖片/二進位交給 GitHub
 });
@@ -2397,6 +2638,7 @@ document.querySelectorAll("[data-s]").forEach(a=>a.addEventListener("click",e=>{
 }));
 
 paintRecent();
+paintLogCount();
 try{ S.token=localStorage.getItem(TOK_KEY)||""; }catch(e){ S.token=""; }
 paintTok();
 try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}
@@ -2404,6 +2646,12 @@ try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}
 try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").checked=true; }
 (async function(){
   const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q"), t=p.get("t");
+  // 分頁：網址決定優先（分享出去的連結、返回），沒有就回到上次停留的分頁
+  let tab="explore"; try{ tab=localStorage.getItem(TAB_KEY)||"explore"; }catch(e){}
+  if(p.get("tab")) tab=p.get("tab");
+  if(p.has("fleet")) tab="mine"; else if(t||q) tab="explore"; else if(r) tab=isMine(r)?"mine":(tab==="log"?"log":"explore");
+  setTab(tab);
+  if(!r&&!q&&!t) try{ history.replaceState({v:p.has("fleet")?"fleet":"home",tab:tab},"",location.search); }catch(e){}
   await loadTrend();
   // 我的 App：skl 的 .github/apps.json 部署時複製成 apps.json；點一下就掃描並看 App 顧問
   loadStatic("apps.json").then(d=>{
@@ -2414,11 +2662,12 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
       (x.private?"🔒 ":"")+esc(x.repo.split("/").pop())+'</a>').join("")+
       '<a id="fleet-go" style="border-color:var(--amber);color:var(--amber)">🩺 一鍵健檢全部（約 '+apps.length*2+' 次額度）</a>':"";
     paintFleet();
+    if(S.tab==="log") paintLog();        // 「外部專案」篩選要等 apps.json 才分得準
     if(new URLSearchParams(location.search).has("fleet") && S.fleetData) $("fleet").scrollIntoView({block:"start"});
   });
-  if(t && S.trend){ history.replaceState({v:"trend",id:t},"",location.search); showTrend(t,true); }
-  else if(r){ history.replaceState({v:"scan",repo:r},"",location.search); $("url").value=r; run(r,true); }
-  else if(q){ history.replaceState({v:"search",q:q},"",location.search); $("url").value=q; search(false,q,true); }
+  if(t && S.trend){ history.replaceState({v:"trend",id:t,tab:"explore"},"",location.search); showTrend(t,true); }
+  else if(r){ history.replaceState({v:"scan",repo:r,tab:tab},"",location.search); $("url").value=r; foldFor(tab); run(r,true); }
+  else if(q){ history.replaceState({v:"search",q:q,tab:"explore"},"",location.search); $("url").value=q; search(false,q,true); }
 })();
 
 const APP_VER="__APP_VER__";
