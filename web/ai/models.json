@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-05",
+ "checked_at": "2026-10-10",
  "vendors": [
   {
    "vendor": "Anthropic",
@@ -292,23 +292,88 @@
      ]
     },
     {
-     "name": "Claude Haiku 4.5",
+     "name": "Claude Haiku 5.5",
+     "id": "claude-haiku-5-5",
+     "released": "2026-10-07",
+     "context": "1M tokens（最大輸出 128K）",
+     "price": "$0.10 / $0.50 每百萬 tokens 起（提示 10 萬 tokens 以內；更長的提示較貴），官方稱平均比 Haiku 4.5 便宜約 75%",
+     "tier": "cheap",
+     "legacy": false,
+     "best_for": [
+      "大量、要快的工作：分類、摘要、抽取、分流",
+      "當 Opus／Sonnet 的子代理（subagent）"
+     ],
+     "strengths": [
+      "陣容中最快、最便宜（官方描述）",
+      "第一個有 effort 設定的 Haiku（預設 medium）",
+      "同一段文字的 token 數比 Haiku 4.5 多約 30%"
+     ],
+     "benchmarks": [
+      {
+       "name": "Terminal-Bench 4.0",
+       "score": "39.2%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "GDPval-AA v2.1",
+       "score": "1620 (Elo)",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "AA-Briefcase v1.1",
+       "score": "1578 (Elo)",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "OSWorld 2.1（offline subset）",
+       "score": "72.4%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Humanity's Last Exam（no tools）",
+       "score": "45.9%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Humanity's Last Exam（with tools）",
+       "score": "57.4%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "FrontierCode 1.1 (Main)",
+       "score": "46.4%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "官方"
+      },
+      {
+       "name": "Chartography（no tools）",
+       "score": "46.4%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "官方"
+      }
+     ]
+    },
+    {
+     "name": "Claude Haiku 4.5（舊款）",
      "id": "claude-haiku-4-5-20251001",
      "released": "2025-10-15",
      "context": "200K tokens（最大輸出 64K）",
      "price": "$1 / $5 每百萬 tokens",
-     "tier": "cheap",
-     "legacy": false,
+     "tier": "legacy",
+     "legacy": true,
      "best_for": [
       "即時低延遲任務（客服、聊天）",
       "多代理架構中的子代理",
       "大量、簡單的處理工作"
      ],
      "strengths": [
-      "官方退役承諾日期：不早於 2026-10-15，之後可能下架，長期用途請改 Sonnet 5.5",
-      "目前陣容中最快",
-      "接近前沿的寫程式能力、成本低",
-      "不支援 effort 參數，用 extended thinking"
+      "官方已列為 Legacy（仍可用），建議改用 Haiku 5.5；退役承諾日期不早於 2026-10-15"
      ],
      "benchmarks": [
       {
@@ -467,6 +532,30 @@
        "score": "66.6%（max effort）",
        "source": "https://pasqualepillitteri.it/en/news/17608/gpt-6-sol-luna-launch",
        "kind": "第三方"
+      },
+      {
+       "name": "Terminal-Bench 4.0",
+       "score": "16.4%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "GDPval-AA v2.1",
+       "score": "1437 (Elo)",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "OSWorld 2.1（offline subset）",
+       "score": "48.9%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "FrontierCode 1.1 (Main)",
+       "score": "42.4%",
+       "source": "https://www.anthropic.com/claude-haiku-5-5",
+       "kind": "Anthropic 對照表"
       }
      ]
     },
@@ -542,9 +631,9 @@
   {
    "need": "又快又便宜、大量簡單工作",
    "icon": "⚡",
-   "claude": "Claude Haiku 4.5",
+   "claude": "Claude Haiku 5.5",
    "codex": "GPT-6 Luna",
-   "why": "延遲低、價格最低，適合分類、聊天、子任務"
+   "why": "延遲低、價格最低，適合分類、摘要、子任務；Haiku 5.5 比 4.5 便宜又強很多"
   },
   {
    "need": "速度和能力平衡",
@@ -559,7 +648,7 @@
    "title": "Terminal-Bench 4.0：在終端機裡寫程式完成任務",
    "unit": "%",
    "higher_better": true,
-   "note": "同一張表：Anthropic 在 Opus 5.5 公告中的對照（OpenAI 分數由 Anthropic 測得）；Fable 5.1 來自其官方公告。 Sonnet 5.5 來自其官方公告（同測驗同版本）。",
+   "note": "同一張表：Anthropic 在 Opus 5.5 公告中的對照（OpenAI 分數由 Anthropic 測得）；Fable 5.1 來自其官方公告。 Sonnet 5.5 來自其官方公告（同測驗同版本）。 Haiku 5.5 與 GPT-6 Luna 來自 Haiku 5.5 官方公告的對照表（Luna 分數由 Anthropic 測得）。",
    "rows": [
     [
      "Claude Opus 5.5",
@@ -585,6 +674,16 @@
      "Claude Sonnet 5.5",
      "Anthropic",
      70.6
+    ],
+    [
+     "Claude Haiku 5.5",
+     "Anthropic",
+     39.2
+    ],
+    [
+     "GPT-6 Luna",
+     "OpenAI",
+     16.4
     ]
    ]
   },
@@ -620,7 +719,7 @@
    "title": "GDPval-AA v2.1：真實職場知識工作（Elo 分數）",
    "unit": "",
    "higher_better": true,
-   "note": "只列同一版本（v2.1）的分數，來源為 Anthropic 公告對照表。 Sonnet 5.5 來自其官方公告。",
+   "note": "只列同一版本（v2.1）的分數，來源為 Anthropic 公告對照表。 Sonnet 5.5 來自其官方公告。 Haiku 5.5 與 GPT-6 Luna 來自 Haiku 5.5 官方公告的對照表。",
    "rows": [
     [
      "Claude Opus 5.5",
@@ -641,6 +740,16 @@
      "Claude Sonnet 5.5",
      "Anthropic",
      1844
+    ],
+    [
+     "Claude Haiku 5.5",
+     "Anthropic",
+     1620
+    ],
+    [
+     "GPT-6 Luna",
+     "OpenAI",
+     1437
     ]
    ]
   }
@@ -656,6 +765,7 @@
   "GPT-5.3-Codex-Spark 據第三方（releasebot）已於 2026-09-14 停用；GPT-5.5 將於 2026-10-14 自 ChatGPT/Codex 退役——皆未經 OpenAI 原文核對。",
   "GPT-6 Astra 的 ARC-AGI-3 99.9% 是 OpenAI 自家 harness 結果（標準 harness 約 62.7%），爭議大，未收錄。",
   "2026-09-28 週檢：兩家都沒有新模型或退役公告。Opus 5.5 新增 Artificial Analysis 第三方分數（Intelligence Index 58、自測 Terminal-Bench 4.0 59.6%，與官方 66.4% 測法不同，不放進同一張圖）；該網站被 egress 擋住，數字取自搜尋結果摘要，未直接讀原文。",
-  "2026-10-05 週檢：新增 Claude Sonnet 5.5（2026-09-28，官方文件與公告），Sonnet 5 改列舊款；Haiku 4.5 官方退役承諾日期為不早於 2026-10-15。OpenAI DevDay 2026 據搜尋摘要推出 GPT-6 Astra Ultrafast（Pro 500／Enterprise），openai.com 被 egress 擋住、未讀原文，未列為獨立模型。Sonnet 5.5 公告中 Sonnet 5 的 Terminal-Bench 4.0 為 10.3%（官方原文數字）。"
+  "2026-10-05 週檢：新增 Claude Sonnet 5.5（2026-09-28，官方文件與公告），Sonnet 5 改列舊款；Haiku 4.5 官方退役承諾日期為不早於 2026-10-15。OpenAI DevDay 2026 據搜尋摘要推出 GPT-6 Astra Ultrafast（Pro 500／Enterprise），openai.com 被 egress 擋住、未讀原文，未列為獨立模型。Sonnet 5.5 公告中 Sonnet 5 的 Terminal-Bench 4.0 為 10.3%（官方原文數字）。",
+  "2026-10-10：新增 Claude Haiku 5.5（2026-10-07，官方模型總覽與公告，跑分取自公告表格），Haiku 4.5 改列舊款。公告中 Sonnet 5.5 的 FrontierCode 1.1 為 52.1%（Xhigh），與 Sonnet 5.5 公告的 46.2%（max）設定不同，未合併。Haiku 5.5 的價格是「起價」，長提示較貴；同樣文字的 token 數比 Haiku 4.5 多約 30%。"
  ]
 }
