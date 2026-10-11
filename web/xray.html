@@ -150,6 +150,10 @@ details.adv-more>summary::-webkit-details-marker{display:none}
 .hb.seen{color:var(--cyan);border-color:rgba(72,211,192,.35)}
 .hb.dl{color:var(--amber);border-color:rgba(242,169,59,.4)}
 .hb.fav{color:#12151B;background:var(--amber);border-color:var(--amber)}
+.hb.cp{color:#B9A7FF;border-color:rgba(185,167,255,.45)}
+.batch{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:10px 12px;margin-bottom:8px;font-size:13px}
+.batch .bh{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.batch .br{color:var(--amber);font-family:var(--mono);font-size:12px;word-break:break-all;margin-top:4px}
 .hb.new{color:var(--red);border-color:rgba(224,104,95,.45)}
 .results button.was{border-left:3px solid rgba(72,211,192,.5)}
 .logf{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;font-family:var(--mono);font-size:11px}
@@ -157,9 +161,20 @@ details.adv-more>summary::-webkit-details-marker{display:none}
 .logf a.on{background:var(--cyan);color:#12151B;border-color:var(--cyan)}
 #log.folded{display:none}
 /* 批次勾選：清單每列左邊的勾選框、底部的勾選列與整理面板 */
-.pk{flex:none;width:30px;height:30px;margin:-2px 2px 0 -4px;border:1.5px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#12151B;cursor:pointer}
-.pk.on{background:var(--cyan);border-color:var(--cyan)}
-.pk.on::after{content:"✓";font-weight:700}
+/* 分類搜尋：分類籤（搜尋前選、結果裡也能切）與進階條件 */
+.catrow{display:flex;gap:6px;overflow-x:auto;padding:8px 0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.catrow::-webkit-scrollbar{display:none}
+.catrow a{flex:none;font-size:12px;border:1px solid var(--line);border-radius:99px;padding:5px 10px;cursor:pointer;color:var(--text);white-space:nowrap}
+.catrow a.on{background:var(--cyan);border-color:var(--cyan);color:#12151B;font-weight:700}
+.catrow a i{font-style:normal;opacity:.7;margin-left:3px;font-family:var(--mono);font-size:11px}
+.results .catrow{padding:8px 12px 0}
+details.sopt{margin-top:6px;font-size:12px;color:var(--muted)}
+details.sopt summary{cursor:pointer;font-family:var(--mono)}
+.sopt .sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.sopt select{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:7px 8px;font-size:15px}
+.pkb{flex:none;width:30px;height:30px;margin:-2px 2px 0 -4px;border:1.5px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#12151B;cursor:pointer}
+.pkb.on{background:var(--cyan);border-color:var(--cyan)}
+.pkb.on::after{content:"✓";font-weight:700}
 .pickbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:40;display:none;gap:8px;align-items:center;
   background:var(--cyan);color:#12151B;border-radius:99px;padding:10px 16px;font-family:var(--mono);font-size:13px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.45);cursor:pointer;white-space:nowrap}
 .pickbar.on{display:flex}
@@ -357,6 +372,17 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 <div class="hint">貼網址 → 直接掃描；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。看過、下載過的專案會標 <span class="hb seen">👁 看過</span><span class="hb dl">⤓ 下載過</span>。</div>
 <label class="fz"><input type="checkbox" id="fuzzy"> 🌀 模糊搜尋：中文自動加英文同義詞、拼錯也找得到、依相關度排序（一樣只用 1 次額度）</label>
 <label class="fz"><input type="checkbox" id="zh"> 🈯 描述翻成繁體中文（Google 翻譯，免費；只送公開的專案描述）</label>
+<div class="catrow" id="cats"></div>
+<details class="sopt" id="sopt">
+  <summary id="sopt-sum">⚙️ 進階條件（語言、星數、更新時間、授權）</summary>
+  <div class="sg">
+    <select id="so-lang" aria-label="語言"><option value="">語言：不限</option><option>Python</option><option>JavaScript</option><option>TypeScript</option><option>HTML</option><option>Go</option><option>Rust</option><option>Java</option><option>C#</option><option>Swift</option><option>Kotlin</option><option>Jupyter Notebook</option><option>Shell</option></select>
+    <select id="so-stars" aria-label="星數"><option value="">星數：不限</option><option value="10">★ 10 以上</option><option value="100">★ 100 以上</option><option value="1000">★ 1000 以上</option><option value="10000">★ 1 萬以上</option></select>
+    <select id="so-pushed" aria-label="更新時間"><option value="">更新：不限</option><option value="30">1 個月內有更新</option><option value="182">半年內有更新</option><option value="365">1 年內有更新</option></select>
+    <select id="so-lic" aria-label="授權"><option value="">授權：不限</option><option value="mit">MIT（最寬鬆）</option><option value="apache-2.0">Apache-2.0</option><option value="bsd-3-clause">BSD-3</option><option value="gpl-3.0">GPL-3.0</option></select>
+  </div>
+  <div class="hint">這些條件交給 GitHub 篩（一樣只用 1 次額度）。上面的分類籤是在手機上分類、不耗額度；先選分類再搜尋時，會順便加上分類關鍵字（例如 AI 技能加 skill）找得更準。</div>
+</details>
 <div class="trend" id="trend"></div>
 <div class="navrow" id="navrow" hidden>
   <button class="ghost" id="back">← 回到搜尋結果</button>
@@ -609,10 +635,13 @@ async function getText(url){
    - 獨立佇列一次一個請求＋指數退避，避免被當成濫用而封鎖。
    - 譯文存 localStorage（最多 400 筆），同一段話第二次不再送出。
    - 失敗不卡畫面：顯示原文並說明可以改用 Safari 的「aA → 翻譯」。 */
-const TR={key:"xray-tr-v1",max:400,url:"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-TW&dt=t&q="};
+// v2：舊版（v1）在中英混送時把「原樣傳回的英文」當成譯文存起來，留著會讓那些描述永遠不再翻譯，所以換新鍵、丟掉舊的
+const TR={key:"xray-tr-v2",max:600,url:"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-TW&dt=t&q="};
 let trMem=null;
 function trAll(){ if(trMem) return trMem; try{ trMem=JSON.parse(localStorage.getItem(TR.key)||"{}"); }catch(e){ trMem={}; } return trMem; }
-function trGet(t){ const h=trAll()[t]; return h?h.v:undefined; }
+try{ localStorage.removeItem("xray-tr-v1"); }catch(e){}
+// 譯文跟原文一模一樣（英文句子沒翻、簡體沒轉）就當成沒翻過，下次重送
+function trGet(t){ const h=trAll()[t]; return h && !(h.v===t && (/[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t) || /[㐀-鿿]/.test(t))) ? h.v : undefined; }
 function trPut(pairs){
   const all=trAll(), now=Date.now();
   pairs.forEach(p=>{ all[p[0]]={v:p[1],t:now}; });
@@ -635,8 +664,11 @@ const trQueue=(()=>{ let p=Promise.resolve(); return fn=>{ const r=p.then(fn); p
 async function trFetch(text,tries){
   tries=tries||0;
   let r;
-  try{ r=await fetch(TR.url+encodeURIComponent(text)); }
-  catch(e){ if(tries<3){ await sleep(500*Math.pow(2,tries)); return trFetch(text,tries+1); } throw new Error("連不到翻譯服務"); }
+  // 10 秒逾時：Google 偶爾不回應，沒有逾時的話整個翻譯佇列會卡死，後面的描述都不會再翻
+  const ac=typeof AbortController!=="undefined"?new AbortController():null;
+  const timer=ac?setTimeout(()=>ac.abort(),10000):null;
+  try{ r=await fetch(TR.url+encodeURIComponent(text),ac?{signal:ac.signal}:{}); clearTimeout(timer); }
+  catch(e){ clearTimeout(timer); if(tries<3){ await sleep(500*Math.pow(2,tries)); return trFetch(text,tries+1); } throw new Error("連不到翻譯服務"); }
   if((r.status===429||r.status>=500) && tries<3){ await sleep(800*Math.pow(2,tries)+Math.random()*300); return trFetch(text,tries+1); }
   if(!r.ok) throw new Error("翻譯服務回 "+r.status);
   const d=await r.json();
@@ -649,7 +681,7 @@ const trBad=new Set();   // 這次開啟頁面中拆到單句仍失敗的句子�
 // Google 會把常見技術縮寫翻成別的意思（LLM→法學碩士）；原文有這個縮寫時換回來
 const TR_FIX=[[/法學碩士(學位)?/g,"LLM",/LLM/],[/拉取請求/g,"PR",/\bPR\b/]];
 function trFix(src,out){ TR_FIX.forEach(f=>{ if(f[2].test(src)) out=out.replace(f[0],f[1]); }); return out; }
-async function translateMany(texts){
+async function translateMany(texts,onProgress){
   const uniq=[...new Set(texts.map(t=>String(t||"").replace(/\s*\n\s*/g," ").trim()))]
     .filter(t=>t && !isZh(t) && trGet(t)===undefined && !trBad.has(t));
   let failed=0, sent=0;
@@ -659,6 +691,7 @@ async function translateMany(texts){
     try{ out=(await trQueue(()=>trFetch(b.join("\n")))).split("\n"); }
     catch(e){ S.trErr=e.message; }
     if(out && out.length===b.length){
+      if(onProgress) setTimeout(onProgress,0);   // 每翻好一批就先畫出來，不用等全部（慢的時候才不會看起來像沒翻）
       // 原樣傳回的英文句：Google 有時整批當成別的語言而不翻；多句時拆開重送，單句才接受（可能本來就是專有名詞）
       const same=b.filter((t,i)=>b.length>1 && /[A-Za-z]{3,}\s+[A-Za-z]{3,}/.test(t) && out[i].trim()===t);
       trPut(b.map((t,i)=>[t,trFix(t,out[i].trim())]).filter(x=>same.indexOf(x[0])<0));
@@ -1708,6 +1741,7 @@ function histMark(full,kind,info){
   if(kind==="seen"){ e.n++; e.s=now; }
   else if(kind==="gh"){ e.g++; e.gs=now; }
   else if(kind==="dl"){ e.dl++; e.ds=now; }
+  else if(kind==="cp"){ e.cp=(e.cp||0)+1; e.cs=now; }
   e.t=now;
   if(info) Object.keys(info).forEach(x=>{ if(info[x]!=null&&info[x]!=="") e[x]=info[x]; });
   histSave();
@@ -1726,6 +1760,7 @@ function histBadges(full,pushed){
   if(e.fav) b+='<span class="hb fav">⭐ 收藏</span>';
   if(e.n||e.g) b+='<span class="hb seen">👁 看過'+((e.n+e.g)>1?" "+(e.n+e.g)+" 次":"")+"・"+mdDay(Math.max(e.s||0,e.gs||0))+'</span>';
   if(e.dl) b+='<span class="hb dl">⤓ 下載過'+(e.dl>1?" "+e.dl+" 次":"")+"・"+mdDay(e.ds)+'</span>';
+  if(e.cp) b+='<span class="hb cp">📋 給過 Claude'+(e.cp>1?" "+e.cp+" 次":"")+"・"+mdDay(e.cs)+'</span>';
   if(pushed && e.p && String(pushed)>String(e.p) && e.n) b+='<span class="hb new">🆕 看過後有更新</span>';
   return b;
 }
@@ -1740,12 +1775,23 @@ function paintLog(){
   if(f==="fav") list=list.filter(e=>e.fav);
   else if(f==="dl") list=list.filter(e=>e.dl);
   else if(f==="ext") list=list.filter(e=>!isMine(e.f));
+  else if(f==="cp") list=list.filter(e=>e.cp);
   if(q) list=list.filter(e=>nz(e.f+" "+(e.d||"")+" "+(e.ty||"")).indexOf(q)>-1);
   list.sort((a,b)=>(b.t||0)-(a.t||0));
   const all=Object.values(h), cnt=k=>all.filter(k).length;
-  const tabs=[["all","全部 "+all.length],["fav","⭐ 收藏 "+cnt(e=>e.fav)],["dl","⤓ 下載過 "+cnt(e=>e.dl)],["ext","外部專案 "+cnt(e=>!isMine(e.f))]];
+  const tabs=[["all","全部 "+all.length],["fav","⭐ 收藏 "+cnt(e=>e.fav)],["dl","⤓ 下載過 "+cnt(e=>e.dl)],["ext","外部專案 "+cnt(e=>!isMine(e.f))],["cp","📋 給過 Claude "+cnt(e=>e.cp)]];
   let html='<div class="logf">'+tabs.map(t=>'<a data-lf="'+t[0]+'"'+(f===t[0]?' class="on"':'')+'>'+esc(t[1])+'</a>').join("")+'</div>'+
     '<input class="rfilter" id="logq" type="search" autocomplete="off" placeholder="在紀錄裡找（名稱、描述、類型）" value="'+esc(S.logQ||"")+'">';
+  // 「給過 Claude」篩選：先列每一次複製的批次（哪天、給哪個 App、做什麼），可以整批重新勾選
+  if(f==="cp"){
+    const bs=pickLog();
+    html+=bs.length?'<div class="h" style="margin-top:6px;font-size:10px">每次複製的批次（最近 '+bs.length+' 次）</div>'+bs.map((b,i)=>'<div class="batch"><div class="bh">'+
+        esc(new Date(b.t).toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}))+'・'+esc(b.pn||"")+(b.app?'・給 '+esc(b.app.split("/").pop()):'')+'・'+b.repos.length+' 個</div>'+
+        b.repos.map(r=>'<div class="br">'+esc(r)+'</div>').join("")+
+        '<button class="gq" data-rebatch="'+i+'" style="margin-top:6px">↺ 重新勾選這批</button></div>').join("")
+      : '<div class="empty">還沒有複製過。勾選專案後按「📋 複製網址＋要求」就會記在這裡。</div>';
+    html+='<div class="h" style="margin-top:14px;font-size:10px">個別專案</div>';
+  }
   html+= list.length ? '<div class="results on" style="display:block">'+list.slice(0,200).map(e=>
       '<button data-h="'+esc(e.f)+'"'+(isMine(e.f)?' class="was"':'')+'><div class="rr">'+pickBox(e.f)+'<div class="rmain"><span class="rn">'+esc(e.f)+'</span>'+
       '<div class="rd">'+(e.ty?'<span class="tb">'+esc(e.ty)+'</span>':'')+esc(e.d||"")+'</div>'+
@@ -1767,7 +1813,7 @@ let pickMem=null;
 function picks(){ if(pickMem) return pickMem; try{ pickMem=JSON.parse(localStorage.getItem(PICK_KEY)||"[]")||[]; }catch(e){ pickMem=[]; } return pickMem; }
 function pickSave(){ try{ localStorage.setItem(PICK_KEY,JSON.stringify(picks())); }catch(e){} paintPickbar(); }
 function picked(full){ const k=String(full).toLowerCase(); return picks().some(p=>p.f.toLowerCase()===k); }
-function pickBox(full){ return '<span class="pk'+(picked(full)?' on':'')+'" data-pk="'+esc(full)+'" role="checkbox" aria-checked="'+picked(full)+'" aria-label="勾選 '+esc(full)+'"></span>'; }
+function pickBox(full){ return '<span class="pkb'+(picked(full)?' on':'')+'" data-pk="'+esc(full)+'" role="checkbox" aria-checked="'+picked(full)+'" aria-label="勾選 '+esc(full)+'"></span>'; }
 /* 從畫面上已有的資料湊出專案資訊（搜尋結果、熱門清單、紀錄、目前掃描的專案），不另外打 API */
 function pickInfo(full){
   const k=full.toLowerCase(), it=(S.results||[]).find(x=>x.full_name.toLowerCase()===k), h=histGet(full), l=S.last&&S.last.full.toLowerCase()===k?S.last:null;
@@ -1799,6 +1845,17 @@ function pickTplSave(id,t){
   let c={}; try{ c=JSON.parse(localStorage.getItem(PICK_TPL_KEY)||"{}"); }catch(e){}
   if(t===PURPOSES.find(p=>p.id===id).t) delete c[id]; else c[id]=t;
   try{ localStorage.setItem(PICK_TPL_KEY,JSON.stringify(c)); }catch(e){}
+}
+/* 每次「複製」都記下來：哪天、給哪個 App、做什麼、哪些專案（使用者要知道哪些已經丟給 Claude 過） */
+const PICKLOG_KEY="xray-picklog-v1";
+function pickLog(){ try{ return JSON.parse(localStorage.getItem(PICKLOG_KEY)||"[]")||[]; }catch(e){ return []; } }
+function recordPickCopy(purpId){
+  const ps=picks(), app=$("pick-app").value, pp=PURPOSES.find(x=>x.id===purpId);
+  const log=pickLog();
+  log.unshift({t:Date.now(),app:app,purp:purpId,pn:pp?pp.n:"🔗 只複製網址",repos:ps.map(p=>p.f)});
+  try{ localStorage.setItem(PICKLOG_KEY,JSON.stringify(log.slice(0,30))); }catch(e){}
+  ps.forEach(p=>histMark(p.f,"cp",{d:p.d,ty:p.ty,st:p.st}));
+  if($("rrows")) paintRows();             // 清單馬上出現「給過 Claude」徽章
 }
 function openPickSheet(){
   const ps=picks();
@@ -2058,8 +2115,68 @@ function render(res,pkg,repo,loc,ref,live,x){
 /* ══════════════════════════════════════════════════════════════
    7. GitHub 專案搜尋（獨立額度池：未授權 10 次/分，不吃那 60 次/小時）
    ══════════════════════════════════════════════════════════════ */
+/* ── 分類：一個專案可以同時屬於好幾類（例如「AI 技能」又是「股票」）。全部在手機上算，不耗額度 ── */
+const CATS=[["all","全部"],["skills","🧠 AI 技能"],["mcp","🔌 MCP"],["agent","🦾 AI 代理"],["ai","🤖 AI／大模型"],["stock","📈 股票金融"],
+  ["list","📚 清單／教學"],["web","🌐 網站"],["app","📱 App"],["cli","⌨️ 命令列"],["lib","📦 函式庫"],["server","🖥️ 後端"],["data","🗃️ 資料集"]];
+// 選了分類再搜尋時順便加的關鍵字（只在一般模式加；模糊模式是 OR 查詢，加了會改變語意）
+const CAT_KW={skills:"skill",mcp:"mcp",agent:"agent",list:"awesome",cli:"cli",data:"dataset"};
+const AI_RE=/\b(ai|llm|llms|gpt|chatgpt|claude|openai|gemini|rag|chatbot|langchain|ollama|deepseek|qwen|diffusion|machine[- ]learning|deep[- ]learning)\b|人工智慧|大模型|機器學習|深度學習|人工智能|大语言模型/i;
+const catMemo=new WeakMap();
+function catsOf(it){
+  if(catMemo.has(it)) return catMemo.get(it);
+  const tp=(it.topics||[]).join(" "), t=it.full_name+" "+(it.description||"")+" "+(it.description_zh||"")+" "+tp;
+  const c=new Set(), q=quickType(it);
+  if(q) c.add(q==="docs"?"list":q==="model"?"ai":q==="ext"?"app":q==="dotfiles"?"cli":q);
+  if(/(^|[\s\/-])(claude|agent|codex)[-_]?skills?\b|\bskills?\b.*\b(claude|agent|codex|cursor)\b|\b(claude|agent|codex|cursor)\b.*\bskills?\b|SKILL\.md/i.test(t)) c.add("skills");
+  if(/\bmcp\b|model context protocol/i.test(t)) c.add("mcp");
+  if(/\bagents?\b|agentic|智能體|智能体|AI 代理/i.test(t) && !c.has("skills")) c.add("agent");
+  if(AI_RE.test(t) || c.has("skills") || c.has("mcp") || c.has("agent")) c.add("ai");
+  if(STOCK_RE.test(t)) c.add("stock");
+  catMemo.set(it,c); return c;
+}
+S.cat="all";
+try{ S.cat=localStorage.getItem("xray-cat")||"all"; }catch(e){}
+if(!CATS.some(c=>c[0]===S.cat)) S.cat="all";
+function setCat(id){
+  S.cat=id; try{ localStorage.setItem("xray-cat",id); }catch(e){}
+  paintCats(); if($("rrows")) paintRows();
+}
+/* 上方分類籤（搜尋前選）＋結果裡的分類籤（附數量，只顯示有結果的類別） */
+function paintCats(){
+  $("cats").innerHTML=CATS.map(c=>'<a data-cat="'+c[0]+'"'+(S.cat===c[0]?' class="on"':'')+'>'+esc(c[1])+'</a>').join("");
+  const el=$("rcats"); if(!el) return;
+  const items=S.results||[], n={};
+  items.forEach(it=>catsOf(it).forEach(k=>{ n[k]=(n[k]||0)+1; }));
+  el.innerHTML=CATS.filter(c=>c[0]==="all"||n[c[0]]||S.cat===c[0]).map(c=>'<a data-cat="'+c[0]+'"'+(S.cat===c[0]?' class="on"':'')+'>'+esc(c[1])+
+    '<i>'+(c[0]==="all"?items.length:(n[c[0]]||0))+'</i></a>').join("");
+}
+/* 進階條件 → GitHub 官方支援的搜尋條件（qualifier）；跟模糊模式的 OR 查詢一起用也只是多加篩選 */
+const SOPT_KEY="xray-sopt-v1";
+function searchExtra(q,fuzzy){
+  const lang=$("so-lang").value, st=$("so-stars").value, pd=$("so-pushed").value, lic=$("so-lic").value, qs=[];
+  if(q.indexOf(":")<0){                           // 使用者自己下了 GitHub 語法就不重複加
+    if(lang) qs.push("language:"+(/\s/.test(lang)?'"'+lang+'"':lang));
+    if(st) qs.push("stars:>="+st);
+    if(pd) qs.push("pushed:>="+daysAgo(+pd));
+    if(lic) qs.push("license:"+lic);
+  }
+  const kw=!fuzzy && CAT_KW[S.cat] && nz(q).indexOf(CAT_KW[S.cat])<0 ? CAT_KW[S.cat] : "";
+  return {qs:qs.join(" "),kw:kw};
+}
+function soptSave(){
+  const v={lang:$("so-lang").value,stars:$("so-stars").value,pushed:$("so-pushed").value,lic:$("so-lic").value};
+  try{ localStorage.setItem(SOPT_KEY,JSON.stringify(v)); }catch(e){}
+  const n=Object.values(v).filter(Boolean).length;
+  $("sopt-sum").textContent="⚙️ 進階條件（語言、星數、更新時間、授權）"+(n?"・已設 "+n+" 項":"");
+}
+function soptLoad(){
+  let v={}; try{ v=JSON.parse(localStorage.getItem(SOPT_KEY)||"{}")||{}; }catch(e){}
+  $("so-lang").value=v.lang||""; $("so-stars").value=v.stars||""; $("so-pushed").value=v.pushed||""; $("so-lic").value=v.lic||"";
+  soptSave();
+}
+
 let qLast="";
-const PER=10;
+const PER=100;   // GitHub 一次最多 100 筆：一次全部展開，看完再「載入更多」，同樣 1 次額度
 S.sort="best";
 S.view="search";   // search＝關鍵字搜尋結果；trend＝熱門推薦清單（不耗 API 額度）
 
@@ -2142,17 +2259,17 @@ async function search(more,qArg,fromHistory){
   const q = more ? qLast : String(qArg!=null ? qArg : $("url").value).trim();
   S.outTab="explore"; if(S.tab!=="explore") setTab("explore"); else showOut();
   if(q.length<2){ fail("關鍵字至少 2 個字。"); return; }
-  const fuzzy=$("fuzzy").checked, key=(fuzzy?"~":"")+q;
+  const fuzzy=$("fuzzy").checked, extra=more?(S.extra||{qs:"",kw:""}):searchExtra(q,fuzzy), key=(fuzzy?"~":"")+q+"|"+extra.qs+"|"+extra.kw;
   if(!more){
     // 同一個關鍵字（同一種模式）已經有結果：直接顯示記憶體裡的，不再花搜尋額度
     if(S.view==="search" && key===S.qKey && S.results && S.results.length){ showResults(); if(!fromHistory) pushView({v:"search",q:q}); return; }
-    qLast=q; S.qKey=key; S.page=1; S.results=[]; S.view="search"; S.filter="";
+    qLast=q; S.qKey=key; S.extra=extra; S.page=1; S.results=[]; S.view="search"; S.filter="";
     S.fzGroups=fzGroups(q); S.sort=fuzzy?"rel":"best"; markTrend("");
   }else S.page=(S.page||1)+1;
 
   const btn=$("more-btn");
   if(btn){ btn.textContent="載入中…"; btn.disabled=true; }
-  const apiQ=fuzzy?fuzzyQuery(q):q;
+  const apiQ=(fuzzy?fuzzyQuery(q):q)+(extra.kw?" "+extra.kw:"")+(extra.qs?" "+extra.qs:"");
   say("搜尋「"+apiQ+"」…");
   try{
     // 模糊模式交給 GitHub 依相關度排；一般模式照星數
@@ -2161,7 +2278,7 @@ async function search(more,qArg,fromHistory){
     S.results=(S.results||[]).concat(r.items||[]);
     S.total=Math.min(r.total_count||0,1000);   // GitHub 搜尋最多只讓翻到第 1000 筆
     if(!more){ addRecent("q",q); if(!fromHistory) pushView({v:"search",q:q}); }
-    say("找到 "+Number(S.total).toLocaleString()+" 個專案"+(fuzzy&&apiQ!==q?"（模糊：已放寬成 "+apiQ+"）":"")+"，點一個開始掃描","✓");
+    say("找到 "+Number(S.total).toLocaleString()+" 個專案"+(apiQ!==q?"（實際查詢："+apiQ+"）":"")+"，點一個開始掃描、點方框勾選","✓");
     showResults();
   }catch(e){
     if(!S.results||!S.results.length){
@@ -2187,7 +2304,7 @@ function sortedIdx(){
   const it=S.results||[];
   const fg=S.filter?fzGroups(S.filter):null;
   // 篩選：每個詞都要「對得上」（含同義詞、拼錯、縮寫），在手機上算，不耗額度
-  let idx=it.map((_,i)=>i).filter(i=>!fg || fg.every(g=>fzScore([g],it[i])>=0.5));
+  let idx=it.map((_,i)=>i).filter(i=>(!fg || fg.every(g=>fzScore([g],it[i])>=0.5)) && (S.cat==="all" || catsOf(it[i]).has(S.cat)));
   const rel=i=>fzScore(S.fzGroups||[],it[i])*10+Math.log10(it[i].stargazers_count+1)*0.5;
   const by={
     stars:(a,b)=>it[b].stargazers_count-it[a].stargazers_count,
@@ -2212,12 +2329,14 @@ function paintResults(){
   const label=trend ? '⭐ '+esc(S.trendTitle)+' · '+items.length+' 個（每天自動收集，不耗額度）'
     : '「'+esc(qLast)+'」共 '+Number(S.total).toLocaleString()+' 個 · 已顯示 '+items.length;
   const head='<div class="rhead"><span>'+label+'</span><select id="rsort" aria-label="排序">'+opts+'</select></div>'+
+    '<div class="catrow" id="rcats"></div>'+
     '<input class="rfilter" id="rfilter" type="search" autocomplete="off" placeholder="🌀 結果內模糊篩選（nvl、downlod、影片）不耗額度" value="'+esc(S.filter||"")+'">';
   const more=(!trend && items.length<S.total && items.length<1000)
     ? '<button id="more-btn" style="color:var(--cyan);font-family:var(--mono);font-size:12px;'+
       'text-align:center;background:var(--panel-2)">載入更多（第 '+((S.page||1)+1)+' 頁）</button>' : "";
   $("results").innerHTML=head+'<div id="rrows"></div>'+more;
   $("results").classList.add("on");
+  paintCats();
   paintRows();
 }
 /* 只重畫清單列：篩選框打字時不重建輸入框，鍵盤才不會一直收起來 */
@@ -2229,7 +2348,7 @@ function paintRows(){
     let shown=d;
     if(zh && d){
       const t=it.description_zh||zhOf(d);
-      if(t!==undefined) shown=t; else if(n<40) missing.push(d);
+      if(t!==undefined) shown=t; else if(n<120) missing.push(d);
     }
     const hb=histBadges(it.full_name,it.pushed_at);
     return '<button data-i="'+i+'"'+(hb?' class="was"':'')+'><div class="rr">'+pickBox(it.full_name)+'<div class="rmain">'+
@@ -2241,12 +2360,14 @@ function paintRows(){
       (it.language?' · '+esc(it.language):'')+' · 更新 '+esc(String(it.pushed_at||"").slice(0,10))+'</div></div>'+
       '<div class="rz"><b>'+fmtSize(it.size)+'</b><span>檔案大小</span></div></div></button>';
   }).join("") : '<button disabled style="color:var(--muted)">已載入的結果中沒有符合「'+esc(S.filter)+'」的，清空篩選或換個詞</button>';
-  // 畫面上（前 40 筆）還沒翻的描述一次送出；每段話只試一次，失敗就留原文，不會無限重試
+  // 還沒翻的描述分批送出、每批翻好就重畫；每段話這次開頁只試一次，失敗就留原文，不會無限重試
   S.trTried=S.trTried||new Set();
   const todo=missing.filter(t=>!S.trTried.has(t));
   if(todo.length && !S.trBusy){
     todo.forEach(t=>S.trTried.add(t)); S.trBusy=true;
-    translateMany(todo).then(f=>{
+    let raf=0;
+    const repaint=()=>{ if(raf) return; raf=requestAnimationFrame(()=>{ raf=0; if($("rrows")) paintRows(); }); };
+    translateMany(todo,repaint).then(f=>{
       S.trBusy=false;
       if(f) toast("有 "+f+" 筆描述翻譯失敗，先顯示原文（可用 Safari「aA → 翻譯」）");
       if($("rrows")) paintRows();
@@ -2760,6 +2881,8 @@ document.addEventListener("click",e=>{
   togglePick(b.dataset.pk);
 },true);
 $("pickbar").addEventListener("click",openPickSheet);
+document.addEventListener("click",e=>{ const c=e.target.closest("[data-cat]"); if(c) setCat(c.dataset.cat); });
+["so-lang","so-stars","so-pushed","so-lic"].forEach(id=>$(id).addEventListener("change",soptSave));
 $("pickbtn").addEventListener("click",()=>{ if(S.last && togglePick(S.last.full)) toast(picked(S.last.full)?"已勾選，下方按「整理並複製」":"已取消勾選"); });
 $("pick-close").addEventListener("click",()=>$("picksheet").classList.remove("on"));
 $("picksheet").addEventListener("click",e=>{
@@ -2767,8 +2890,8 @@ $("picksheet").addEventListener("click",e=>{
   if(u){ togglePick(u.dataset.unpick); if(!picks().length) $("picksheet").classList.remove("on"); else openPickSheet(); return; }
   const p=e.target.closest("[data-purp]");
   if(p){ S.pickPurp=p.dataset.purp; document.querySelectorAll("#pick-purp a").forEach(a=>a.classList.toggle("on",a===p)); $("pick-tpl").value=pickTpl(S.pickPurp); return; }
-  if(e.target.closest("#pick-copy")){ if(!picks().length){ toast("還沒有勾選"); return; } copyText(pickPrompt(true)); return; }
-  if(e.target.closest("#pick-urls")){ if(!picks().length){ toast("還沒有勾選"); return; } copyText(pickPrompt(false)); return; }
+  if(e.target.closest("#pick-copy")){ if(!picks().length){ toast("還沒有勾選"); return; } copyText(pickPrompt(true)); recordPickCopy(S.pickPurp); return; }
+  if(e.target.closest("#pick-urls")){ if(!picks().length){ toast("還沒有勾選"); return; } copyText(pickPrompt(false)); recordPickCopy("urls"); return; }
   if(e.target.closest("#pick-reset")){ pickTplSave(S.pickPurp,PURPOSES.find(x=>x.id===S.pickPurp).t); $("pick-tpl").value=pickTpl(S.pickPurp); toast("已還原預設"); return; }
   if(e.target.closest("#pick-clear")){ if(!confirm("清空全部 "+picks().length+" 個勾選？")) return;
     pickMem=[]; pickSave(); document.querySelectorAll("[data-pk].on").forEach(el=>{ el.classList.remove("on"); el.setAttribute("aria-checked","false"); });
@@ -2785,6 +2908,15 @@ $("tabs").addEventListener("click",e=>{
 });
 /* 紀錄分頁：篩選、搜尋、點了重看（跟健檢清單一樣先收起清單，結果才不會在畫面外） */
 $("log").addEventListener("click",e=>{
+  const rb=e.target.closest("[data-rebatch]");
+  if(rb){
+    const b=pickLog()[+rb.dataset.rebatch]; if(!b) return;
+    // 把這批放回勾選（已勾的不重複），App 也帶回來，直接打開整理面板
+    b.repos.forEach(f=>{ if(!picked(f) && picks().length<PICK_MAX) picks().push(pickInfo(f)); });
+    pickSave(); try{ if(b.app) localStorage.setItem("xray-pick-app",b.app); }catch(err){}
+    if(b.purp && b.purp!=="urls") S.pickPurp=b.purp;
+    openPickSheet(); return;
+  }
   const f=e.target.closest("[data-lf]");
   if(f){ S.logF=f.dataset.lf; paintLog(); return; }
   if(e.target.closest("#log-clear")){
@@ -2966,6 +3098,8 @@ document.querySelectorAll("[data-s]").forEach(a=>a.addEventListener("click",e=>{
 paintRecent();
 paintLogCount();
 paintPickbar();
+soptLoad();
+paintCats();
 try{ S.token=localStorage.getItem(TOK_KEY)||""; }catch(e){ S.token=""; }
 paintTok();
 try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}
