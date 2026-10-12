@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-10",
+ "checked_at": "2026-10-12",
  "vendors": [
   {
    "vendor": "Anthropic",
@@ -176,7 +176,7 @@
      "id": "claude-sonnet-5-5",
      "released": "2026-09-28",
      "context": "1M tokens（最大輸出 128K）",
-     "price": "$2 / $10 每百萬 tokens；cache read $0.20（與 Sonnet 5 同價，官方稱每個任務成本最多低 30%）",
+     "price": "$2 / $10 每百萬 tokens；cache read $0.10（2026-10-07 起由 $0.20 調降，官方定價頁）",
      "tier": "balanced",
      "legacy": false,
      "best_for": [
@@ -296,7 +296,7 @@
      "id": "claude-haiku-5-5",
      "released": "2026-10-07",
      "context": "1M tokens（最大輸出 128K）",
-     "price": "$0.10 / $0.50 每百萬 tokens 起（提示 10 萬 tokens 以內；更長的提示較貴），官方稱平均比 Haiku 4.5 便宜約 75%",
+     "price": "$0.10 / $0.50 每百萬 tokens（提示 10 萬 tokens 以內）；超過 10 萬 tokens 的提示 $0.50 / $2.50；cache read $0.01（官方定價頁）",
      "tier": "cheap",
      "legacy": false,
      "best_for": [
@@ -472,13 +472,32 @@
      ]
     },
     {
-     "name": "GPT-6 Sol",
+     "name": "GPT-6.1 Sol",
+     "id": "gpt-6.1-sol",
+     "released": "2026-09-29",
+     "context": "約 1.05M tokens（最大輸出 128K，第三方整理）",
+     "price": "$2 / $10 每百萬 tokens；cached input $0.10（OpenAI 開發者帳號公告與媒體轉述）",
+     "tier": "daily",
+     "legacy": false,
+     "best_for": [
+      "日常寫程式主力（Codex CLI 0.161.0 起預設，第三方整理）",
+      "大型重構、深入追查程式碼、長時間代理工作（OpenAI 描述）"
+     ],
+     "strengths": [
+      "OpenAI 稱寫程式與電腦操作接近 GPT-6 Astra，價格約五分之一",
+      "與 GPT-6 Sol 同價，cached input 打 95 折扣（便宜 95%）",
+      "ChatGPT Work 與 Codex 可用，一般聊天尚未提供"
+     ],
+     "benchmarks": []
+    },
+    {
+     "name": "GPT-6 Sol（舊款，已由 GPT-6.1 Sol 取代）",
      "id": "gpt-6-sol",
      "released": "2026-09-22",
      "context": "API：約 1.05M tokens（最大輸出 128K，第三方整理）；Codex 內建目錄：272K / 最大 872K",
      "price": "$2 / $10 每百萬 tokens（第三方整理 OpenAI 公告）",
-     "tier": "daily",
-     "legacy": false,
+     "tier": "legacy",
+     "legacy": true,
      "best_for": [
       "日常寫程式主力",
       "複雜寫程式與代理流程（OpenAI 建議）"
@@ -618,7 +637,7 @@
    "need": "日常大部分工作",
    "icon": "🧰",
    "claude": "Claude Opus 5.5",
-   "codex": "GPT-6 Sol",
+   "codex": "GPT-6.1 Sol",
    "why": "官方都定位為主力：能力強、價格適中"
   },
   {
@@ -639,7 +658,7 @@
    "need": "速度和能力平衡",
    "icon": "⚖️",
    "claude": "Claude Sonnet 5.5",
-   "codex": "GPT-6 Sol",
+   "codex": "GPT-6.1 Sol",
    "why": "比旗艦便宜很多、速度快；Sonnet 5.5 多數基準接近 Opus 5.5"
   }
  ],
@@ -766,6 +785,7 @@
   "GPT-6 Astra 的 ARC-AGI-3 99.9% 是 OpenAI 自家 harness 結果（標準 harness 約 62.7%），爭議大，未收錄。",
   "2026-09-28 週檢：兩家都沒有新模型或退役公告。Opus 5.5 新增 Artificial Analysis 第三方分數（Intelligence Index 58、自測 Terminal-Bench 4.0 59.6%，與官方 66.4% 測法不同，不放進同一張圖）；該網站被 egress 擋住，數字取自搜尋結果摘要，未直接讀原文。",
   "2026-10-05 週檢：新增 Claude Sonnet 5.5（2026-09-28，官方文件與公告），Sonnet 5 改列舊款；Haiku 4.5 官方退役承諾日期為不早於 2026-10-15。OpenAI DevDay 2026 據搜尋摘要推出 GPT-6 Astra Ultrafast（Pro 500／Enterprise），openai.com 被 egress 擋住、未讀原文，未列為獨立模型。Sonnet 5.5 公告中 Sonnet 5 的 Terminal-Bench 4.0 為 10.3%（官方原文數字）。",
-  "2026-10-10：新增 Claude Haiku 5.5（2026-10-07，官方模型總覽與公告，跑分取自公告表格），Haiku 4.5 改列舊款。公告中 Sonnet 5.5 的 FrontierCode 1.1 為 52.1%（Xhigh），與 Sonnet 5.5 公告的 46.2%（max）設定不同，未合併。Haiku 5.5 的價格是「起價」，長提示較貴；同樣文字的 token 數比 Haiku 4.5 多約 30%。"
+  "2026-10-10：新增 Claude Haiku 5.5（2026-10-07，官方模型總覽與公告，跑分取自公告表格），Haiku 4.5 改列舊款。公告中 Sonnet 5.5 的 FrontierCode 1.1 為 52.1%（Xhigh），與 Sonnet 5.5 公告的 46.2%（max）設定不同，未合併。Haiku 5.5 的價格是「起價」，長提示較貴；同樣文字的 token 數比 Haiku 4.5 多約 30%。",
+  "2026-10-12 週檢：OpenAI 於 2026-09-29（DevDay）推出 GPT-6.1 Sol（$2/$10，cached $0.10），Codex CLI 0.161.0 起預設使用（第三方整理 changelog），GPT-6 Sol 改列舊款；上週漏列，本週補上。GPT-6.1 Sol 的跑分只有第三方轉述且彼此不一致（例如 OSWorld 2.0 有 71.4% 與 69.56% 兩種），原文網站被 egress 擋住無法核對，暫不收錄。Anthropic：Sonnet 5.5 cache read 2026-10-07 起降為 $0.10（官方定價頁與 release notes）；Haiku 5.5 長提示（>10 萬 tokens）價格 $0.50/$2.50。兩家本週都沒有退役公告；Haiku 4.5 官方退役日期仍為不早於 2026-10-15。"
  ]
 }

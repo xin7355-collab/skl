@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-05",
+ "checked_at": "2026-10-12",
  "products": [
   {
    "product": "Claude Code",
@@ -242,6 +242,28 @@
      "zh": "檢查你的 CLAUDE.md、技能、代理人和指令裡，有沒有「為舊模型寫的」提示寫法（新模型不需要、甚至會變差）。",
      "how": "在 Claude Code 工作階段輸入 /doctor prompt-audit（或 /checkup prompt-audit）。2026-09-25 的 2.1.283 版才加入；若網頁版說沒有這個指令，代表還沒推到網頁版。",
      "when": "換新模型後、覺得 CLAUDE.md 越寫越長時",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/changelog"
+    },
+    {
+     "name": "Mods（自訂 Claude Code 行為）",
+     "icon": "🛠️",
+     "zh": "外掛可以在介面加上通知、輸入框自動完成選項、自訂工具，甚至改變 Claude 回覆前後要做的檢查；內建的「You should know」會提醒你可能漏掉的事。",
+     "how": "在手機上請 Claude 說「幫我做一個 mod，在每次推上 GitHub 前提醒我跑測試」，它會用 plugin-authoring 技能做好並說明怎麼啟用。",
+     "when": "想讓 Claude Code 每次都自動多做某件事、或多一個提醒時",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/changelog"
+    },
+    {
+     "name": "外掛一行安裝（--marketplace）",
+     "icon": "📦",
+     "zh": "安裝外掛時直接指定來源市集，沒加過的市集會自動加入再安裝，一樣經過權限檢查。",
+     "how": "請 Claude：「用 claude plugin install --marketplace 幫我裝 某某外掛」，或在 /plugin 介面裡安裝。",
+     "when": "別人給你一個外掛名稱和市集網址時",
      "level": "進階",
      "mobile": true,
      "new": true,
@@ -527,6 +549,17 @@
      "mobile": false,
      "new": false,
      "url": "https://developers.openai.com/codex/ide"
+    },
+    {
+     "name": "預設改用 GPT-6.1 Sol",
+     "icon": "⚡",
+     "zh": "Codex 預設模型換成 GPT-6.1 Sol：寫程式與電腦操作接近旗艦 GPT-6 Astra，但便宜很多。",
+     "how": "不用設定，新的工作會自動使用；要換回其他模型，在 Codex 的模型選單切換。",
+     "when": "日常寫程式都適用；最難的任務再改用 GPT-6 Astra",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://learn.chatgpt.com/codex/changelog"
     }
    ]
   },
@@ -636,6 +669,28 @@
      "mobile": false,
      "new": false,
      "url": "https://support.claude.com/en/articles/13947068-assign-tasks-from-anywhere-in-claude-cowork"
+    },
+    {
+     "name": "影片成果直接播放",
+     "icon": "🎬",
+     "zh": "Cowork 做出來的影片檔可以在檔案區直接播放，聊天裡也會顯示縮圖，不用先下載。",
+     "how": "交辦會產生影片的工作（例如把照片做成短片）→ 完成後點檔案區的影片就能播放。",
+     "when": "請 Cowork 做簡報影片、短片、動畫時",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://claude.com/docs/cowork/changelog"
+    },
+    {
+     "name": "排程任務自動核准",
+     "icon": "🔁",
+     "zh": "Claude 幫你建立的排程任務，預設在組織允許的範圍內自動核准工具使用，只有看起來不安全時才暫停問你；排程失敗也會推播通知。",
+     "how": "在 Cowork 說「每週一早上幫我整理上週重點」→ Claude 建好排程；要改成每次都問，到排程任務的設定把核准方式改掉。",
+     "when": "想讓每週固定工作在你沒盯著時也能跑完",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://claude.com/docs/cowork/changelog"
     }
    ],
    "examples": [
