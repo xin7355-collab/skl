@@ -55,6 +55,15 @@
    ],
    "verdict_at_review": "FAIL",
    "note": "base64 是瀏覽器截圖 PNG 與 TTS 回傳的音訊；.exec() 是正規表達式；unlink 只刪自己的暫存檔。唯一外連是使用者主動啟用的火山引擎語音（預設關閉）與 skl 加的 fetch_fonts.py（固定 commit＋sha256 驗證）（2026-10-10）"
+  },
+  "community/skills/lit-review": {
+   "sha256": "fde788bf34aecf071891839f6a5fd836c9d86e573c0d345aa21938b955ceb8ed",
+   "categories": [
+    "CRED-HARVEST",
+    "NET-EXFIL"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "S2_API_KEY 只放進送往 api.semanticscholar.org 的 x-api-key 標頭、CROSSREF_MAILTO 只給 Crossref／Unpaywall 的禮貌池；只連 semanticscholar、crossref、arxiv、openalex、unpaywall。注意 load_dotenv 會把目前資料夾與家目錄的 .env 全部讀進這支程式的環境變數（只在本機、不外送）（2026-10-14）"
   }
  }
 }

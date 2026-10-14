@@ -93,5 +93,21 @@
       "ecc/skills/cost-aware-llm-pipeline",
       "ecc/skills/prompt-optimizer"
     ]
+  },
+  "writing": {
+    "desc": "繁體中文寫作（社群精選）：去 AI 味、台灣技術寫作規範、萃取你自己的文字語氣、英文去 AI 味",
+    "skills": [
+      "community/skills/zh-tw-humanizer",
+      "community/skills/tw-writing",
+      "community/skills/voice-profile-extraction",
+      "community/skills/humanizer"
+    ]
+  },
+  "research": {
+    "desc": "查證與學術寫作（社群精選）：找文獻並查核引用真假與支持度、中文學術寫作紀律",
+    "skills": [
+      "community/skills/lit-review",
+      "community/skills/academic-writing-discipline"
+    ]
   }
 }

@@ -58,3 +58,7 @@ superpowers/skills/writing-skills/SKILL.md :: skills/path/SKILL.md
 superpowers/skills/writing-skills/SKILL.md :: skills/testing/test-driven-development/SKILL.md
 superpowers/skills/writing-skills/SKILL.md :: scripts/tool.sh
 superpowers/skills/writing-skills/SKILL.md :: ../some-skill
+
+# lit-review：SKILL.md 提到的是原作者給維護者跑的迴歸測試，收錄時刻意沒帶 evals/（見 community/README.md）
+community/skills/lit-review/SKILL.md :: evals/test_regression.py
+community/skills/lit-review/SKILL.md :: evals/mutation_check.py
