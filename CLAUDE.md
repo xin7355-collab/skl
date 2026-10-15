@@ -89,7 +89,7 @@
     Token 可勾「記在這支手機」存 localStorage（使用者要求；只建議唯讀 Token，畫面只顯示末 4 碼，只送 api.github.com）。
   - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
     使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
-  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（oil-ui、hairline-create、live-panel、huashu-art-motion、humanizer、zh-tw-humanizer、tw-writing、voice-profile-extraction、lit-review、academic-writing-discipline，MIT）；來源、版本與修改
+  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（oil-ui、hairline-create、live-panel、huashu-art-motion、humanizer、zh-tw-humanizer、tw-writing、voice-profile-extraction、lit-review、academic-writing-discipline、design-taste-frontend、redesign-existing-projects、ponytail、wireframe、qa-acceptance、statistical-analysis、statsmodels、polars、markitdown，MIT）；來源、版本與修改
     記在 `community/README.md`（oil-ui 已移除自動更新與推銷；huashu-art-motion 的字型不進 repo，用 fetch_fonts.py 下載驗證；評估過沒收的也列在裡面，避免重複評估）。組合 `visual`、`writing`、`research`。
   - `xin-toolkit/skills/app-bootstrap/assets/security-reviewed.json`：掃描 FAIL 但人工審查為誤判的技能清單，
     以內容指紋（`bootstrap_app.py hash <路徑>`）綁定；技能一改就失效、要重審。不要為了「裝得上」隨便加。

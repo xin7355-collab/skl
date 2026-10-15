@@ -102,3 +102,8 @@ community/skills/huashu-art-motion/scripts/key_green.py  # 需要 numpy（uv run
 community/skills/huashu-art-motion/scripts/key_split.py  # 需要 numpy（uv run 時才安裝）
 community/skills/huashu-art-motion/scripts/qa.py  # 需要 numpy（uv run 時才安裝）
 community/skills/huashu-art-motion/scripts/subzone_gate.py  # 需要 numpy（uv run 時才安裝）
+
+# K-Dense 精選技能：要 pip install markitdown／matplotlib 才能執行，CI 沒裝
+community/skills/markitdown/scripts/batch_convert.py  # 需要 markitdown
+community/skills/markitdown/scripts/convert_literature.py  # 需要 markitdown
+community/skills/statistical-analysis/scripts/assumption_checks.py  # 需要 matplotlib

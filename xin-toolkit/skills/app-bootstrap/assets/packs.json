@@ -46,7 +46,10 @@
     "skills": [
       "xin-toolkit/skills/tw-stock",
       "finance/skills/stock-analysis",
-      "finance/skills/financial-analyst"
+      "finance/skills/financial-analyst",
+      "community/skills/statsmodels",
+      "community/skills/polars",
+      "community/skills/statistical-analysis"
     ]
   },
   "video": {
@@ -78,12 +81,15 @@
     ]
   },
   "visual": {
-    "desc": "視覺設計（社群精選）：介面設計與評審、會轉動的線條插圖、動態架構圖影片",
+    "desc": "視覺設計（社群精選）：介面設計與評審、去掉 AI 樣板感的設計方向、改造既有網頁、線框圖、線條插圖、動態架構圖、程式動畫",
     "skills": [
       "community/skills/oil-ui",
       "community/skills/hairline-create",
       "community/skills/live-panel",
-      "community/skills/huashu-art-motion"
+      "community/skills/huashu-art-motion",
+      "community/skills/design-taste-frontend",
+      "community/skills/redesign-existing-projects",
+      "community/skills/wireframe"
     ]
   },
   "ai": {
@@ -107,7 +113,8 @@
     "desc": "查證與學術寫作（社群精選）：找文獻並查核引用真假與支持度、中文學術寫作紀律",
     "skills": [
       "community/skills/lit-review",
-      "community/skills/academic-writing-discipline"
+      "community/skills/academic-writing-discipline",
+      "community/skills/markitdown"
     ]
   }
 }

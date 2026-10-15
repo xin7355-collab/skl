@@ -64,6 +64,23 @@
    ],
    "verdict_at_review": "FAIL",
    "note": "S2_API_KEY 只放進送往 api.semanticscholar.org 的 x-api-key 標頭、CROSSREF_MAILTO 只給 Crossref／Unpaywall 的禮貌池；只連 semanticscholar、crossref、arxiv、openalex、unpaywall。注意 load_dotenv 會把目前資料夾與家目錄的 .env 全部讀進這支程式的環境變數（只在本機、不外送）（2026-10-14）"
+  },
+  "community/skills/design-taste-frontend": {
+   "sha256": "b05e75118562d34601f7e0fb54a46dda63b647dbea22a5acdda41c0db56f9d9b",
+   "categories": [
+    "CMD-INJECT",
+    "CODE-EXEC"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "eval 是 DevTools 協定在本機無頭 Chrome 頁面內執行自己的檢查程式；spawn 只啟動 Chrome。素材搜尋只連 openverse、wikimedia、芝加哥藝術館、大都會、archive.org、NASA 公開 API；draw.mjs 會寫 ~/.taste-skill/history.json（可用 TASTE_SKILL_HISTORY 改位置）（2026-10-15）"
+  },
+  "community/skills/markitdown": {
+   "sha256": "329dbd5f2e845eee160d8972905bff81e881cf2c7f78ad554f40c25537d028ab",
+   "categories": [
+    "PROMPT-OVERRIDE"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "命中的是 references/security.md 提醒「轉出的文件可能藏有 ignore previous instructions 之類的注入文字」的說明，不是指令（2026-10-15）"
   }
  }
 }
