@@ -29,13 +29,13 @@
    "note": "eval 是在本機 headless Chrome 頁面內執行（DevTools 管線）、base64 是截圖、rmtree 只刪自己的暫存資料夾（2026-10-06）"
   },
   "superpowers/skills/brainstorming": {
-   "sha256": "4a210045db535ffcb86cbc978aa9b8a782e218592e7ff65ab086467b80ff87cb",
+   "sha256": "6dd215541b5e84dbcd72f9239c2d815255c0f6abe6f01426fcf862727dbf2180",
    "categories": [
     "CMD-INJECT",
     "CODE-EXEC"
    ],
    "verdict_at_review": "FAIL",
-   "note": "server.cjs 的 exec 只在使用者設定 BRAINSTORM_OPEN_CMD 時開瀏覽器（2026-09-24）"
+   "note": "server.cjs 的 exec 只在使用者設定 BRAINSTORM_OPEN 並自訂 BRAINSTORM_OPEN_CMD 時開瀏覽器，其餘用 execFile 不經 shell（2026-09-24 審查；2026-10-15 同步 7.0.0 後重審，同一段程式）"
   },
   "superpowers/skills/writing-skills": {
    "sha256": "5c1e1bcab7b97349563f4bde413f62f9304bdf10ed96d916f77490d03c1cb25d",
@@ -45,6 +45,25 @@
    ],
    "verdict_at_review": "FAIL",
    "note": "render-graphs.js 用 execFileSync 呼叫 graphviz 產生圖（2026-09-24）"
+  },
+  "community/skills/huashu-art-motion": {
+   "sha256": "8c2412b8b8b584ae6fde14d7c7e9a62c54ffd823a1e07138d13533fe21f7a490",
+   "categories": [
+    "CODE-EXEC",
+    "FS-ABUSE",
+    "OBFUSCATION"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "base64 是瀏覽器截圖 PNG 與 TTS 回傳的音訊；.exec() 是正規表達式；unlink 只刪自己的暫存檔。唯一外連是使用者主動啟用的火山引擎語音（預設關閉）與 skl 加的 fetch_fonts.py（固定 commit＋sha256 驗證）（2026-10-10）"
+  },
+  "community/skills/lit-review": {
+   "sha256": "fde788bf34aecf071891839f6a5fd836c9d86e573c0d345aa21938b955ceb8ed",
+   "categories": [
+    "CRED-HARVEST",
+    "NET-EXFIL"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "S2_API_KEY 只放進送往 api.semanticscholar.org 的 x-api-key 標頭、CROSSREF_MAILTO 只給 Crossref／Unpaywall 的禮貌池；只連 semanticscholar、crossref、arxiv、openalex、unpaywall。注意 load_dotenv 會把目前資料夾與家目錄的 .env 全部讀進這支程式的環境變數（只在本機、不外送）（2026-10-14）"
   }
  }
 }

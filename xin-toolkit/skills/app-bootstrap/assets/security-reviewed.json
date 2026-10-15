@@ -29,13 +29,13 @@
    "note": "eval 是在本機 headless Chrome 頁面內執行（DevTools 管線）、base64 是截圖、rmtree 只刪自己的暫存資料夾（2026-10-06）"
   },
   "superpowers/skills/brainstorming": {
-   "sha256": "4a210045db535ffcb86cbc978aa9b8a782e218592e7ff65ab086467b80ff87cb",
+   "sha256": "6dd215541b5e84dbcd72f9239c2d815255c0f6abe6f01426fcf862727dbf2180",
    "categories": [
     "CMD-INJECT",
     "CODE-EXEC"
    ],
    "verdict_at_review": "FAIL",
-   "note": "server.cjs 的 exec 只在使用者設定 BRAINSTORM_OPEN_CMD 時開瀏覽器（2026-09-24）"
+   "note": "server.cjs 的 exec 只在使用者設定 BRAINSTORM_OPEN 並自訂 BRAINSTORM_OPEN_CMD 時開瀏覽器，其餘用 execFile 不經 shell（2026-09-24 審查；2026-10-15 同步 7.0.0 後重審，同一段程式）"
   },
   "superpowers/skills/writing-skills": {
    "sha256": "5c1e1bcab7b97349563f4bde413f62f9304bdf10ed96d916f77490d03c1cb25d",
