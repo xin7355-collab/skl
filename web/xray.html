@@ -1145,7 +1145,9 @@ async function scanTree(nodes){
         if(!res.indexHtml || depth(path)<depth(res.indexHtml)) res.indexHtml=path;
       } else if(/\.html?$/.test(low)) res.htmlCount++;
       if(!res.readme && /(^|\/)readme(\.md|\.markdown|\.txt)?$/.test(low)) res.readme=path;
-      if(/(^|\/)skill\.md$/.test(low)){
+      // .claude/skills、.agents/skills 這類隱藏資料夾裡的 SKILL.md 是「裝進來給自己用的技能」
+      // （例如用 app-bootstrap 裝的 skl 技能），不代表這個 repo 本身是技能包
+      if(/(^|\/)skill\.md$/.test(low) && !/(^|\/)\.[^\/]+\//.test(low)){
         res.skillMd=(res.skillMd||0)+1;                                   // AI 技能包的最強證據
         if(low==="skill.md") res.skillRoot=true;                          // 根目錄就是 SKILL.md：整個 repo 就是一個技能
         if(low.split("/").length<=3) res.skillTop=true;                   // skills/x/SKILL.md：技能放在上層
@@ -1163,6 +1165,7 @@ async function scanTree(nodes){
       if(res.imgs.length<30 && /\.(png|jpe?g|gif|webp|svg|avif)$/.test(low)
          && low.indexOf("node_modules/")<0) res.imgs.push(path);
       if(!res.cname && /(^|\/)cname$/.test(low)) res.cname=path;
+      if(!res.deployMd && /^(docs\/)?(deploy(ment)?|部署[^\/]*)\.md$/.test(low)) res.deployMd=path;
 
       /* App 身分：PWA manifest / Android / iOS / Expo / Capacitor */
       if(/(^|\/)manifest\.(webmanifest|json)$/.test(low) && low.indexOf("node_modules/")<0
@@ -1420,26 +1423,60 @@ function readmeOutline(txt){
 }
 
 /* 線上網址推導：homepage 欄位常常是空的，但 GitHub Pages 的網址是可推算的 */
-function liveCandidates(repo,loc,res,readmeTxt,cnameTxt){
+// 可能是線上網址的主機（部署平台的預設網域）
+const LIVE_HOST_RE=/https?:\/\/[\w.-]+\.(?:vercel\.app|netlify\.app|pages\.dev|workers\.dev|github\.io|surge\.sh|onrender\.com|streamlit\.app|fly\.dev|deno\.dev)(?:\/[\w\-./]*)?/gi;
+// 文件裡的範例網址（xxx、<你的子網域>、your-name…）不是真的網址
+const PLACEHOLDER_RE=/(^|[.\/-])(xxx+|your|you|example|demo-?name|<|你的)/i;
+// 同一行寫著「已停用／舊網址」的不要推薦（例如搬家後留在文件裡的舊 Pages 網址）
+const DEAD_LINE_RE=/已停用|停用|舊網址|不要再看|已廢棄|deprecated|no longer|old url/i;
+function urlsInText(txt,why,add,limit){
+  if(!txt) return;
+  let n=0;
+  for(const line of String(txt).split("\n")){
+    if(DEAD_LINE_RE.test(line)) continue;
+    LIVE_HOST_RE.lastIndex=0;
+    let m;
+    while((m=LIVE_HOST_RE.exec(line)) && n<limit){
+      const host=m[0].replace(/^https?:\/\//,"").split("/")[0];
+      if(PLACEHOLDER_RE.test(host)) continue;
+      add(m[0],why); n++;
+    }
+  }
+}
+/* 實際連一次看看網址還活著沒（no-cors：讀不到內容，但 DNS 失敗、連不上會丟錯）。
+   文件裡的網址常常是舊的；不檢查的話，使用者點下去才發現打不開。最多 6 秒，不花 GitHub 額度。 */
+function probeLive(live){
+  const tok=S.liveTok=(S.liveTok||0)+1;
+  live.slice(0,5).forEach((l,i)=>{
+    const ac=typeof AbortController!=="undefined"?new AbortController():null;
+    const timer=ac?setTimeout(()=>ac.abort(),6000):null;
+    fetch(l.url,Object.assign({mode:"no-cors",cache:"no-store"},ac?{signal:ac.signal}:{}))
+      .then(()=>"<b style=\"color:var(--cyan)\">✓ 連得上</b>",()=>"<b style=\"color:var(--amber)\">⚠ 連不上（可能已停用或網路擋住）</b>")
+      .then(h=>{ clearTimeout(timer); const el=$("lv"+i); if(el && tok===S.liveTok) el.innerHTML=h; });
+  });
+}
+function liveCandidates(repo,loc,res,readmeTxt,cnameTxt,docs){
   const out=[], seen=new Set();
   const add=(u,why)=>{
-    u=u.replace(/[).,]+$/,"").replace(/\/$/,"")+"/";
+    u=u.replace(/[).,`]+$/,"").replace(/\/$/,"")+"/";
     if(!seen.has(u)){ seen.add(u); out.push({url:u,why:why}); }
   };
+  // 自己的 App：.github/apps.json 填了 url 就最優先（最準，不用猜）
+  const me=(S.apps||[]).find(a=>String(a.repo).toLowerCase()===(loc.owner+"/"+loc.repo).toLowerCase());
+  if(me && me.url) add(me.url,"apps.json 登記的網址");
   if(cnameTxt){
     const d=cnameTxt.trim().split(/\s+/)[0];
     if(d && /^[\w.-]+\.\w+$/.test(d)) add("https://"+d,"CNAME 自訂網域");
   }
   if(repo.homepage && /^https?:/.test(repo.homepage)) add(repo.homepage,"homepage 欄位");
+  docs=docs||{};
+  urlsInText(docs.claude,"CLAUDE.md 寫的部署網址",add,3);
+  urlsInText(readmeTxt,"README 內的連結",add,4);
+  urlsInText(docs.deploy,"部署文件內的網址",add,3);
   if(repo.has_pages){
     const isUserSite = loc.repo.toLowerCase() === (loc.owner+".github.io").toLowerCase();
     add(isUserSite ? "https://"+loc.owner+".github.io"
                    : "https://"+loc.owner+".github.io/"+loc.repo, "GitHub Pages 已啟用（推導）");
-  }
-  if(readmeTxt){
-    const re=/https?:\/\/[\w.-]+\.(?:vercel\.app|netlify\.app|pages\.dev|github\.io|surge\.sh|onrender\.com|streamlit\.app|fly\.dev|deno\.dev)(?:\/[\w\-./]*)?/gi;
-    let m,n=0;
-    while((m=re.exec(readmeTxt)) && n<4){ add(m[0],"README 內的連結"); n++; }
   }
   return out;
 }
@@ -1572,15 +1609,18 @@ async function run(target,fromHistory){
 
     /* README / CNAME / index.html 一律走 raw，不計 API 額度；並行但受佇列限流 */
     say("讀取 README、CNAME 與入口 HTML…","[4/4]");
-    const [readmeTxt,cnameTxt,htmlTxt]=await Promise.all([
+    // CLAUDE.md／DEPLOY.md 常寫著實際部署的網址（例如 Cloudflare Workers），README 不一定有
+    const [readmeTxt,cnameTxt,htmlTxt,claudeTxt,deployTxt]=await Promise.all([
       res.readme    ? getText(base+res.readme)    : null,
       res.cname     ? getText(base+res.cname)     : null,
-      res.indexHtml ? getText(base+res.indexHtml) : null
+      res.indexHtml ? getText(base+res.indexHtml) : null,
+      res.claudeMd  ? getText(base+res.claudeMd)  : null,
+      res.deployMd  ? getText(base+res.deployMd)  : null
     ]);
     scanHtml(htmlTxt,res,res.indexHtml);
     extractApi(htmlTxt,res.indexHtml,res);
     if(repo.has_pages) res.hits.set("GitHub Pages",{cat:"部署",ev:"repo 設定已啟用 Pages"});
-    const live=liveCandidates(repo,loc,res,readmeTxt,cnameTxt);
+    const live=liveCandidates(repo,loc,res,readmeTxt,cnameTxt,{claude:claudeTxt,deploy:deployTxt});
 
     /* App 身分證 + API 原始碼：全部 raw，不吃 API 額度 */
     say("抽取 App 身分與 API 端點…","[5/5]");
@@ -1925,6 +1965,14 @@ function licText(l){
 function render(res,pkg,repo,loc,ref,live,x){
   x=x||{};
   const v=verdict(res,pkg,repo);
+  // 有找到線上網址就用網址判斷部署平台：repo 裡同時有 vercel.json 和 wrangler 設定時，
+  // 光看設定檔會猜錯（實際只用其中一個）
+  {
+    const h=((live||[])[0]||{}).url||"";
+    const plat=[[/\.workers\.dev/,"Cloudflare Workers"],[/\.pages\.dev/,"Cloudflare Pages"],[/\.vercel\.app/,"Vercel"],
+      [/\.netlify\.app/,"Netlify"],[/\.github\.io/,"GitHub Pages"],[/\.onrender\.com/,"Render"],[/\.fly\.dev/,"Fly.io"]].find(x=>x[0].test(h));
+    if(plat) v.tail="部署到 "+plat[1];
+  }
   const dt=deepType(res,pkg,repo,x.readme), T=TYPES[dt];
   // 框架指紋認不出來時（「未知類型」「函式庫／工具」），改用類型判斷的白話說法
   if(T && (v.title.indexOf("未知類型")>-1 || v.kind==="函式庫 / 工具" || v.kind==="專案" || dt==="skills" || dt==="list" || dt==="agent"))
@@ -1958,9 +2006,10 @@ function render(res,pkg,repo,loc,ref,live,x){
 
   live=live||[];
   $("v-live").innerHTML=live.length
-    ? live.map(l=>'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">▸ '+
-        esc(l.url.replace(/^https?:\/\//,""))+' <s>'+esc(l.why)+'</s></a>').join("")
+    ? live.map((l,i)=>'<a href="'+esc(l.url)+'" target="_blank" rel="noopener">▸ '+
+        esc(l.url.replace(/^https?:\/\//,""))+' <s>'+esc(l.why)+'</s> <s id="lv'+i+'">檢查中…</s></a>').join("")
     : '<div class="hint" style="margin-top:14px">'+esc(T?"沒有線上網址："+T.why:noSiteReason(res))+'</div>';
+  probeLive(live);
 
   // 重點檔案快捷：最常想直接打開的就這幾支
   {

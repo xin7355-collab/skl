@@ -85,7 +85,8 @@
     翻譯：簡體也送去轉繁體、簡體與英文分批送（混送時英文會原樣傳回）；簡體字表在 xray.html 的 SIMP_RE 與
     build_trending.py 的 SIMP，兩邊要一致。
     「我的 App」＋「App 顧問」：規則在 `web/advisor_rules.json`（推薦技能路徑必須存在，`web/check_advisor_rules.py` 檢查），
-    部署時複製 `.github/apps.json` 成 `apps.json`。新增 App 就加進 apps.json。
+    部署時複製 `.github/apps.json` 成 `apps.json`。新增 App 就加進 apps.json（可填 `url`：線上網址，X-Ray 優先顯示）。
+    `.claude/`、`.agents/` 等隱藏資料夾裡的 SKILL.md 是裝進來的技能，不算技能包。
     Token 可勾「記在這支手機」存 localStorage（使用者要求；只建議唯讀 Token，畫面只顯示末 4 碼，只送 api.github.com）。
   - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
     使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
