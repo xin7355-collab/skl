@@ -64,6 +64,50 @@
    ],
    "verdict_at_review": "FAIL",
    "note": "S2_API_KEY 只放進送往 api.semanticscholar.org 的 x-api-key 標頭、CROSSREF_MAILTO 只給 Crossref／Unpaywall 的禮貌池；只連 semanticscholar、crossref、arxiv、openalex、unpaywall。注意 load_dotenv 會把目前資料夾與家目錄的 .env 全部讀進這支程式的環境變數（只在本機、不外送）（2026-10-14）"
+  },
+  "community/skills/design-taste-frontend": {
+   "sha256": "b05e75118562d34601f7e0fb54a46dda63b647dbea22a5acdda41c0db56f9d9b",
+   "categories": [
+    "CMD-INJECT",
+    "CODE-EXEC"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "eval 是 DevTools 協定在本機無頭 Chrome 頁面內執行自己的檢查程式；spawn 只啟動 Chrome。素材搜尋只連 openverse、wikimedia、芝加哥藝術館、大都會、archive.org、NASA 公開 API；draw.mjs 會寫 ~/.taste-skill/history.json（可用 TASTE_SKILL_HISTORY 改位置）（2026-10-15）"
+  },
+  "community/skills/markitdown": {
+   "sha256": "329dbd5f2e845eee160d8972905bff81e881cf2c7f78ad554f40c25537d028ab",
+   "categories": [
+    "PROMPT-OVERRIDE"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "命中的是 references/security.md 提醒「轉出的文件可能藏有 ignore previous instructions 之類的注入文字」的說明，不是指令（2026-10-15）"
+  },
+  "community/skills/archify": {
+   "sha256": "eecd1e4134bde2165d088d2d98309553fe81ac9452d35d4e798f02b2f528bbda",
+   "categories": [
+    "CMD-INJECT",
+    "CODE-EXEC"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "CODE-EXEC 都是正規表達式 .exec()；child_process 只用參數陣列（無 shell）啟動 node、唯讀 git、本機無頭 Chrome、系統開啟程式。檢查更新（連作者 GitHub Pages）已在 updatesDisabled／delivery-update 寫死關閉，斷網實測 finalize 通過（2026-10-17）"
+  },
+  "community/skills/answer-me-with-html": {
+   "sha256": "cbd7f00e36ccffd92c97ac34474b8ea5ef62506cf2b6e5dec6d5c0564be03d56",
+   "categories": [
+    "CODE-EXEC",
+    "CMD-INJECT",
+    "DEPS-RUNTIME"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "CODE-EXEC 幾乎都是正規表達式 .exec()，唯一真的動態執行是 vm.runInThisContext 載入打包在檔案裡、內容固定的 Temml；child_process 只開瀏覽器、系統語音、Chrome／ffmpeg 錄影與檢查更新（已預設關閉），沒有 shell:true；DEPS-RUNTIME 是印出來的提示字串。skl 改成預設不開瀏覽器、不檢查更新，並拿掉每頁的 Star on GitHub 連結；斷網實測產頁通過（2026-10-17）"
+  },
+  "community/skills/source-driven-development": {
+   "sha256": "2d8958f0a7239a1d2127c8178980dfd7f0d505bc292549b1802268af30e8f78a",
+   "categories": [
+    "PROMPT-OVERRIDE"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "命中的第 110 行是防禦說明：叫 AI 忽略抓來的網頁裡「ignore previous instructions」這類注入指令（2026-10-17）"
   }
  }
 }

@@ -11,11 +11,12 @@
     ]
   },
   "pwa": {
-    "desc": "手機網頁／PWA：前端、Playwright 瀏覽器自動化、效能分析",
+    "desc": "手機網頁／PWA：前端、Playwright 瀏覽器自動化、效能分析與「先量再改」的效能優化",
     "skills": [
       "engineering-team/skills/senior-frontend",
       "engineering/skills/browser-automation",
-      "engineering/skills/performance-profiler"
+      "engineering/skills/performance-profiler",
+      "community/skills/performance-optimization"
     ]
   },
   "actions": {
@@ -46,7 +47,10 @@
     "skills": [
       "xin-toolkit/skills/tw-stock",
       "finance/skills/stock-analysis",
-      "finance/skills/financial-analyst"
+      "finance/skills/financial-analyst",
+      "community/skills/statsmodels",
+      "community/skills/polars",
+      "community/skills/statistical-analysis"
     ]
   },
   "video": {
@@ -56,7 +60,7 @@
     ]
   },
   "workflow": {
-    "desc": "開發方法論（superpowers）：先腦力激盪與寫計畫、系統化除錯、測試先行、完成前必驗證、請求程式審查",
+    "desc": "開發方法論（superpowers）：先腦力激盪與寫計畫、系統化除錯、測試先行、完成前必驗證、請求程式審查；防止 AI 偷降標準過關、用官方文件查證",
     "skills": [
       "superpowers/skills/brainstorming",
       "superpowers/skills/writing-plans",
@@ -64,7 +68,9 @@
       "superpowers/skills/systematic-debugging",
       "superpowers/skills/test-driven-development",
       "superpowers/skills/verification-before-completion",
-      "superpowers/skills/requesting-code-review"
+      "superpowers/skills/requesting-code-review",
+      "community/skills/constraint-driven-development",
+      "community/skills/source-driven-development"
     ]
   },
   "python": {
@@ -78,12 +84,19 @@
     ]
   },
   "visual": {
-    "desc": "視覺設計（社群精選）：介面設計與評審、會轉動的線條插圖、動態架構圖影片",
+    "desc": "視覺設計（社群精選）：介面設計與評審、去掉 AI 樣板感的設計方向、改造既有網頁、線框圖、線條插圖、動態架構圖、程式動畫、數學解說動畫、互動架構圖與流程圖、配色字型與 UX 規則查詢、把回答做成一頁圖解網頁",
     "skills": [
       "community/skills/oil-ui",
       "community/skills/hairline-create",
       "community/skills/live-panel",
-      "community/skills/huashu-art-motion"
+      "community/skills/huashu-art-motion",
+      "community/skills/manimgx",
+      "community/skills/design-taste-frontend",
+      "community/skills/redesign-existing-projects",
+      "community/skills/wireframe",
+      "community/skills/archify",
+      "community/skills/ui-ux-pro-max",
+      "community/skills/answer-me-with-html"
     ]
   },
   "ai": {
@@ -107,7 +120,8 @@
     "desc": "查證與學術寫作（社群精選）：找文獻並查核引用真假與支持度、中文學術寫作紀律",
     "skills": [
       "community/skills/lit-review",
-      "community/skills/academic-writing-discipline"
+      "community/skills/academic-writing-discipline",
+      "community/skills/markitdown"
     ]
   }
 }
