@@ -81,3 +81,36 @@ test.describe('App 清單讀不到時', () => {
     await expect(page.locator('#advPick option')).toHaveCount(2);
   });
 });
+
+// 使用者要求：確認要裝技能後，不要停在「裝好了」——先列執行方案，再直接接著把技能用上
+test.describe('安裝技能的指令：裝完先列執行方案，再直接接著做', () => {
+  const FOLLOW = /執行方案[\s\S]*直接照方案做/;
+  const clip = (page) => page.evaluate(() => navigator.clipboard.readText());
+
+  test('「讓 App 自己挑」與「組合安裝」', async ({ page }) => {
+    await page.goto('/index.html');
+    await expect(page.locator('#autoPrompt')).toHaveValue(FOLLOW);
+    await expect(page.locator('#packPrompt')).toHaveValue(FOLLOW);
+  });
+
+  test('瀏覽技能：單個複製、全部安裝、讓 App 挑', async ({ page }) => {
+    await page.goto('/index.html');
+    await page.locator('nav.tabs button[data-tab="browse"]').click();
+    const first = page.locator('#skillList .skill').first();
+    await first.locator('.top > button').click();
+    expect(await clip(page)).toMatch(FOLLOW);
+    await first.locator('input[type="checkbox"]').check();
+    await page.locator('#copySel').click();
+    expect(await clip(page)).toMatch(FOLLOW);
+    await page.locator('#copyPick').click();
+    expect(await clip(page)).toMatch(FOLLOW);
+  });
+
+  test('「該裝哪些技能」：這一步只建議，我說要裝之後才照方案做', async ({ page }) => {
+    await openOps(page);
+    const v = await page.locator('#advPrompt').inputValue();
+    expect(v).toMatch(/先不要安裝/);
+    expect(v).toMatch(/我說要裝之後/);
+    expect(v).toMatch(FOLLOW);
+  });
+});

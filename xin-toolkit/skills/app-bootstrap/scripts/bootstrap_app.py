@@ -328,6 +328,9 @@ def _print(res, dry_run):
         print(f"※ {note}")
     if res["installed"] or res["updated"]:
         print("下一步：git add .claude CLAUDE.md && git commit，之後在這個 repo 開的工作階段就會自動載入這些技能。")
+        # 使用者要的是「裝完就接著用」，不是只把檔案放進來；細節在 SKILL.md 第 7 步
+        print("接著：先列執行方案（每個新技能要做什麼、改哪些檔、套件寫進哪個設定檔、怎麼驗證、有沒有費用），"
+              "再直接把技能用在這個 App（見 app-bootstrap SKILL.md 第 7 步）。")
 
 
 def selftest():

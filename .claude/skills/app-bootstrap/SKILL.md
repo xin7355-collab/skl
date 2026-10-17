@@ -37,6 +37,15 @@ description: 把 skl 技能庫裡挑好的技能組合（core／pwa／actions／
 4. 若新建了 `CLAUDE.md`：依專案實際情況填第 7 節；不是 PWA + Actions 架構就刪掉第 6 節。
 5. 裝完立刻跑一次 `app-guardrails-audit` 做健檢，把結果回報給使用者。
 6. commit：`.claude/skills/` 與 `CLAUDE.md`（commit 訊息寫裝了哪些組合、來源 commit）。
+7. **裝完接著做，不要停在「裝好了」**（使用者要求）：
+   - 先列「執行方案」：每個新技能在這個 App 要拿來做什麼、會改哪些檔案、怎麼驗證、有沒有費用或要使用者準備的東西。
+   - 技能需要的套件或工具（npm／pip 套件、Chrome、ffmpeg、字型）寫進 repo 的設定檔：`package.json`、
+     `requirements.txt`、工作流的安裝步驟或 SessionStart hook，並固定版本。雲端工作階段的容器每次都是新的，
+     只在容器裡 `pip install` 的東西下次就不見了。
+   - 列完就直接照方案做，不用等回覆。需要使用者提供的東西（金鑰、帳號、付款），或目標 repo 的 CLAUDE.md
+     沒授權的動作，才先停下來問。使用者說「只裝不做」、或明說「只是先問問題」時，就停在安裝。
+   - 每一項做完就驗證（有測試就跑；網頁用 Playwright 開手機尺寸看），照 CLAUDE.md 合併推送，
+     回報做了什麼、驗過什麼、沒驗到什麼。
 
 只要個別技能（例如網頁上勾選複製來的路徑）時，用 `--skills`，可與 `--packs` 併用：
 ```bash

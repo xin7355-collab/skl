@@ -275,11 +275,19 @@ async function copyText(text) {
   toast("已複製 ✓");
 }
 
+// 使用者要求：裝完技能不要停在「裝好了」，要接著把技能用在這個 App 上；但動手前先講清楚要怎麼做。
+// 技能需要的套件寫進 repo 的設定檔：雲端工作階段的容器每次都是新的，只裝在容器裡下次就不見了。
+const FOLLOW_UP = `\n裝好後不要停，接著做：\n` +
+  `1. 先列出「執行方案」：每個新技能在這個 App 要拿來做什麼、會改哪些檔案、技能需要的套件或工具怎麼裝` +
+  `（寫進 package.json／requirements.txt／工作流，下次開工作階段才還在）、怎麼驗證、有沒有費用或要我準備的東西（金鑰、帳號）。\n` +
+  `2. 列完就直接照方案做，不用等我回覆；需要我提供的東西（金鑰、帳號、付款），或這個 repo 的 CLAUDE.md 沒授權的動作，才先停下來問我。\n` +
+  `3. 每一項做完就驗證（有測試就跑；網頁用 Playwright 開手機尺寸看），照 CLAUDE.md 合併推送，` +
+  `最後回報做了什麼、驗過什麼、沒驗到什麼。`;
 function packPrompt(packs) {
   const list = packs.length ? packs.join(",") : "core";
   return `從 ${REPO} 用 app-bootstrap 幫這個 repo 安裝技能組合：${list}。\n` +
     `先看這個 repo 的性質，如果還有明顯該加的組合就告訴我。\n` +
-    `先試跑（--dry-run）確認，再正式安裝；裝完跑一次 app-guardrails-audit 健檢並回報結果，最後 commit。`;
+    `先試跑（--dry-run）確認，再正式安裝；裝完跑一次 app-guardrails-audit 健檢並回報結果，commit。` + FOLLOW_UP;
 }
 function packCmd(packs) {
   const list = packs.length ? packs.join(",") : "core";
@@ -288,20 +296,20 @@ function packCmd(packs) {
 function skillsPrompt(paths) {
   return `從 ${REPO} 用 app-bootstrap 幫這個 repo 安裝以下技能（bootstrap_app.py install --skills）：\n` +
     paths.map((p) => `- ${p}`).join("\n") +
-    `\n先試跑（--dry-run）確認，再正式安裝，最後 commit。`;
+    `\n先試跑（--dry-run）確認，再正式安裝，commit。` + FOLLOW_UP;
 }
 // 候選清單：使用者全選一大批，由目標 App 的 Claude 依 repo 實際情況篩選，只裝用得到的。
 function candidatesPrompt(paths) {
   return `從 ${REPO} 取得技能庫（${FETCH_CMD}）。以下 ${paths.length} 個是候選技能：\n` +
     paths.map((p) => `- ${p}`).join("\n") +
     `\n請先讀這個 repo 的 CLAUDE.md、README 與程式結構，判斷用途和技術，從候選中只挑真正用得到的（寧缺勿濫），` +
-    `每個寫一句理由；用 bootstrap_app.py install --skills 先試跑（--dry-run）再正式安裝，最後 commit，並回報裝了哪些、跳過哪些。`;
+    `每個寫一句理由；用 bootstrap_app.py install --skills 先試跑（--dry-run）再正式安裝，commit，並回報裝了哪些、跳過哪些。` + FOLLOW_UP;
 }
 const AUTO_PROMPT = `從 ${REPO} 取得技能庫：${FETCH_CMD}\n` +
   `再執行 python3 ${TOOL} catalog 看全部技能清單（依類別分組、附中文說明）。\n` +
   `請先讀這個 repo 的 CLAUDE.md、README 與程式結構，判斷這個 App 的用途和技術，從清單挑出真正用得到的技能` +
   `（建議 5～15 個，寧缺勿濫），每個寫一句理由；用 install --target . --skills 路徑1,路徑2 先試跑（--dry-run）再正式安裝，` +
-  `最後 commit，並回報裝了哪些、為什麼。`;
+  `commit，並回報裝了哪些、為什麼。` + FOLLOW_UP;
 const UPDATE_PROMPT = `從 ${REPO} 用 app-bootstrap 把這個 repo 已安裝的技能更新到最新版（bootstrap_app.py update），回報更新了哪些，然後 commit。`;
 const UPDATE_CMD = `${FETCH_CMD} && python3 ${TOOL} update --target .`;
 
@@ -320,7 +328,7 @@ function advicePrompt(repo) {
     `判斷這個 App 的用途和技術；再讀 .claude/skills/.skl-vendor.json，看已經裝了哪些。\n` +
     `依「必裝／建議／可選」三級列出要裝的組合與技能，每項寫一句理由和對應的檔案證據；` +
     `也列出已經裝了但用不到、可以移除的。最後給一行安裝指令（先用 --dry-run）。\n` +
-    `先不要安裝、不要改任何檔案，等我決定。`;
+    `這一步先不要安裝、不要改任何檔案，等我決定。\n我說要裝之後：照上面的指令安裝並 commit。` + FOLLOW_UP;
 }
 // App 清單用原生 <select>：iPhone Safari 的 <datalist> 打字後會把選項篩掉、點選常沒反應（使用者回報常失敗）
 function advRepoNow() {
