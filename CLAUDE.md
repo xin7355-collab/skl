@@ -72,7 +72,7 @@
   - `web/ai.html`＋`web/ai/models.json`、`web/ai/features.json`：AI 模型與功能指南（含 Cowork 分頁：分區對照、範例只放通用情境，不放工作單位等敏感資訊）。資料由每週 Routine 自動
     研究更新（自我進化）；改資料後必須跑 `python3 web/ai/check_ai_data.py`，通過才能推。跑分一律附出處網址。
   - `web/xray.html`：Repo X-Ray（使用者提供的單檔工具，GitHub 專案透視）。合併搜尋器（網址直接掃、關鍵字搜尋）、
-    上一步／瀏覽器返回不重查、搜尋結果顯示檔案大小與排序、localStorage 快取 1 小時（超過 200KB 不存）省 API 額度。
+    上一步／瀏覽器返回不重查、搜尋結果右側大字星星數（`fmtStars`）＋小字檔案大小與排序、localStorage 快取 1 小時（超過 200KB 不存）省 API 額度。
     熱門推薦由 `web/build_trending.py` 在 `Deploy web page`（每天 06:00 排程＋push）收集成 `trending.json`（不進 git）；
     另有模糊搜尋（同義詞＋OR 放寬＋本機重排）、結果內模糊篩選、成長速度（★/天）、
     繁中翻譯（Google 免費端點，熱門清單部署時預翻）、專案類型判斷與「參考它做我的 App」提示。

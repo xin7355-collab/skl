@@ -347,6 +347,8 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .results .rz{flex:none;text-align:right;font-family:var(--mono);min-width:74px}
 .results .rz b{display:block;font-size:13px;color:var(--cyan);font-weight:700}
 .results .rz span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+.results .rz b{color:var(--amber);font-size:15px}
+.results .rz i{display:block;font-style:normal;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px}
 .results .rhead{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--panel-2);font-family:var(--mono);font-size:11px;color:var(--muted)}
 .results select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:3px;font-family:var(--mono);font-size:12px;padding:4px 6px}
 .toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--ink);font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:99px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
@@ -2485,6 +2487,8 @@ async function search(more,qArg,fromHistory){
 }
 
 /* GitHub 的 size 單位是 KB（整個 repo 的 git 資料量，含歷史，約略值） */
+// 手機上一眼看懂：1 萬以上寫「55.4 萬」，不寫 553,821
+function fmtStars(n){ n=+n||0; return n>=1e4 ? (n/1e4).toFixed(n>=1e6?0:1).replace(/\.0$/,"")+" 萬" : n.toLocaleString(); }
 function fmtSize(kb){
   kb=+kb||0;
   if(kb<1024) return kb+" KB";
@@ -2550,11 +2554,12 @@ function paintRows(){
     return '<button data-i="'+i+'"'+(hb?' class="was"':'')+'><div class="rr">'+pickBox(it.full_name)+'<div class="rmain">'+
       '<span class="rn">'+esc(it.full_name)+'</span>'+(hb?'<div class="rd">'+hb+'</div>':'')+
       '<div class="rd">'+typeBadge(quickType(it))+esc(shown||"（沒有描述）")+'</div>'+
-      '<div class="rd" style="font-family:var(--mono);font-size:10px">★ '+Number(it.stargazers_count).toLocaleString()+
-      (it.gain_per_day?' <span class="gain">▲ +'+fmtPerDay(it.gain_per_day)+'★/天（最近）</span>':'')+
-      (pd?' · ≈'+fmtPerDay(pd)+'★/天':'')+
-      (it.language?' · '+esc(it.language):'')+' · 更新 '+esc(String(it.pushed_at||"").slice(0,10))+'</div></div>'+
-      '<div class="rz"><b>'+fmtSize(it.size)+'</b><span>檔案大小</span></div></div></button>';
+      // 星星數放右邊大字（使用者回饋：混在灰色小字裡看不到）；這行只留成長速度
+      '<div class="rd" style="font-family:var(--mono);font-size:10px">'+
+      [it.gain_per_day?'<span class="gain">▲ +'+fmtPerDay(it.gain_per_day)+'★/天（最近）</span>':'',
+       pd?'≈'+fmtPerDay(pd)+'★/天':'', it.language?esc(it.language):'',
+       '更新 '+esc(String(it.pushed_at||"").slice(0,10))].filter(Boolean).join(' · ')+'</div></div>'+
+      '<div class="rz"><b>★ '+fmtStars(it.stargazers_count)+'</b><span>星星</span><i>'+fmtSize(it.size)+'</i></div></div></button>';
   }).join("") : '<button disabled style="color:var(--muted)">已載入的結果中沒有符合「'+esc(S.filter)+'」的，清空篩選或換個詞</button>';
   // 還沒翻的描述分批送出、每批翻好就重畫；每段話這次開頁只試一次，失敗就留原文，不會無限重試
   S.trTried=S.trTried||new Set();
