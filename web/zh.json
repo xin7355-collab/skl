@@ -96,6 +96,7 @@
  "community/skills/academic-writing-discipline": "中文學術寫作紀律：因果用語、句子結構、台灣學術用語與 APA 7、標點與 AI 味，逐項稽核論文或報告。",
  "community/skills/design-taste-frontend": "去掉「AI 樣板網頁」感的設計方向：從 247 個精選網站整理的風格參考，先定調再做，最後用真的瀏覽器檢查版面（需要 Node 22 與 Chrome）。",
  "community/skills/hairline-create": "畫一張會跟著手指／滑鼠轉動的等角線條插圖，輸出成單一 HTML 檔，適合網站首頁或功能說明圖。",
+ "community/skills/manimgx": "數學／3D 解說動畫（3Blue1Brown 那種公式與圖形會動的影片）：用 Python 寫場景、先出分鏡圖檢查重疊再輸出 mp4；寫法跟 Manim 一樣但快很多，數學式與影片編碼都內建（需 Python 3.13 以上，pip 安裝 manimgx）。",
  "community/skills/huashu-art-motion": "用程式碼畫動畫：35 種藝術風格（洞穴壁畫、莫內、浮世繪、8-bit…）、9 種解說動畫語法（Kurzgesagt、Vox、3b1b、白板、財經圖表），從鏡頭表到成片與品質檢查一條龍（簡體中文說明，需 Python＋Playwright＋ffmpeg）。",
  "community/skills/humanizer": "把「AI 味」很重的文字改寫得像真人寫的：抓出「不是 X 而是 Y」、三連排比、滿篇破折號、浮誇用詞等 AI 痕跡，只改寫法、不增減事實（以英文寫作規則為主）。",
  "community/skills/lit-review": "找文獻並查核引用：用 Semantic Scholar、Crossref、arXiv 確認論文真的存在、書目正確、真的支持你的論點，也查撤稿；防止 AI 編造引用。",

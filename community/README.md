@@ -20,6 +20,7 @@
 | `ponytail` | https://github.com/DietrichGebert/ponytail（`skills/ponytail`） | 84740e3 | 只收核心技能與 `LICENSE`。不收 hooks（會寫 `~/.claude` 並提議改 `settings.json` 的狀態列）、benchmarks、各平台安裝檔，以及 review／audit／debt／gain／help 子技能。它主張「最小改動、小改動不一定要測試」，跟 superpowers 的 test-driven-development 有取捨，需要時手動叫用。安全掃描 PASS。 |
 | `wireframe`、`qa-acceptance` | https://github.com/paperclipai/paperclip（`packages/skills-catalog/catalog/bundled/`） | 5ec93da | 只從這個 179MB 的「AI 員工管理 App」挑出 2 個不依賴它伺服器的通用技能，原樣收錄（frontmatter 的 `key:` 是原 App 的目錄代號，不影響使用）。其他 77 個技能要接 Paperclip 伺服器或是維護者流程，不收；App 本身有匿名使用統計。安全掃描 PASS。 |
 | `statistical-analysis`、`statsmodels`、`polars`、`markitdown` | https://github.com/K-Dense-AI/scientific-agent-skills（`skills/`） | a1043ef | 177 個技能裡約 90% 是生物化學，只挑這 4 個資料分析與文件轉換用的（不需要金鑰）。**修改**：刪掉每份 SKILL.md 結尾的「Citing Scientific Agent Skills」段落（它要求在你的報告與程式裡附上作者論文引用）。frontmatter 的 `license:` 是被介紹的套件本身的授權。markitdown 的掃描 FAIL 為誤判（命中的是「小心文件裡藏的注入指令」安全說明）；其餘 PASS。 |
+| `manimgx` | https://github.com/academa-labs/manimgx（`skills/manimgx`） | cfd33af（套件 0.1.1） | 原樣，只收 `SKILL.md` 與 `LICENSE`。技能本身只有說明，實際畫圖的是 PyPI 套件 `manimgx`（Rust 引擎，MIT；內附第三方元件授權見原 repo 的 `LICENSES/`）。安裝指令沒有鎖版本，會裝最新版。需要 Python 3.13 以上。安全掃描 PASS。 |
 
 ## 評估過但沒有收錄（2026-10-14）
 
