@@ -81,6 +81,15 @@
    ],
    "verdict_at_review": "FAIL",
    "note": "命中的是 references/security.md 提醒「轉出的文件可能藏有 ignore previous instructions 之類的注入文字」的說明，不是指令（2026-10-15）"
+  },
+  "community/skills/archify": {
+   "sha256": "eecd1e4134bde2165d088d2d98309553fe81ac9452d35d4e798f02b2f528bbda",
+   "categories": [
+    "CMD-INJECT",
+    "CODE-EXEC"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "CODE-EXEC 都是正規表達式 .exec()；child_process 只用參數陣列（無 shell）啟動 node、唯讀 git、本機無頭 Chrome、系統開啟程式。檢查更新（連作者 GitHub Pages）已在 updatesDisabled／delivery-update 寫死關閉，斷網實測 finalize 通過（2026-10-17）"
   }
  }
 }

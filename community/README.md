@@ -21,6 +21,9 @@
 | `wireframe`、`qa-acceptance` | https://github.com/paperclipai/paperclip（`packages/skills-catalog/catalog/bundled/`） | 5ec93da | 只從這個 179MB 的「AI 員工管理 App」挑出 2 個不依賴它伺服器的通用技能，原樣收錄（frontmatter 的 `key:` 是原 App 的目錄代號，不影響使用）。其他 77 個技能要接 Paperclip 伺服器或是維護者流程，不收；App 本身有匿名使用統計。安全掃描 PASS。 |
 | `statistical-analysis`、`statsmodels`、`polars`、`markitdown` | https://github.com/K-Dense-AI/scientific-agent-skills（`skills/`） | a1043ef | 177 個技能裡約 90% 是生物化學，只挑這 4 個資料分析與文件轉換用的（不需要金鑰）。**修改**：刪掉每份 SKILL.md 結尾的「Citing Scientific Agent Skills」段落（它要求在你的報告與程式裡附上作者論文引用）。frontmatter 的 `license:` 是被介紹的套件本身的授權。markitdown 的掃描 FAIL 為誤判（命中的是「小心文件裡藏的注入指令」安全說明）；其餘 PASS。 |
 | `manimgx` | https://github.com/academa-labs/manimgx（`skills/manimgx`） | cfd33af（套件 0.1.1） | 原樣，只收 `SKILL.md` 與 `LICENSE`。技能本身只有說明，實際畫圖的是 PyPI 套件 `manimgx`（Rust 引擎，MIT；內附第三方元件授權見原 repo 的 `LICENSES/`）。安裝指令沒有鎖版本，會裝最新版。需要 Python 3.13 以上。安全掃描 PASS。 |
+| `archify` | https://github.com/tt-a1i/archify（`archify/`） | 88d1ae4（v3.1） | **修改**：寫死關閉「檢查更新」（原本每次產圖都連作者的 GitHub Pages 查新版，24 小時快取寫在 `~/.cache/archify-skill`；改 `scripts/check-update.mjs` 的 `updatesDisabled` 與 `bin/delivery-update.mjs`）。**不收** 16 份預先產好的範例 HTML（約 12MB）與 `examples/locales/`；範例 JSON 保留（doctor／guide 會用）。不收 repo 其他部分（維護者技能、integrations、archify.zip）。安全掃描 FAIL 為誤判：`.exec()` 是正規表達式，child_process 只用參數陣列啟動 node、唯讀 git、本機 Chrome。品牌圖示來自 Simple Icons（各商標授權不同，見 THIRD_PARTY_NOTICES.md）。需要 Node 18 以上；最後一關要 Chrome，沒有 Chrome 時會回報「略過」（結束碼 2），要用 `ARCHIFY_CHROME` 指定瀏覽器路徑。 |
+| `ui-ux-pro-max` | https://github.com/nextlevelbuilder/ui-ux-pro-max-skill（`.claude/skills/ui-ux-pro-max`） | 56ea9cf | 只收主技能：`SKILL.md`、`references/`、`data/`、5 支腳本與 `LICENSE`。**修改**：SKILL.md 裡 11 處寫死的外掛路徑 `${CLAUDE_PLUGIN_ROOT}/.claude/skills/...` 改成相對路徑，並拿掉指向沒收錄的 README 那句話。不收 tests、npm 安裝器、截圖，以及同 repo 另外 6 個技能（`design` 要付費生圖 API；`ui-styling` 多半是 shadcn 文件加 54 個字型檔）。純標準函式庫、離線、不寫檔（除非加 `--persist`）。安全掃描 WARN 為誤判（刪除自己的暫存檔）。跟 design-taste-frontend 部分重疊（它的 1–10 滑桿就是參考那個技能），這個多了可搜尋的配色、字型、框架資料庫。 |
+| `karpathy-guidelines` | https://github.com/multica-ai/andrej-karpathy-skills（`skills/karpathy-guidelines`） | 2c60614 | 原樣，只收 `SKILL.md`。**授權注意**：repo 沒有 LICENSE 檔，也沒有寫著作權人；作者在 README「License: MIT」與 SKILL.md frontmatter `license: MIT` 標示 MIT，依此收錄。內容跟 superpowers、ponytail、本 repo 工作守則大量重疊，而且「不確定就先問」跟長期授權的「直接做」有取捨，所以不放進任何組合，需要時手動叫用。安全掃描 PASS。 |
 
 ## 評估過但沒有收錄（2026-10-14）
 
@@ -38,4 +41,9 @@
 | morluto/rea | 逆向工程工具：技能離不開作者的 MCP 伺服器，安裝用 `curl | bash`、每次用 `npx @latest` 抓最新版；反編譯商業 App 可能違反授權條款；58MB 且含 GPL 元件。 |
 | wheresryan22/anatomy | 跟 hairline-create（等角線條插圖）高度重疊；附的投稿腳本會讀你的 Claude 對話紀錄（用時、用量、提示文字）放進公開的 PR。 |
 | JuliusBrussee/caveman | 讓回覆極度精簡（類似「穴居人說話」），跟「用白話繁中解釋清楚」相衝突；作者自己的實測相對「請簡潔回答」只省約 3%（舊版宣稱的 65% 已撤回）；中文模式是文言文；另有商業雲端服務推廣與會改 `~/.claude/settings.json` 的安裝器。 |
+| rehan-remade/universal-modder | 改單機遊戲的工具組：教 AI 反編譯、讀遊戲記憶體（可能違反遊戲授權條款，作者雖禁止外掛與破解防作弊，但仍示範關閉 EAC 離線玩）；生成美術音效要付費的 fal.ai；`um kb` 每 24 小時從作者 repo 自動下載知識檔直接給 AI 讀（未經審查的外部內容）；附自動載入的 MCP 設定；錄影只支援 Windows。跟手機與現有 App 無關。 |
+| Graphify-Labs/graphify | 把程式碼變成可查詢的知識圖（Apache-2.0）。但安裝流程會改全域 `~/.claude/CLAUDE.md`、專案 CLAUDE.md、`.claude/settings.json`（PreToolUse hooks）與 git hook；技能要求 AI「強制」平行開很多子代理（耗用量）、結尾要求贊助、安裝後推銷雲端版試用；環境裡有 AI 金鑰時會自動拿來用（可能產生費用）。要用的話應另寫一份只 `pip install` 固定版本、關掉這些行為的精簡技能。 |
+| ComposioHQ/awesome-claude-skills | 832 個是 Composio 自動化技能（要 Composio 帳號與金鑰，連結帶推廣追蹤碼）；其餘多是 Anthropic 官方技能的複本（canvas-design、theme-factory、skill-creator 等，Claude 已內建）；根目錄沒有 LICENSE 檔（README 寫 Apache-2.0），多數小技能沒有各自授權。 |
+| calesthio/OpenMontage | AGPL-3.0（改了拿去提供服務要公開原始碼）；163MB 的整套影片製作系統，技能離不開它的管線，需要 fal、ElevenLabs、Kling、Google 等多組付費金鑰；`.claude/skills/` 裡很多是轉載別人的技能。剪片已有 auto-video-edit。 |
+| kepano/obsidian-skills | 品質好、純文件、MIT（Obsidian 執行長寫的），但都是 Obsidian 專用（筆記語法、Bases、Canvas、要開著桌面版的 CLI）；defuddle、knap 要 `npm install -g`。你目前沒用 Obsidian，網頁轉 Markdown 已有 web-to-markdown。開始用 Obsidian 再收 obsidian-markdown、obsidian-bases、json-canvas 三個即可。 |
 | K-Dense-AI/scientific-agent-skills 其餘 173 個 | 生物、化學、物理專用，或需要付費金鑰（OpenRouter、Parallel、Exa）。 |

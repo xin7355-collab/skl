@@ -81,7 +81,7 @@
     ]
   },
   "visual": {
-    "desc": "視覺設計（社群精選）：介面設計與評審、去掉 AI 樣板感的設計方向、改造既有網頁、線框圖、線條插圖、動態架構圖、程式動畫、數學解說動畫",
+    "desc": "視覺設計（社群精選）：介面設計與評審、去掉 AI 樣板感的設計方向、改造既有網頁、線框圖、線條插圖、動態架構圖、程式動畫、數學解說動畫、互動架構圖與流程圖、配色字型與 UX 規則查詢",
     "skills": [
       "community/skills/oil-ui",
       "community/skills/hairline-create",
@@ -90,7 +90,9 @@
       "community/skills/manimgx",
       "community/skills/design-taste-frontend",
       "community/skills/redesign-existing-projects",
-      "community/skills/wireframe"
+      "community/skills/wireframe",
+      "community/skills/archify",
+      "community/skills/ui-ux-pro-max"
     ]
   },
   "ai": {
