@@ -107,6 +107,14 @@
       "ecc/skills/prompt-optimizer"
     ]
   },
+  "agent": {
+    "desc": "AI Agent（會自己查資料、做事的 AI）：選單一或多代理人模式、交接與失敗處理、產生並驗證工具規格、分析執行紀錄找成本與瓶頸、把 API 做成 MCP 工具",
+    "skills": [
+      "engineering/skills/agent-workflow-designer",
+      "engineering/skills/agent-designer",
+      "engineering/skills/mcp-server-builder"
+    ]
+  },
   "writing": {
     "desc": "繁體中文寫作（社群精選）：去 AI 味、台灣技術寫作規範、萃取你自己的文字語氣、英文去 AI 味",
     "skills": [

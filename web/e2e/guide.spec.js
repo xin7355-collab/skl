@@ -73,6 +73,58 @@ test.describe('起手式產生器', () => {
     await expect(page.locator('#gPacks')).toHaveText('core, pwa, actions, stock, ai');
   });
 
+  test('新選項會帶出對應的規定、做法與技能組合', async ({ page }) => {
+    await page.goto('/dev-guide.html');
+    await page.locator('nav.tabs button[data-tab="start"]').click();
+    await page.locator('#gMode').selectOption('existing');
+    await page.locator('#gType').selectOption('shop');
+    await page.locator('#pLine').check();
+    await page.locator('#nScrape').check();
+    await page.locator('#nAgent').check();
+    await page.locator('#nNotify').selectOption('push');
+    await page.locator('#dStore').selectOption('sync');
+
+    const chat = await page.locator('#outChat').inputValue();
+    expect(chat).toContain('LINE Notify 已在 2025/3/31 停止');
+    expect(chat).toContain('iOS 16.4');
+    expect(chat).toContain('robots.txt');
+    expect(chat).toContain('noindex');
+    expect(chat).not.toContain('英文的 repo 名稱');   // 改版不用取名
+
+    const code = await page.locator('#outCode').inputValue();
+    expect(code).toContain('這是已經在做的 App repo');
+    expect(code).toContain('不要整個重寫');
+    expect(code).toContain('Messaging API');
+    expect(code).toContain('web-to-markdown');
+    expect(code).toMatch(FOLLOW);
+    // 固定順序：core, pwa, actions, backend, stock, ai, agent, security, python, video, visual, workflow
+    await expect(page.locator('#gPacks')).toHaveText('core, pwa, actions, backend, ai, agent, security, python');
+    // 勾了 AI Agent 才出現往 Agent 頁的提示
+    await expect(page.locator('#agentHint a[href="agent.html"]')).toBeVisible();
+    await page.locator('#nAgent').uncheck();
+    await expect(page.locator('#agentHint')).toBeHidden();
+  });
+
+  test('全部重設回到預設；舊版存檔（沒有新欄位）照樣讀得進來', async ({ page }) => {
+    await page.goto('/dev-guide.html');
+    await page.evaluate(() => localStorage.setItem('guide-gen', JSON.stringify({ gDesc: '舊的 App', gWho: '自己', nAi: true, gType: 'removed-type' })));
+    await page.reload();
+    await page.locator('nav.tabs button[data-tab="start"]').click();
+    await expect(page.locator('#gDesc')).toHaveValue('舊的 App');
+    await expect(page.locator('#nAi')).toBeChecked();
+    await expect(page.locator('#qTest')).toBeChecked();          // 舊存檔沒有這欄 → 預設勾選
+    await expect(page.locator('#gType')).toHaveValue('tool');    // 改名或不存在的選項 → 回預設
+
+    await page.locator('#nVideo').check();
+    await expect(page.locator('#gPacks')).toContainText('video');
+    await page.locator('#genReset').click();
+    await expect(page.locator('#gDesc')).toHaveValue('');
+    await expect(page.locator('#nAi')).not.toBeChecked();
+    await expect(page.locator('#nVideo')).not.toBeChecked();
+    await expect(page.locator('#qTest')).toBeChecked();
+    await expect(page.locator('#gPacks')).toHaveText('core, pwa');
+  });
+
   test('複製的內容跟畫面一致，重新整理後還記得填過的內容與分頁', async ({ page }) => {
     await page.goto('/dev-guide.html');
     await page.locator('nav.tabs button[data-tab="start"]').click();
@@ -89,6 +141,17 @@ test.describe('起手式產生器', () => {
     await expect(page.locator('#gDesc')).toHaveValue('家庭記帳');
     await expect(page.locator('#nLogin')).toBeChecked();
   });
+});
+
+test('「功能的眉角」把起手式選項用到的規定都附了出處', async ({ page }) => {
+  await page.goto('/dev-guide.html');
+  await page.locator('nav.tabs button[data-tab="caution"]').click();
+  const card = page.locator('#tab-caution .card').filter({ hasText: '功能的眉角' });
+  for (const word of ['LINE Notify', 'Telegram', '捷徑', 'OpenStreetMap', '開放資料', '44×44']) {
+    const li = card.locator('li').filter({ hasText: word });
+    await expect(li, word).toHaveCount(1);
+    expect(await li.locator('a.src').count(), word + ' 要有出處').toBeGreaterThan(0);
+  }
 });
 
 test('「裝完接著做」規則跟技能庫網頁一字不差（兩邊要一致）', async ({ page }) => {

@@ -22,7 +22,8 @@ description: 把 skl 技能庫裡挑好的技能組合（core／pwa／actions／
    python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py list
    ```
    判斷方式：有 `manifest.json`／service worker → `pwa`；有 `.github/workflows` → `actions`；
-   有資料庫或 API 伺服器 → `backend`；處理金鑰、登入、使用者資料 → `security`。`core` 一律裝。
+   有資料庫或 API 伺服器 → `backend`；處理金鑰、登入、使用者資料 → `security`；
+   有會自己查資料、做事的 AI（AI Agent）→ `ai`＋`agent`。`core` 一律裝。
 3. 先試跑再安裝：
    ```bash
    python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py install --target . --packs core,pwa --dry-run
