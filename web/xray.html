@@ -663,13 +663,18 @@ function isZh(t){
 const trQueue=(()=>{ let p=Promise.resolve(); return fn=>{ const r=p.then(fn); p=r.catch(()=>{}); return r; }; })();
 async function trFetch(text,tries){
   tries=tries||0;
+  // Google 開始擋（回 429，或導到驗證頁 → 瀏覽器只看到連線失敗）時，再送只會被擋更久：
+  // 暫停 3 分鐘不送，畫面先顯示原文，並說明可以怎麼做
+  if(S.trPauseUntil && Date.now()<S.trPauseUntil) throw new Error("Google 翻譯暫時擋住太多請求，約 "+Math.ceil((S.trPauseUntil-Date.now())/60000)+" 分鐘後會自動再試");
   let r;
   // 10 秒逾時：Google 偶爾不回應，沒有逾時的話整個翻譯佇列會卡死，後面的描述都不會再翻
   const ac=typeof AbortController!=="undefined"?new AbortController():null;
   const timer=ac?setTimeout(()=>ac.abort(),10000):null;
   try{ r=await fetch(TR.url+encodeURIComponent(text),ac?{signal:ac.signal}:{}); clearTimeout(timer); }
-  catch(e){ clearTimeout(timer); if(tries<3){ await sleep(500*Math.pow(2,tries)); return trFetch(text,tries+1); } throw new Error("連不到翻譯服務"); }
-  if((r.status===429||r.status>=500) && tries<3){ await sleep(800*Math.pow(2,tries)+Math.random()*300); return trFetch(text,tries+1); }
+  catch(e){ clearTimeout(timer); if(tries<3){ await sleep(800*Math.pow(2,tries)+Math.random()*300); return trFetch(text,tries+1); }
+    S.trPauseUntil=Date.now()+180e3; throw new Error("連不到翻譯服務（可能被 Google 暫時限流）"); }
+  if((r.status===429||r.status>=500) && tries<3){ await sleep(1200*Math.pow(2,tries)+Math.random()*300); return trFetch(text,tries+1); }
+  if(r.status===429){ S.trPauseUntil=Date.now()+180e3; throw new Error("Google 翻譯暫時限流"); }
   if(!r.ok) throw new Error("翻譯服務回 "+r.status);
   const d=await r.json();
   return (d[0]||[]).map(x=>x[0]||"").join("");
@@ -699,8 +704,11 @@ async function translateMany(texts,onProgress){
       return;
     }
     if(out) S.trErr="譯文行數對不上";
+    // 被限流時拆半重送只會更糟：整批先放棄，等暫停結束再翻
+    if(S.trPauseUntil && Date.now()<S.trPauseUntil){ failed+=b.length; return; }
     if(b.length>1){ const h=Math.ceil(b.length/2); await one(b.slice(0,h)); await one(b.slice(h)); return; }
-    failed++; trBad.add(b[0]);
+    failed++;
+    if(!(S.trPauseUntil && Date.now()<S.trPauseUntil)) trBad.add(b[0]);   // 被限流不算「這句翻不了」，等恢復後還會再送
   };
   // 每批最多 8 句、1200 字（中文網址編碼後會變好幾倍長，太長的網址會被拒）。
   // 簡體中文和英文分開送：混在同一批時 Google 自動偵測成中文，英文句就原樣傳回、看起來像沒翻。
@@ -782,6 +790,9 @@ function deepType(res,pkg,repo,readme){
   const md=(res.exts.get("md")||0)+(res.exts.get("mdx")||0);
   if(res.files>2 && md/res.files>0.6) return quickType(repo)==="list" ? "list" : "docs";
   if(pkg && pkg.bin) return "cli";
+  // Python 套件（pyproject 有 [project]），而且沒有執行期的後端框架：是給人 pip install 的函式庫，
+  // 不要被描述裡的 API、server 這類字眼帶去判成後端
+  if(res.pyPackage && !["FastAPI","Django","Flask"].some(h) && res.indexHtml!=="index.html") return "lib";
   const q=quickType(repo);
   if(q) return q;
   if(["Express","Fastify","Hono","NestJS","Koa","FastAPI","Django","Flask"].some(h) && !res.indexHtml) return "server";
@@ -1082,6 +1093,19 @@ const CDN_RULES = [
 ];
 
 /* Python manifest 內容規則 */
+/* pyproject.toml 裡真正的執行期依賴：[project] 的 dependencies 與 [tool.poetry.dependencies]（不含 dev 群組） */
+function pyMainDeps(txt){
+  if(!txt) return "";
+  const out=[]; let cur="";
+  String(txt).split("\n").forEach(line=>{
+    const h=line.match(/^\s*\[([^\]]+)\]\s*$/);
+    if(h){ cur=h[1].trim(); return; }
+    if(cur==="project" || cur==="tool.poetry.dependencies") out.push(line);
+  });
+  // [project] 底下只取 dependencies = [ ... ]，不取 optional-dependencies 與其他欄位
+  const proj=out.join("\n"), m=proj.match(/(^|\n)\s*dependencies\s*=\s*\[([\s\S]*?)\]/);
+  return (m?m[2]:"")+"\n"+(/tool\.poetry/.test(txt)?proj:"");
+}
 const PY_RULES=[["FastAPI","後端",/fastapi/i],["Django","後端",/(^|\W)django/i],
   ["Flask","後端",/(^|\W)flask/i],["Streamlit","框架",/streamlit/i]];
 
@@ -1495,7 +1519,8 @@ function verdict(res,pkg,repo){
              "Bootstrap (CDN)","styled-components","Emotion","UnoCSS","Bulma","Sass"].filter(has)[0];
   const be=["Next.js","Express","Fastify","Hono","NestJS","Koa","FastAPI","Django","Flask",
             "Google Apps Script 後端"].filter(has)[0];
-  const noBuild = !res.manifests.has("package.json") && !!res.indexHtml;
+  // Python 套件的 docs／範例裡也常有 index.html，那不是網站本身；只有根目錄的 index.html 才算
+  const noBuild = !res.manifests.has("package.json") && !!res.indexHtml && !(res.pyPackage && res.indexHtml!=="index.html");
   const parts=[];
 
   let head;
@@ -1604,7 +1629,11 @@ async function run(target,fromHistory){
     }
     if(res.manifests.has("requirements.txt")||res.manifests.has("pyproject.toml")){
       const t=await getText(base+prefix+(res.manifests.has("requirements.txt")?"requirements.txt":"pyproject.toml"));
-      if(t) PY_RULES.forEach(r=>{ if(r[2].test(t)&&!res.hits.has(r[0])) res.hits.set(r[0],{cat:r[1],ev:"manifest"}); });
+      // pyproject 只看「使用者安裝時會裝」的依賴：開發／測試用的群組（dependency-groups、dev、optional）
+      // 常有 FastAPI 之類的工具，算進去會把 Python 套件誤判成「需要後端伺服器」
+      const main=res.manifests.has("requirements.txt")?t:pyMainDeps(t);
+      if(t && !res.manifests.has("requirements.txt") && /^\s*\[project\]/m.test(t)) res.pyPackage=true;
+      if(main) PY_RULES.forEach(r=>{ if(r[2].test(main)&&!res.hits.has(r[0])) res.hits.set(r[0],{cat:r[1],ev:"manifest"}); });
     }
 
     /* README / CNAME / index.html 一律走 raw，不計 API 額度；並行但受佇列限流 */
@@ -1731,11 +1760,13 @@ function paintPlain(res,pkg,x){
 
   // 4. 能放哪裡跑：使用者只有 GitHub Pages＋Actions，先回答「能不能直接放」
   const back=names(["後端"]).filter(n=>n!=="OpenAPI 規格"), db=names(["資料庫"]).filter(n=>!/sqlite/i.test(n));
-  const web=!!(res.indexHtml||names(["框架"]).length);
+  // Python 套件的 docs／範例 index.html 不算網站（否則會叫人把函式庫放 GitHub Pages）
+  const web=!!((res.indexHtml && !(res.pyPackage && res.indexHtml!=="index.html"))||names(["框架"]).length);
   rows.push(["放哪裡跑", back.length||res.apiRoutes.length||db.length
     ? '<span class="warn">需要後端伺服器</span>（'+esc(back.concat(db).slice(0,3).join("、")||"有 API 路由")+'），不能只放 GitHub Pages；'+
       '免費替代：Cloudflare Workers，或改成 Actions 定時產出資料檔讓網頁讀。'
     : web ? '<span class="ok">純前端，可以直接放 GitHub Pages</span>'
+    : res.pyPackage ? 'Python 套件：在自己的程式裡 <code>pip install</code> 後使用，可以在 GitHub Actions 或 Claude Code 雲端工作階段跑'
     : '不是網站：在 GitHub Actions 排程跑，或下載到電腦執行']);
 
   // 5. 怎麼跑起來：README 指令＋npm scripts，一鍵複製
@@ -2705,9 +2736,12 @@ function renderDocs(res){
   if(!S.docs.length){ $("sec-docs").style.display="none"; return; }
   $("sec-docs").style.display="";
   $("doc-hits").innerHTML="";
+  // 授權條款、行為準則、貢獻須知這類文件內容大同小異：直接給中文標籤、排到最後，不讀也不送翻譯
+  // （80 份文件全部送 Google 翻譯很容易被限流，真正想看的說明反而翻不出來）
   const order=S.docs.slice().sort((a,b)=>{
+    const ka=docKnown(a)?1:0, kb=docKnown(b)?1:0;
     const ra=/readme/i.test(a)?0:1, rb=/readme/i.test(b)?0:1;
-    return ra-rb || a.split("/").length-b.split("/").length || a.localeCompare(b);
+    return ka-kb || ra-rb || a.split("/").length-b.split("/").length || a.localeCompare(b);
   });
   S.docOrder=order;
   const skills=order.filter(d=>/(^|\/)SKILL\.md$/i.test(d)).length;
@@ -2729,6 +2763,11 @@ function renderDocs(res){
     S.docObs.observe(el);
   } else loadDocSums(tok);
 }
+const DOC_KNOWN=[[/(^|\/)licen[cs]es?\/|(^|\/)(licen[cs]e|copying|notice)([-_.][^\/]*)?$/i,"⚖️ 授權條款全文（法律文字，通常不用讀）"],
+  [/(^|\/)code[-_]of[-_]conduct/i,"🤝 社群行為準則"],[/(^|\/)contributing/i,"🛠️ 貢獻者須知：想參與開發的人看的"],
+  [/(^|\/)security\.md$/i,"🛡️ 怎麼私下回報資安漏洞"],[/pull_request_template|issue_template\//i,"📝 提交 PR／Issue 時的填寫範本"],
+  [/(^|\/)(changelog|changes|history|release[-_]notes)\.md$/i,"🗓️ 版本更新紀錄"],[/(^|\/)(support|governance|funding|authors|maintainers)\.md$/i,"👥 維護與支援資訊"]];
+function docKnown(path){ const k=DOC_KNOWN.find(x=>x[0].test(path)); return k?k[1]:null; }
 /* 顯示名稱：SKILL.md 用技能資料夾名稱（agent-transcript），其他用檔名 */
 function docName(path){
   const parts=path.split("/"), file=parts.pop();
@@ -2804,7 +2843,11 @@ async function loadDocSums(tok){
     return null;
   };
   const todo=[];
-  order.forEach((d,i)=>{ const key=c.owner+"/"+c.repo+"@"+c.ref+":"+d; if(cache[key]!==undefined) sums[i]=cache[key]; else todo.push([i,key]); });
+  order.forEach((d,i)=>{
+    const known=docKnown(d);
+    if(known){ sums[i]=known; return; }            // 授權、行為準則等：直接用中文標籤
+    const key=c.owner+"/"+c.repo+"@"+c.ref+":"+d; if(cache[key]!==undefined) sums[i]=cache[key]; else todo.push([i,key]);
+  });
   paint();
   for(let k=0;k<todo.length;k+=6){
     const chunk=todo.slice(k,k+6);
@@ -2824,14 +2867,14 @@ async function loadDocSums(tok){
     paint();
     if(!zhOn()) return;
     const todo=[...new Set(sums.filter(t=>t&&!isZh(t)&&zhOf(t)===undefined&&!trBad.has(t)))];
-    if(todo.length){ await translateMany(todo); paint(); }
+    if(todo.length){ await translateMany(todo,paint); paint(); }
   };
   if(zhOn()){
     const todo=[...new Set(sums.filter(t=>t&&!isZh(t)&&zhOf(t)===undefined))];
     if(todo.length){
-      const f=await translateMany(todo);
+      const f=await translateMany(todo,()=>{ if(tok===S.docTok) paint(); });   // 每翻好一批就先顯示
       if(tok!==S.docTok) return;
-      if(f) toast("有 "+f+" 段說明翻譯失敗，先顯示原文");
+      if(f) toast(f+" 段說明沒翻成："+(S.trErr||"翻譯服務沒回應")+"。先顯示原文；稍後關掉再打開「翻成繁中」會重翻，或用 Safari「aA → 翻譯」");
       paint();
     }
   }
