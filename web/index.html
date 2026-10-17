@@ -163,9 +163,15 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   <section id="tab-ops" class="card" hidden>
     <h2>健檢與更新</h2>
     <b>🔍 我的 App 該裝哪些技能？（只建議、不安裝）</b>
-    <p class="hint">選你的 App 或貼 GitHub 網址。不填就是「貼到哪個 App 的對話，就檢查哪個 App」。</p>
-    <input id="advRepo" type="search" list="advApps" autocomplete="off" placeholder="例如 xin7355-collab/argus-pwa 或 GitHub 網址">
-    <datalist id="advApps"></datalist>
+    <p class="hint">選你的 App，或選最後一項貼 GitHub 網址。</p>
+    <select id="advPick" aria-label="選擇 App">
+      <option value="">目前這個 repo（貼到哪個 App 的對話就檢查哪個）</option>
+      <option value="__url">其他：貼 GitHub 網址…</option>
+    </select>
+    <input id="advRepo" type="url" autocomplete="off" autocapitalize="off" spellcheck="false" hidden
+      style="width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);margin-top:8px"
+      placeholder="例如 https://github.com/xin7355-collab/argus-pwa">
+    <p class="hint" id="advNote" hidden></p>
     <textarea id="advPrompt" class="out" readonly></textarea>
     <div class="row">
       <button class="btn" data-copy="advPrompt">複製給 Claude 的指令</button>
@@ -316,26 +322,46 @@ function advicePrompt(repo) {
     `也列出已經裝了但用不到、可以移除的。最後給一行安裝指令（先用 --dry-run）。\n` +
     `先不要安裝、不要改任何檔案，等我決定。`;
 }
+// App 清單用原生 <select>：iPhone Safari 的 <datalist> 打字後會把選項篩掉、點選常沒反應（使用者回報常失敗）
+function advRepoNow() {
+  const pick = $("advPick").value;
+  return pick === "__url" ? repoOf($("advRepo").value) : pick;
+}
 function paintAdvice() {
-  const repo = repoOf($("advRepo").value);
+  const isUrl = $("advPick").value === "__url";
+  $("advRepo").hidden = !isUrl;
+  const repo = advRepoNow();
   $("advPrompt").value = advicePrompt(repo);
   $("advXray").disabled = !repo;
+  store.set("advPick", $("advPick").value);
   store.set("advRepo", $("advRepo").value.trim());
 }
-async function loadMyApps() {
-  // 部署時會把 .github/apps.json 複製到網站根目錄（X-Ray 也用同一份）；讀不到就只能手動貼網址
+function addAppOption(repo) {
+  const sel = $("advPick");
+  if ([...sel.options].some((o) => o.value === repo)) return;
+  const o = document.createElement("option");
+  o.value = o.textContent = repo;
+  sel.insertBefore(o, sel.querySelector('option[value="__url"]'));
+}
+async function loadMyApps(want) {
+  // 部署時會把 .github/apps.json 複製到網站根目錄（X-Ray 也用同一份）。
+  // want 要在任何 paintAdvice 之前讀：paintAdvice 會把「目前選項」存回去，先畫會蓋掉上次選的 App
+  $("advPrompt").value = advicePrompt("");
   try {
     const r = await fetch("apps.json", { cache: "no-cache" });
-    if (!r.ok) return;
+    if (!r.ok) throw new Error("HTTP " + r.status);
     const d = await r.json();
-    $("advApps").innerHTML = "";
-    for (const a of d.apps || []) {
-      if (!a.repo) continue;
-      const o = document.createElement("option");
-      o.value = a.repo;
-      $("advApps").appendChild(o);
-    }
-  } catch { /* 離線或本機預覽：不影響手動輸入 */ }
+    for (const a of d.apps || []) if (a.repo) addAppOption(a.repo);
+  } catch {
+    // 讀不到清單（離線、網站還在部署）時說清楚，不要讓選單看起來像壞掉
+    $("advNote").hidden = false;
+    $("advNote").textContent = "App 清單暫時讀不到（網路或網站部署中），可以選「其他：貼 GitHub 網址」，或稍後重新整理。";
+  }
+  // 上次選的 App 不在清單裡（例如清單讀不到）也照樣保留，不會被默默換掉
+  if (want && want !== "__url") addAppOption(want);
+  $("advPick").value = want;
+  if ($("advPick").value !== want) $("advPick").value = "";
+  paintAdvice();
 }
 
 function renderPacks() {
@@ -443,12 +469,12 @@ function wire() {
   $("updatePrompt").value = UPDATE_PROMPT;
   $("advRepo").value = store.get("advRepo", "");
   $("advRepo").addEventListener("input", paintAdvice);
+  $("advPick").addEventListener("change", () => { paintAdvice(); if ($("advPick").value === "__url") $("advRepo").focus(); });
   $("advXray").addEventListener("click", () => {
-    const repo = repoOf($("advRepo").value);
+    const repo = advRepoNow();
     if (repo) location.href = "xray.html?repo=" + encodeURIComponent(repo);
   });
-  paintAdvice();
-  loadMyApps();
+  loadMyApps(store.get("advPick", ""));
   let t;
   $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => { shown = PAGE; renderSkills(); }, 150); });
   $("domain").addEventListener("change", () => { shown = PAGE; renderSkills(); });
