@@ -162,7 +162,18 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 
   <section id="tab-ops" class="card" hidden>
     <h2>健檢與更新</h2>
-    <p class="hint">在已經裝過技能的 App 裡使用。</p>
+    <b>🔍 我的 App 該裝哪些技能？（只建議、不安裝）</b>
+    <p class="hint">選你的 App 或貼 GitHub 網址。不填就是「貼到哪個 App 的對話，就檢查哪個 App」。</p>
+    <input id="advRepo" type="search" list="advApps" autocomplete="off" placeholder="例如 xin7355-collab/argus-pwa 或 GitHub 網址">
+    <datalist id="advApps"></datalist>
+    <textarea id="advPrompt" class="out" readonly></textarea>
+    <div class="row">
+      <button class="btn" data-copy="advPrompt">複製給 Claude 的指令</button>
+      <button class="btn ghost" id="advXray">🔬 用 X-Ray 立刻看</button>
+    </div>
+    <p class="hint" style="margin-top:6px">X-Ray 不用開 Claude、幾秒就有建議，但只看檔案結構；Claude 會讀程式內容，比較準。</p>
+    <br>
+    <p class="hint">下面兩個在已經裝過技能的 App 裡使用。</p>
     <b>防禦準則健檢</b>
     <textarea id="auditPrompt" class="out" readonly>用 app-guardrails-audit 幫這個 repo 做一次防禦準則健檢。每一條都打開原始碼確認是不是真問題，依「必修／建議修／提醒」分級回報，每條寫檔案與行號、會在什麼情境出事、怎麼修。先不要改程式，等我決定。</textarea>
     <div class="row"><button class="btn" data-copy="auditPrompt">複製健檢指令</button></div>
@@ -288,6 +299,45 @@ const AUTO_PROMPT = `從 ${REPO} 取得技能庫：${FETCH_CMD}\n` +
 const UPDATE_PROMPT = `從 ${REPO} 用 app-bootstrap 把這個 repo 已安裝的技能更新到最新版（bootstrap_app.py update），回報更新了哪些，然後 commit。`;
 const UPDATE_CMD = `${FETCH_CMD} && python3 ${TOOL} update --target .`;
 
+// 「該裝哪些技能」：只建議不安裝（使用者要先看清單再決定），所以跟 AUTO_PROMPT 分開
+function repoOf(v) {
+  const m = String(v || "").trim().replace(/\.git$/, "").match(/(?:github\.com\/)?([\w.-]+)\/([\w.-]+)/);
+  return m ? m[1] + "/" + m[2] : "";
+}
+function advicePrompt(repo) {
+  const target = repo
+    ? `GitHub 專案 https://github.com/${repo}（如果它就是目前這個 repo，直接讀本機檔案；不是的話先 git clone --depth 1 到暫存資料夾）`
+    : "目前這個 repo";
+  return `從 ${REPO} 取得技能庫：${FETCH_CMD}\n` +
+    `執行 python3 ${TOOL} catalog 看全部技能（附中文說明）與技能組合。\n` +
+    `請檢查${target}：讀 CLAUDE.md、README、套件設定（package.json／requirements.txt／pyproject.toml）、.github/workflows 與主要程式，` +
+    `判斷這個 App 的用途和技術；再讀 .claude/skills/.skl-vendor.json，看已經裝了哪些。\n` +
+    `依「必裝／建議／可選」三級列出要裝的組合與技能，每項寫一句理由和對應的檔案證據；` +
+    `也列出已經裝了但用不到、可以移除的。最後給一行安裝指令（先用 --dry-run）。\n` +
+    `先不要安裝、不要改任何檔案，等我決定。`;
+}
+function paintAdvice() {
+  const repo = repoOf($("advRepo").value);
+  $("advPrompt").value = advicePrompt(repo);
+  $("advXray").disabled = !repo;
+  store.set("advRepo", $("advRepo").value.trim());
+}
+async function loadMyApps() {
+  // 部署時會把 .github/apps.json 複製到網站根目錄（X-Ray 也用同一份）；讀不到就只能手動貼網址
+  try {
+    const r = await fetch("apps.json", { cache: "no-cache" });
+    if (!r.ok) return;
+    const d = await r.json();
+    $("advApps").innerHTML = "";
+    for (const a of d.apps || []) {
+      if (!a.repo) continue;
+      const o = document.createElement("option");
+      o.value = a.repo;
+      $("advApps").appendChild(o);
+    }
+  } catch { /* 離線或本機預覽：不影響手動輸入 */ }
+}
+
 function renderPacks() {
   const box = $("packList");
   box.innerHTML = "";
@@ -391,6 +441,14 @@ function wire() {
   $("copyPackCmd").addEventListener("click", () => copyText(packCmd(orderedPacks())));
   $("copyUpdateCmd").addEventListener("click", () => copyText(UPDATE_CMD));
   $("updatePrompt").value = UPDATE_PROMPT;
+  $("advRepo").value = store.get("advRepo", "");
+  $("advRepo").addEventListener("input", paintAdvice);
+  $("advXray").addEventListener("click", () => {
+    const repo = repoOf($("advRepo").value);
+    if (repo) location.href = "xray.html?repo=" + encodeURIComponent(repo);
+  });
+  paintAdvice();
+  loadMyApps();
   let t;
   $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => { shown = PAGE; renderSkills(); }, 150); });
   $("domain").addEventListener("change", () => { shown = PAGE; renderSkills(); });
