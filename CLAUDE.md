@@ -83,6 +83,8 @@
     翻譯快取 `xray-tr-v2`（v1 有混送時存下的未翻譯英文，已棄用）；翻譯請求 10 秒逾時、每批翻好就重畫。
     說明文件清單每份附一句中文說明（SKILL.md description／第一段，摘要快取 `xray-docsum-v1`）；授權、行為準則等制式文件用 `DOC_KNOWN`
     直接標中文、不送翻譯（省請求避免被 Google 限流）。翻譯被限流（429／連線失敗）時 `trFetch` 斷路 3 分鐘。
+    專案地圖 `paintMap`（資料夾用途規則 `DIR_ROLES`，只用 `res.skel`）；「複製整包重點給 AI」`buildPack`（上限 `PACK_CAP`，只用已抓內容）；
+    外部深入看 `EXT_TOOLS`（私人 repo 不顯示）。README 取路徑最淺的那份（`.claude/skills/x/README.md` 不能搶走根目錄的）。
     Python 判斷只看主要依賴（`pyMainDeps`，dev 群組不算）；有 `[project]` 的 pyproject 是套件，docs 裡的 index.html 不算網站。
     翻譯：簡體也送去轉繁體、簡體與英文分批送（混送時英文會原樣傳回）；簡體字表在 xray.html 的 SIMP_RE 與
     build_trending.py 的 SIMP，兩邊要一致。

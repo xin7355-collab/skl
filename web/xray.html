@@ -140,6 +140,17 @@ section{margin-top:26px}
 .plain .pv{flex:1;min-width:0;word-break:break-word}
 .plain .pv code{font-family:var(--mono);font-size:11px;color:var(--amber)}
 .plain .warn{color:var(--amber)}
+.map{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:2px 12px}
+.map details{border-bottom:1px solid var(--panel-2)}
+.map details:last-child{border-bottom:0}
+.map summary{list-style:none;cursor:pointer;padding:9px 0;font-size:13px;line-height:1.5}
+.map summary::-webkit-details-marker{display:none}
+.map .mn{font-family:var(--mono);font-size:12px;color:var(--cyan)}
+.map .mr{color:var(--text)}
+.map .mc{float:right;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.map .ms{padding:0 0 10px 18px;font-size:12px;line-height:1.7;color:var(--muted)}
+.map .ms b{font-family:var(--mono);font-weight:400;color:var(--text)}
+.map .more{font-size:12px;color:var(--muted);padding:8px 0}
 .plain .ok{color:var(--cyan)}
 details.adv-more{margin-top:26px}
 details.adv-more>summary{cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--cyan);list-style:none;padding:8px 0}
@@ -440,7 +451,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     <div id="v-type"></div>
     <div id="v-quick"></div>
     <div id="v-live"></div>
-    <div class="navrow"><button class="ghost" id="pickbtn">☐ 勾選</button><button class="ghost" id="favbtn">☆ 收藏</button><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="refclaude">🧩 複製「參考它做我的 App」</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
+    <div class="navrow"><button class="ghost" id="pickbtn">☐ 勾選</button><button class="ghost" id="favbtn">☆ 收藏</button><button class="ghost" id="askclaude">複製「請 Claude 分析這個專案」</button><button class="ghost" id="refclaude">🧩 複製「參考它做我的 App」</button><button class="ghost" id="packbtn">📦 複製整包重點給 AI</button><button class="ghost" id="sharebtn">分享這個結果</button></div>
   </div>
 
   <section id="sec-advisor" class="adv">
@@ -464,13 +475,18 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     <div class="plain" id="plain"></div>
   </section>
 
+  <section id="sec-map">
+    <div class="h"><u>03</u> 🗺️ 專案地圖：每個資料夾在做什麼</div>
+    <div class="map" id="map"></div>
+  </section>
+
   <section id="sec-app">
-    <div class="h"><u>03</u> App 身分證</div>
+    <div class="h"><u>04</u> App 身分證</div>
     <div id="app-card"></div>
   </section>
 
   <section id="sec-docs">
-    <div class="h"><u>04</u> 說明文件</div>
+    <div class="h"><u>05</u> 說明文件</div>
     <div class="bar" style="margin-bottom:10px">
       <input id="dq" type="search" autocomplete="off" placeholder="搜尋所有 .md 的內容（例如：安裝、API、部署）">
       <button id="dqgo" style="background:var(--panel-2);color:var(--text);border:1px solid var(--line)">搜尋</button>
@@ -480,17 +496,17 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
   </section>
 
   <details class="adv-more" id="sec-more">
-    <summary>▸ 進階：路由、目錄結構、依賴清單、README 大綱（寫程式時才需要）</summary>
+    <summary>▸ 進階：路由、圖片素材、依賴清單、README 大綱（寫程式時才需要）</summary>
     <section id="sec-routes">
-      <div class="h"><u>05</u> 路由地圖</div>
+      <div class="h"><u>06</u> 路由地圖</div>
       <div id="routes"></div>
     </section>
     <section id="sec-skel">
-      <div class="h"><u>06</u> 專案結構</div>
+      <div class="h"><u>07</u> 圖片與 README 大綱</div>
       <div id="skel-box"></div>
     </section>
     <section id="sec-deps">
-      <div class="h"><u>07</u> 直接依賴</div>
+      <div class="h"><u>08</u> 直接依賴</div>
       <div class="list" id="deps"></div>
     </section>
   </details>
@@ -1168,7 +1184,9 @@ async function scanTree(nodes){
         res.htmlCount++;
         if(!res.indexHtml || depth(path)<depth(res.indexHtml)) res.indexHtml=path;
       } else if(/\.html?$/.test(low)) res.htmlCount++;
-      if(!res.readme && /(^|\/)readme(\.md|\.markdown|\.txt)?$/.test(low)) res.readme=path;
+      // 取最淺的 README：檔案樹按字母排，.claude/skills/x/README.md 會排在根目錄 README.md 前面，
+      // 取第一個會把裝進來的技能說明當成這個專案的介紹
+      if(/(^|\/)readme(\.md|\.markdown|\.txt)?$/.test(low) && (!res.readme || depth(path)<depth(res.readme))) res.readme=path;
       // .claude/skills、.agents/skills 這類隱藏資料夾裡的 SKILL.md 是「裝進來給自己用的技能」
       // （例如用 app-bootstrap 裝的 skl 技能），不代表這個 repo 本身是技能包
       if(/(^|\/)skill\.md$/.test(low) && !/(^|\/)\.[^\/]+\//.test(low)){
@@ -1701,7 +1719,7 @@ async function run(target,fromHistory){
     }
 
     render(res,pkg,repo,loc,ref,live,{pwa:pwa,appId:appId,envKeys:envKeys,langs:langs,
-                                      release:release,outline:readmeOutline(readmeTxt),cmds:cmds,readme:readmeTxt});
+                                      release:release,outline:readmeOutline(readmeTxt),cmds:cmds,readme:readmeTxt,claude:claudeTxt});
     say("完成 · "+res.files.toLocaleString()+" 個檔案 · 認出 "+res.hits.size+" 項技術"+
         (treeTrunc?" · 註：檔案樹過大已被 GitHub 截斷":""),"✓");
   }catch(e){
@@ -1710,6 +1728,108 @@ async function run(target,fromHistory){
     S.busy=false; $("go").disabled=false; $("scan").classList.remove("on");
   }
 }
+
+/* ── 專案地圖：GitDiagram／Code Repo 那種「每塊在做什麼」，但不用 AI、不花額度 ──
+   只用掃描時已經算好的目錄骨架（res.skel）；資料夾名稱認得就標中文用途，認不得就看主要檔案類型 */
+const DIR_ROLES=[
+  [/^(docs?|documentation|wiki|guides?|manual|handbook)$/,"📖","說明文件"],
+  [/^(tests?|__tests__|spec|specs|e2e|testing|test_?data|fixtures)$/,"🧪","自動測試"],
+  [/^\.github$/,"⚙️","GitHub 自動化設定"],
+  [/^(\.claude|\.agents|\.codex|\.cursor|skills?|agents?|prompts?|commands)$/,"🧠","AI 技能／代理設定"],
+  [/^(scripts?|tools?|bin|ops|tasks|utils?|helpers?)$/,"🔧","工具腳本"],
+  [/^(examples?|samples?|demos?|playground|showcase|tutorials?|notebooks?)$/,"🎬","範例"],
+  [/^(benchmarks?|bench|perf)$/,"⏱️","效能測試"],
+  [/^(fonts?|typefaces?)$/,"🔤","字型"],
+  [/^(public|static|assets|images?|img|media|icons?|screenshots?|res|resources)$/,"🖼️","圖片與素材"],
+  [/^(web|site|www|frontend|client|ui|pages|views|screens|components|layouts|styles?|css|templates?)$/,"🖥️","畫面／網頁"],
+  [/^(api|apis|server|backend|routes|functions|workers?|services?|handlers?|controllers?|endpoints)$/,"🌐","後端／API"],
+  [/^(android|ios|mobile|native|app-?android|app-?ios)$/,"📱","手機 App"],
+  [/^(data|datasets?|db|database|migrations?|seeds?|sql|schema)$/,"🗄️","資料／資料庫"],
+  [/^(config|configs|conf|settings|\.vscode|\.devcontainer|\.husky)$/,"⚙️","設定檔"],
+  [/^(docker|deploy|deployment|infra|k8s|helm|terraform|\.circleci|\.gitlab)$/,"🚀","部署設定"],
+  [/^(locales?|i18n|lang|languages|translations?)$/,"🌏","多語系文字"],
+  [/^(licenses?|legal)$/,"⚖️","授權條款"],
+  [/^(vendor|third_?party|external|deps)$/,"📦","別人的程式（第三方）"],
+  [/^(dist|build|out|target|release|output)$/,"📦","打包好的成品"],
+  [/^(src|source|lib|libs|core|internal|pkg|packages|crates|modules|app|python|js|ts|rust|go)$/,"🧩","主程式"]
+];
+const EXT_WORD={md:"文件",mdx:"文件",txt:"文字",rst:"文件",py:"Python",ipynb:"筆記本",ts:"TypeScript",tsx:"TypeScript 畫面",
+  js:"JavaScript",jsx:"JavaScript 畫面",mjs:"JavaScript",vue:"Vue 畫面",svelte:"Svelte 畫面",rs:"Rust",go:"Go",java:"Java",
+  kt:"Kotlin",swift:"Swift",c:"C",cpp:"C++",h:"C 標頭",cs:"C#",rb:"Ruby",php:"PHP",html:"網頁",css:"樣式",scss:"樣式",
+  json:"設定／資料",yml:"設定",yaml:"設定",toml:"設定",sh:"指令稿",ps1:"指令稿",sql:"資料庫",csv:"表格資料",
+  png:"圖片",jpg:"圖片",jpeg:"圖片",svg:"圖示",gif:"動圖",webp:"圖片",woff:"字型",woff2:"字型",ttf:"字型",mp4:"影片",wasm:"WebAssembly",sha256:"檢查碼",lock:"版本鎖定檔"};
+function dirRole(name,repoName){
+  const n=String(name).toLowerCase();
+  if(n==="（根目錄）") return ["📄","根目錄的設定與說明"];
+  // Python／Rust 套件常把主程式放在跟 repo 同名的資料夾（manimgx/manimgx）
+  if(repoName && n.replace(/[-_]/g,"")===String(repoName).toLowerCase().replace(/[-_]/g,"")) return ["🧩","主程式"];
+  const r=DIR_ROLES.find(r=>r[0].test(n));
+  return r ? [r[1],r[2]] : null;
+}
+function extHint(m){
+  const top=[...m.entries()].sort((a,b)=>b[1]-a[1])[0];
+  return top ? (EXT_WORD[top[0]]||"."+top[0]) : "";
+}
+function paintMap(res,repoName){
+  const tops=new Map();
+  for(const [k,d] of res.skel){
+    const i=k.indexOf("/"), top=i<0?k:k.slice(0,i), sub=i<0?"":k.slice(i+1);
+    let t=tops.get(top); if(!t){ t={n:0,ext:new Map(),subs:new Map()}; tops.set(top,t); }
+    t.n+=d.n; d.ext.forEach((c,e)=>t.ext.set(e,(t.ext.get(e)||0)+c));
+    if(sub){ const s0=t.subs.get(sub)||{n:0,ext:new Map()}; s0.n+=d.n; d.ext.forEach((c,e)=>s0.ext.set(e,(s0.ext.get(e)||0)+c)); t.subs.set(sub,s0); }
+  }
+  const all=[...tops.entries()].sort((a,b)=>(a[0]==="（根目錄）")-(b[0]==="（根目錄）")||b[1].n-a[1].n);
+  const MAXTOP=16, list=all.slice(0,MAXTOP), rest=all.slice(MAXTOP);
+  S.mapData=all.slice(0,40).map(([name,t])=>{ const r=dirRole(name,repoName);
+    return {name:name,role:r?r[1]:(extHint(t.ext)?"主要是 "+extHint(t.ext):""),n:t.n,
+            subs:[...t.subs.entries()].sort((a,b)=>b[1].n-a[1].n).slice(0,8).map(s=>s[0]+"("+s[1].n+")")}; });
+  if(all.length<2){ $("sec-map").style.display="none"; return; }   // 只有根目錄就沒什麼好畫
+  $("map").innerHTML='<div class="more" style="padding-bottom:0">點資料夾看裡面有什麼；用途是依資料夾名稱判斷，認不出來的就寫主要檔案類型。</div>'+list.map(([name,t])=>{
+    const r=dirRole(name,repoName), hint=extHint(t.ext);
+    const subs=[...t.subs.entries()].sort((a,b)=>b[1].n-a[1].n);
+    const body=subs.length ? subs.slice(0,12).map(([sn,sd])=>{ const sr=dirRole(sn,repoName);
+        return '<div><b>'+esc(sn)+'/</b> '+(sr?sr[0]+' '+esc(sr[1]):esc("主要是 "+extHint(sd.ext)))+' · '+sd.n+' 檔</div>'; }).join("")+
+        (subs.length>12?'<div>…另有 '+(subs.length-12)+' 個子資料夾</div>':'')
+      : '<div>這層沒有子資料夾'+(hint?'，主要是 '+esc(hint):'')+'</div>';
+    return '<details><summary><span class="mc">'+t.n.toLocaleString()+' 檔</span>'+(r?r[0]:"📁")+' <span class="mn">'+
+      esc(name==="（根目錄）"?name:name+"/")+'</span> <span class="mr">'+esc(r?r[1]:(hint?"主要是 "+hint:"其他"))+'</span></summary>'+
+      '<div class="ms">'+body+'</div></details>';
+  }).join("")+(rest.length?'<div class="more">…另有 '+rest.length+' 個資料夾（'+rest.reduce((a,b)=>a+b[1].n,0)+' 檔）</div>':'');
+  $("sec-map").style.display="";
+}
+
+/* ── 複製整包重點給 AI：gitingest／repomix 的做法，但只放「看懂專案」需要的部分，
+   長度有上限（手機剪貼簿與 Claude App 貼上都會卡太長的文字） ── */
+const PACK_CAP=30000, PACK_README=16000, PACK_CLAUDE=4000;
+function cut(t,n){ t=String(t||""); return t.length>n ? t.slice(0,n)+"\n…（後面還有 "+(t.length-n).toLocaleString()+" 字，太長先省略）" : t; }
+function buildPack(p,sums){
+  const L=[];
+  L.push("以下是 GitHub 專案 https://github.com/"+p.full+" 的重點整理（Repo X-Ray 自動整理）。請先讀完，再回答我接下來的問題。");
+  L.push("");
+  L.push("## 基本資料");
+  L.push("- 描述："+(S.last&&S.last.desc||"（沒有）"));
+  L.push("- 類型判讀："+(S.last&&(S.last.type||S.last.title)||"—")+"；授權："+(S.last&&S.last.license||"—"));
+  L.push("- 主要語言："+(p.repo.lang||"—")+"；★ "+Number(p.repo.stars||0).toLocaleString()+"；最後更新 "+p.repo.pushed+"；"+p.files.toLocaleString()+" 個檔案；分支 "+p.ref);
+  if(p.map&&p.map.length){
+    L.push(""); L.push("## 目錄地圖（資料夾／用途／檔案數／主要子資料夾）");
+    p.map.forEach(m=>L.push("- "+m.name+(m.name==="（根目錄）"?"":"/")+"："+(m.role||"—")+"，"+m.n+" 檔"+(m.subs.length?"；"+m.subs.join("、"):"")));
+  }
+  if(p.hits.length){ L.push(""); L.push("## 認出的技術"); L.push(p.hits.join("、")); }
+  if(p.deps.length){ L.push(""); L.push("## 直接依賴（package.json）"); L.push(p.deps.join("、")); }
+  if(p.cmds.length){ L.push(""); L.push("## README 裡的安裝／執行指令"); p.cmds.forEach(c=>L.push("    "+c)); }
+  if(sums&&sums.length){ L.push(""); L.push("## 說明文件清單（每份一句話）"); sums.forEach(x=>L.push("- "+x[0]+"："+x[1])); }
+  if(p.claude){ L.push(""); L.push("## CLAUDE.md（作者給 AI 的工作守則）"); L.push(cut(p.claude,PACK_CLAUDE)); }
+  if(p.readme){ L.push(""); L.push("## "+(p.readmePath||"README")); L.push(cut(p.readme,PACK_README)); }
+  let out=L.join("\n");
+  if(out.length>PACK_CAP) out=out.slice(0,PACK_CAP)+"\n…（整包超過 "+PACK_CAP.toLocaleString()+" 字，後面省略）";
+  return out;
+}
+const EXT_TOOLS=[
+  ["🧭 DeepWiki","自動產生這個專案的說明網站，可以直接問它問題",f=>"https://deepwiki.com/"+f],
+  ["🗺️ GitDiagram","把專案畫成可點的架構圖",f=>"https://gitdiagram.com/"+f],
+  ["📈 星數歷史","Star History：星星多久漲起來的",f=>"https://star-history.com/#"+f+"&Date"],
+  ["📊 OSSInsight","活躍度：commit、PR、貢獻者趨勢",f=>"https://ossinsight.io/analyze/"+f]
+];
 
 /* ── 白話重點 ── */
 // 只認得出名字的服務才列（徽章、文件、社群網址是雜訊）；AI／金流特別標出來，因為要金鑰、可能收費
@@ -2055,7 +2175,10 @@ function render(res,pkg,repo,loc,ref,live,x){
                  [res.indexHtml,"入口 HTML"],
                  [res.pwaManifest,"PWA manifest"],
                  [res.openapi,"API 規格"]].filter(q=>q[0]);
-    $("v-quick").innerHTML = '<div class="meta" style="margin-top:10px">'+links+'</div>' + (quick.length
+    const ext=repo.private ? "" : '<div class="meta" style="margin-top:6px"><span class="chip" style="border:0;padding-left:0">更深入看（外部網站、英文）</span>'+
+      EXT_TOOLS.map(t=>'<a class="chip" href="'+esc(t[2](loc.owner+"/"+loc.repo))+'" target="_blank" rel="noopener" title="'+esc(t[1])+'" '+
+        'style="text-decoration:none;color:var(--cyan);border-color:rgba(72,211,192,.3)">'+esc(t[0])+'</a>').join("")+'</div>';
+    $("v-quick").innerHTML = '<div class="meta" style="margin-top:10px">'+links+'</div>' + ext + (quick.length
       ? '<div class="meta" style="margin-top:6px">'+quick.map(q=>
           '<span class="chip" data-f="'+esc(q[0])+'" style="cursor:pointer;color:var(--cyan);'+
           'border-color:rgba(72,211,192,.3)">▤ 看 '+esc(q[1])+'</span>').join("")+'</div>'
@@ -2123,6 +2246,7 @@ function render(res,pkg,repo,loc,ref,live,x){
   // ── 白話重點：取代技術指紋牆／API 端點／檔案類型分佈（使用者回饋看不懂、用不到）。
   //    只回答「我要準備什麼、放哪裡跑、會連到誰、怎麼跑起來、Claude 讀不讀得完」。
   paintPlain(res,pkg,x);
+  paintMap(res,loc.repo);
 
   // 路由
   const rs=res.routes.slice().sort((a,b)=>a.path.length-b.path.length||a.path.localeCompare(b.path));
@@ -2152,20 +2276,8 @@ function render(res,pkg,repo,loc,ref,live,x){
   // ── 專案結構：目錄骨架 + 啟動指令 + README 大綱 ──
   {
     let h="";
-    const sk=[...res.skel.entries()].sort((a,b)=>b[1].n-a[1].n).slice(0,12);
-    if(sk.length>1){
-      const mx=sk[0][1].n;
-      h+='<div class="h" style="margin-top:0;font-size:10px">檔案最集中的目錄</div><div class="list">'+
-        sk.map(d=>{
-          const top=[...d[1].ext.entries()].sort((a,b)=>b[1]-a[1])[0];
-          return '<div style="display:block"><span class="n">'+esc(d[0])+
-            '</span><span class="x" style="float:right">'+d[1].n+
-            (top?' 檔 · 主要 .'+esc(top[0]):' 檔')+'</span>'+
-            '<div class="bar-mini"><i style="width:'+Math.round(d[1].n/mx*100)+'%"></i></div></div>';
-        }).join("")+'</div>';
-    }
     if(res.imgs.length){
-      h+='<div class="h" style="margin-top:14px;font-size:10px">圖片素材（'+res.imgs.length+
+      h+='<div class="h" style="margin-top:0;font-size:10px">圖片素材（'+res.imgs.length+
         '）· 點檔名直接預覽</div><div class="meta">'+
         res.imgs.map(f=>'<span class="chip" data-f="'+esc(f)+'" style="cursor:pointer;color:var(--cyan);'+
           'border-color:rgba(72,211,192,.3)">▣ '+esc(f.split("/").pop())+'</span>').join("")+'</div>';
@@ -2184,6 +2296,10 @@ function render(res,pkg,repo,loc,ref,live,x){
   $("out").classList.add("on");
   S.last={full:loc.owner+"/"+loc.repo,title:v.title,kind:v.kind,desc:repo.description||"",
           type:T?T.n:"",typeIcon:T?T.i+" "+T.n:"",license:licText(repo.license)};
+  // 「複製整包重點給 AI」只用這次已經抓到的內容，不再花任何請求
+  S.pack={full:full,ref:ref,repo:{lang:repo.language,stars:repo.stargazers_count,pushed:(repo.pushed_at||"").slice(0,10),
+          size:repo.size},files:res.files,map:S.mapData,hits:[...res.hits.keys()],
+          deps:pkg?pkg.direct.slice(0,60):[],cmds:x.cmds||[],readme:x.readme||"",claude:x.claude||"",readmePath:res.readme};
   // 外部專案不用 skl 技能健檢（使用者要求）；只有自己的 App 才看顧問，外部專案改給「參考它做我的 App」
   paintFav(); paintPickBtn();
   const mine=isMine(full);
@@ -3132,6 +3248,16 @@ $("askclaude").addEventListener("click",()=>{
   copyText("請幫我分析 GitHub 專案 https://github.com/"+l.full+"（Repo X-Ray 判讀："+(l.type||l.title+" 的"+l.kind)+"；授權 "+l.license+"）。"+
     "用白話說明：它能做什麼、適合誰用、怎麼在手機上試用或部署、有沒有安全或授權要注意的地方；"+
     "如果適合拿來改成我自己的 App，列出最少步驟。");
+});
+$("packbtn").addEventListener("click",async()=>{
+  const p=S.pack; if(!p||!S.last||p.full!==S.last.full) return;
+  // 說明文件的一句話摘要有讀到才放（沒捲到文件區就沒有，不為了打包另外去抓）
+  const d=S.docSums, sums=d&&d.order ? d.order.map((f,i)=>{ const t=d.sums[i]; const z=t&&zhOn()?(zhOf(t)||t):t;
+    return [f,String(z||"").replace(/\s+/g," ").trim()]; }).filter(x=>x[1]).slice(0,40) : [];
+  const t=buildPack(p,sums);
+  await copyText(t);
+  toast("已複製 ✓ 約 "+t.length.toLocaleString()+" 字，貼到 Claude App 就能問");
+  histMark(p.full,"cp");
 });
 $("sharebtn").addEventListener("click",async()=>{
   const l=S.last; if(!l) return;
