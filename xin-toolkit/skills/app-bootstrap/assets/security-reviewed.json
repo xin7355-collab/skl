@@ -90,6 +90,24 @@
    ],
    "verdict_at_review": "FAIL",
    "note": "CODE-EXEC 都是正規表達式 .exec()；child_process 只用參數陣列（無 shell）啟動 node、唯讀 git、本機無頭 Chrome、系統開啟程式。檢查更新（連作者 GitHub Pages）已在 updatesDisabled／delivery-update 寫死關閉，斷網實測 finalize 通過（2026-10-17）"
+  },
+  "community/skills/answer-me-with-html": {
+   "sha256": "cbd7f00e36ccffd92c97ac34474b8ea5ef62506cf2b6e5dec6d5c0564be03d56",
+   "categories": [
+    "CODE-EXEC",
+    "CMD-INJECT",
+    "DEPS-RUNTIME"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "CODE-EXEC 幾乎都是正規表達式 .exec()，唯一真的動態執行是 vm.runInThisContext 載入打包在檔案裡、內容固定的 Temml；child_process 只開瀏覽器、系統語音、Chrome／ffmpeg 錄影與檢查更新（已預設關閉），沒有 shell:true；DEPS-RUNTIME 是印出來的提示字串。skl 改成預設不開瀏覽器、不檢查更新，並拿掉每頁的 Star on GitHub 連結；斷網實測產頁通過（2026-10-17）"
+  },
+  "community/skills/source-driven-development": {
+   "sha256": "2d8958f0a7239a1d2127c8178980dfd7f0d505bc292549b1802268af30e8f78a",
+   "categories": [
+    "PROMPT-OVERRIDE"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "命中的第 110 行是防禦說明：叫 AI 忽略抓來的網頁裡「ignore previous instructions」這類注入指令（2026-10-17）"
   }
  }
 }
