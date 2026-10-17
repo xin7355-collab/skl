@@ -1,0 +1,11 @@
+{
+  "name": "skl-web-e2e",
+  "private": true,
+  "description": "技能庫網頁與 Repo X-Ray 的 Playwright 測試（假資料、不連網）",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

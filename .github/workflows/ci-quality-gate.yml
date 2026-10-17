@@ -160,3 +160,53 @@ jobs:
         if: always()
         run: |
           echo "Quality gate completed with status: ${{ job.status }}"
+
+  web-e2e:
+    # 技能庫網頁與 Repo X-Ray 的 Playwright 測試（web/e2e）。對外連線全部是假資料，
+    # 不連 GitHub、不花額度；改網頁時改壞了會在這裡變紅燈。
+    name: Web pages E2E (Playwright, mocked network)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web/e2e
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/e2e/package-lock.json
+
+      - name: Install Playwright (version pinned in package-lock.json)
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        env:
+          CI: 'true'
+        run: |
+          set -o pipefail
+          npx playwright test 2>&1 | tee e2e.log
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-e2e-report
+          path: |
+            web/e2e/playwright-report/
+            web/e2e/test-results/
+            web/e2e/e2e.log
+          retention-days: 14

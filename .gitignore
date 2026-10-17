@@ -83,3 +83,9 @@ my-agent/
 my-agent-*/
 web/catalog.json
 web/trending.json
+
+# 網頁 E2E 測試（web/e2e）：套件、測試結果與報告不進 git
+web/e2e/node_modules/
+web/e2e/test-results/
+web/e2e/playwright-report/
+web/e2e/e2e.log

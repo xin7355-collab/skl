@@ -103,6 +103,10 @@
 - 需要的 Secrets：無（選用 `SKL_READ_TOKEN`：唯讀 Token，讓每週報告能掃私人 repo）。
 - 部署在哪：網頁 https://xin7355-collab.github.io/skl/ （`Deploy web page` 工作流）；
   另有 `CI Quality Gate`。兩者都在 push 到 main 時跑。
+- 網頁 E2E 測試：`web/e2e/`（Playwright，`@playwright/test` 版本鎖在 package-lock.json；GitHub API／raw／翻譯全用
+  `fixtures.js` 的假資料，沒列到的外部連線會判失敗）。本機：`cd web/e2e && npm ci && npx playwright test`；
+  CI 是 `CI Quality Gate` 的 `web-e2e` job。改 `web/*.html` 的行為就補對應測試；假資料要像真的
+  （例如檔案樹照 GitHub 的字母排序，否則會藏住 bug）。
 - 特別注意：
   - 上游約 388 個技能照原樣保留，除非必要不改，方便日後同步上游。
   - 技能本體（SKILL.md）維持英文，不翻譯；中文只放 `web/zh.json`。新增技能後要補 zh.json
