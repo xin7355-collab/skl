@@ -55,4 +55,7 @@
 | iizcm/web-design-guidelines-skill | Vercel 技能的第三方轉傳（frontmatter 寫 author: vercel），沒有 LICENSE 檔；每次使用都即時下載 GitHub 上的規則給 AI 照做（外部內容未經審查）。同類需求有 ECC accessibility、ui-ux-pro-max 的 UX 規則。 |
 | mattbx/shadcn-skills | 只對用 shadcn/ui 的專案有用，描述寫成「做任何 UI 前都主動觸發」，裝在沒用 shadcn 的 App 會亂觸發；建議 `npx shadcn@latest`（不固定版本）；LICENSE 沒寫著作權人。有 App 改用 shadcn 再收。 |
 | bergside/design-md-firefox | 是 Firefox 擴充功能（從網站擷取樣式產生 DESIGN.md），不是 Claude 技能；iPhone 不能裝 Firefox 擴充功能。 |
+| Imbad0202/academic-research-skills | 授權 CC BY-NC 4.0（禁止商業使用），跟 MIT 的技能庫衝突，收進來等於讓別人誤以為能商用；另含 hooks、agents，62MB；學術寫作與文獻回顧已有 academic-writing-discipline、lit-review。 |
+| hesreallyhim/awesome-claude-code | 是連結清單，不是技能；授權 CC BY-NC-ND 4.0（禁止商業使用、禁止改作），不能改寫收錄。要找資源時用 Repo X-Ray 看原網頁即可。 |
+| Arekejoker/qwen21-nsfw-pose-skill | 成人（NSFW）圖片生成，不適合放在公開 repo，跟你的 App 也無關。 |
 | K-Dense-AI/scientific-agent-skills 其餘 173 個 | 生物、化學、物理專用，或需要付費金鑰（OpenRouter、Parallel、Exa）。 |
