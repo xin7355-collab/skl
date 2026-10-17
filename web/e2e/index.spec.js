@@ -11,8 +11,8 @@ async function openOps(page) {
   await expect(page.locator('#tab-ops')).toBeVisible();
 }
 
-test('三個網頁都有 noindex（公開 repo 的網站不讓搜尋引擎收錄）', async ({ page }) => {
-  for (const p of ['/index.html', '/xray.html', '/ai.html']) {
+test('每個網頁都有 noindex（公開 repo 的網站不讓搜尋引擎收錄）', async ({ page }) => {
+  for (const p of ['/index.html', '/xray.html', '/ai.html', '/dev-guide.html']) {
     await page.goto(p);
     await expect(page.locator('meta[name="robots"]'), p).toHaveAttribute('content', /noindex/);
   }

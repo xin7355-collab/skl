@@ -63,6 +63,9 @@
     `catalog.json`（部署時才產生，不進 git）；`web/zh.json`：每個技能的中文說明（只給網頁顯示用）；
     `web/categories.json`：技能用途分類規則（由上而下比對，可用 overrides 指定）。「健檢更新」的「該裝哪些技能」
     （`advicePrompt`，只建議不安裝；App 清單讀部署時複製的 `apps.json`，用原生 `<select>`，不要用 `<datalist>`——iPhone Safari 常選不到；可一鍵開 X-Ray 顧問）。
+  - `web/dev-guide.html`：App 開發全流程（流程／平台／費用／注意／起手式）。費用與規定**一律附官方出處**、頁首寫查證日；
+    出處清單由頁面上的 `a.src` 自動整理，只能靠搜尋確認的標 ※。起手式的 B 段與技能庫網頁共用「裝完接著做」規則（FOLLOW_UP 兩邊要一致）。
+    更新內容要重新查證並改查證日。
   - `ops/weekly_report.py`＋`Weekly maintenance report` 工作流：每週一 08:00 健檢 `.github/apps.json` 列的 App、
     比對上游（基準在 `.github/upstream-sync.json`）、檢查中文說明覆蓋率 → 只寫數量的 Issue。
     同步上游後要更新 upstream-sync.json 的 commit。

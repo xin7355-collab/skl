@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="App 開發流程">
+<title>App 開發全流程</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1a1d21; --muted: #5d6670; --line: #e3e6ea;
+  --accent: #0f766e; --accent-soft: #e6f4f2; --accent-text: #ffffff; --warn: #b45309; --warn-soft: #fff7ed;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --card: #181c20; --text: #e8eaed; --muted: #9aa3ad; --line: #2a3036;
+    --accent: #2dd4bf; --accent-soft: #123330; --accent-text: #06201d; --warn: #f59e0b; --warn-soft: #2a1f0e;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
+  padding: env(safe-area-inset-top) 16px calc(40px + env(safe-area-inset-bottom));
+  max-width: 760px; margin: 0 auto; -webkit-text-size-adjust: 100%;
+}
+a { color: var(--accent); }
+header { padding: 20px 0 8px; }
+h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
+.sub { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
+nav.tabs {
+  position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 4px; padding: 8px 0; background: var(--bg);
+}
+nav.tabs button {
+  border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 10px;
+  padding: 9px 2px; font: inherit; font-size: 14px; cursor: pointer;
+}
+nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin: 8px 0 12px; }
+.card h2 { font-size: 18px; margin: 0 0 6px; }
+.card h3 { font-size: 16px; margin: 16px 0 6px; }
+.hint { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+.note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 8px 10px; border-radius: 8px; font-size: 14px; margin: 10px 0; }
+ul, ol { padding-left: 1.3em; margin: 6px 0; }
+li { margin: 3px 0; }
+.step { border: 1px solid var(--line); border-radius: 12px; margin: 10px 0; background: var(--card); }
+.step > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
+.step > summary::-webkit-details-marker { display: none; }
+.step .no { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--accent-text);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.step .tt { flex: 1; min-width: 0; }
+.step .tt b { display: block; font-size: 16px; }
+.step .tt small { color: var(--muted); font-size: 13px; }
+.step .body { padding: 0 14px 14px 52px; font-size: 15px; }
+.step[open] > summary .tt b::after { content: ""; }
+.where { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--text); margin: 2px 4px 2px 0; }
+.chip { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 6px; border: 1px solid var(--line); margin: 2px 4px 2px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+.lbl { font-size: 13px; color: var(--muted); margin: 10px 0 2px; font-weight: 600; }
+.src { font-size: 12px; white-space: nowrap; text-decoration: none; }
+.src::before { content: "↗"; margin-right: 1px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th, .tbl td { border-top: 1px solid var(--line); padding: 8px 6px; text-align: left; vertical-align: top; }
+.tbl th { color: var(--muted); font-weight: 600; font-size: 13px; }
+.pgrid { display: grid; gap: 10px; }
+@media (min-width: 640px) { .pgrid { grid-template-columns: repeat(3, 1fr); } }
+.pcard { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.pcard.best { border-color: var(--accent); }
+.pcard h3 { margin: 0 0 6px; font-size: 16px; }
+.pcard dl { margin: 0; font-size: 14px; }
+.pcard dt { color: var(--muted); font-size: 12px; margin-top: 6px; }
+.pcard dd { margin: 0; }
+.badge { display: inline-block; margin-left: 6px; font-size: 11px; padding: 1px 6px; border-radius: 999px; background: var(--accent); color: var(--accent-text); vertical-align: 2px; }
+/* 費用表：窄螢幕一項一塊（使用者只用 iPhone，左右滑的表格很難讀） */
+@media (max-width: 600px) {
+  .stack tr { display: block; border-top: 1px solid var(--line); padding: 8px 0; }
+  .stack tr:first-child { display: none; }
+  .stack td { display: block; border: 0; padding: 2px 0; }
+  .stack td:first-child { font-weight: 700; }
+  .stack td:nth-child(3) { color: var(--muted); font-size: 13px; }
+  .stack td:nth-child(3)::before { content: "需要："; }
+}
+textarea.out {
+  width: 100%; min-height: 150px; border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); background: var(--bg); resize: vertical;
+}
+textarea.in, input.in {
+  width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  font: inherit; font-size: 16px; color: var(--text); background: var(--card);
+}
+textarea.in { min-height: 70px; resize: vertical; }
+select.in { width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+.checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.checks label { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.checks input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.btn {
+  appearance: none; border: 0; border-radius: 10px; padding: 11px 14px; font: inherit; font-size: 15px;
+  background: var(--accent); color: var(--accent-text); font-weight: 600; cursor: pointer; flex: 1 1 auto;
+}
+.btn.ghost { background: var(--accent-soft); color: var(--text); font-weight: 500; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: #111827; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.toast.show { opacity: .95; }
+.srcs li { font-size: 13px; word-break: break-all; }
+footer { color: var(--muted); font-size: 13px; margin: 18px 0; }
+@media (max-width: 380px) { nav.tabs button { font-size: 13px; } .checks { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>App 開發全流程</h1>
+  <p class="sub">從想法、雛形、GitHub、Claude Code 到上線（網頁 App／Android／iOS）：技能什麼時候用、要花多少錢、要注意什麼。</p>
+  <p class="sub">費用與規定查證日：<b>2026-10-17</b>，每一項都附官方出處；會變動，以官方頁面為準。</p>
+  <p class="sub"><a href="index.html" style="text-decoration:none">← 回技能庫</a></p>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="flow" aria-selected="true">流程</button>
+  <button role="tab" data-tab="platform" aria-selected="false">平台</button>
+  <button role="tab" data-tab="cost" aria-selected="false">費用</button>
+  <button role="tab" data-tab="caution" aria-selected="false">注意</button>
+  <button role="tab" data-tab="start" aria-selected="false">起手式</button>
+</nav>
+
+<main>
+<!-- ───────────── 流程 ───────────── -->
+<section id="tab-flow">
+  <div class="card">
+    <h2>先回答：「聊天 AI 做雛形 → 匯出 → 帶到 Code → 上架 GitHub」對嗎？</h2>
+    <p>大方向對，但有三個地方要調整：</p>
+    <ol>
+      <li><b>雛形可做可不做。</b>在 Claude App 請它做「手機尺寸的單一 HTML 可點擊雛形」，聊天畫面裡就能直接看、改到滿意。
+        不用自己匯出整個專案，只要下載或複製那一個 HTML 檔，到 Claude Code 上傳，說「照這份做出來」。</li>
+      <li><b>先建 GitHub repo，再開 Claude Code。</b>雲端的 Claude Code 是「在你的 repo 裡面工作」：改程式、測試、合併、推上去都在裡面完成，不用你搬檔案。</li>
+      <li><b>GitHub 不是商店。</b>GitHub 是放程式碼、免費架網站（Pages）、免費排程（Actions）的地方。
+        網頁 App 在 GitHub Pages 上線後，iPhone 用 Safari「加入主畫面」就能像 App 一樣用。
+        要進 App Store／Google Play 才叫「上架」，那要另外付費、送審。</li>
+    </ol>
+    <div class="note">最推薦的路線：<b>先做網頁 App（PWA），免費、不用電腦、改了馬上更新</b>；真的需要商店再包裝上架（見「平台」）。</div>
+  </div>
+
+  <details class="step" open>
+    <summary><span class="no">0</span><span class="tt"><b>想清楚要做什麼（5 分鐘）</b><small>手機備忘錄就好</small></span></summary>
+    <div class="body">
+      <ul>
+        <li>給誰用（自己、家人朋友、公開）、解決什麼問題。</li>
+        <li><b>最重要的 3 個功能</b>就好，其他之後再加。功能越少越快做完。</li>
+        <li>資料從哪來：自己輸入、官方 API（例如證交所 OpenAPI）、還是要抓別人的網頁。</li>
+        <li>要不要登入、要不要 AI、要不要收錢——這三個會決定費用和風險。</li>
+      </ul>
+      <p class="hint">不知道怎麼寫？到「起手式」分頁勾一勾，會幫你產生要貼給 AI 的指令。</p>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">1</span><span class="tt"><b>跟聊天 AI 討論，產出一頁規格</b><small><span class="where">Claude App（手機）</span></small></span></summary>
+    <div class="body">
+      <ul>
+        <li>貼上「起手式」分頁產生的 <b>A 段</b>：它會先問你幾個問題，再寫出規格（功能、畫面、資料來源、平台建議、費用與風險）。</li>
+        <li>想參考別人做好的：用 <a href="xray.html">Repo X-Ray</a> 搜尋 GitHub 上類似的開源專案，看授權、按「🧩 參考它做我的 App」。</li>
+      </ul>
+      <div class="lbl">技能</div>
+      <p class="hint">這一步還用不到 skl 技能：技能是裝在 repo 裡、給 Claude Code 用的（第 4 步才裝）。</p>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">2</span><span class="tt"><b>做雛形（可略過）</b><small><span class="where">Claude App</span></small></span></summary>
+    <div class="body">
+      <ul>
+        <li>請它做「手機尺寸、單一 HTML、假資料」的可點擊雛形，在聊天畫面直接看、一直改到滿意。</li>
+        <li>滿意後下載那個 HTML 檔（或複製全部程式碼），第 5 步會用到。</li>
+      </ul>
+      <div class="note">雛形只確認「長怎樣、怎麼點」。資料是假的，<b>不要放任何真的金鑰或個資</b>。</div>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">3</span><span class="tt"><b>建 GitHub repo</b><small><span class="where">手機瀏覽器</span> <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a></small></span></summary>
+    <div class="body">
+      <ul>
+        <li>取英文名字，選 <b>Public（公開）</b>，勾「Add a README file」。</li>
+        <li>為什麼選公開：公開 repo 用標準 runner 跑 Actions 免費而且不限量（含 macOS）；免費帳號的 GitHub Pages 也只能用公開 repo。
+          <a class="src" href="https://docs.github.com/en/actions/reference/runners/github-hosted-runners" target="_blank" rel="noopener">GitHub</a>
+          <a class="src" href="https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits" target="_blank" rel="noopener">GitHub</a></li>
+        <li>建好後，把 repo 加進 skl 的 <code>.github/apps.json</code>（請 skl 的 Claude 幫你加），Repo X-Ray「我的 App」和每週健檢才看得到它。</li>
+      </ul>
+      <div class="note">公開 repo 的程式碼、commit 紀錄、Issue 任何人都看得到：<b>金鑰放 Settings → Secrets</b>，不想公開的資料（工作單位、個資）不要放進 repo。</div>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">4</span><span class="tt"><b>第一次開 Claude Code：裝技能＋工作守則</b><small><span class="where">claude.ai/code 或 Claude App</span> 技能從這裡開始介入</small></span></summary>
+    <div class="body">
+      <ul>
+        <li>開 <a href="https://claude.ai/code" target="_blank" rel="noopener">claude.ai/code</a>（Claude 手機 App 也能操作雲端工作階段），選剛建好的 repo。
+          雲端工作階段需要 Pro 以上方案。<a class="src" href="https://code.claude.com/docs/en/claude-code-on-the-web" target="_blank" rel="noopener">Claude</a></li>
+        <li>貼上「起手式」分頁的 <b>B 段</b>（或<a href="index.html">技能庫網頁</a>「組合安裝」的指令）：
+          它會把技能裝進 repo 的 <code>.claude/skills/</code>、建立 <code>CLAUDE.md</code> 工作守則，<b>裝完會先列執行方案，再直接接著做</b>。</li>
+      </ul>
+      <div class="lbl">技能怎麼運作</div>
+      <ul>
+        <li>裝在 repo 裡的技能，之後<b>每次開工作階段都會自動載入</b>，你不用記技能名稱。</li>
+        <li>Claude 會依你的要求自動挑用：說「修 bug」→ <span class="chip">systematic-debugging</span>；
+          說「畫面變好看」→ <span class="chip">design-taste-frontend</span>；上傳檔案說「做出來」→ <span class="chip">file-intake</span>。</li>
+        <li>技能需要的套件（npm／pip、Chrome、ffmpeg）會寫進 repo 的設定檔。雲端工作階段每次都是新的容器，只裝在容器裡的東西下次就不見了。</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">5</span><span class="tt"><b>把雛形做成真的 App</b><small><span class="where">Claude Code</span></small></span></summary>
+    <div class="body">
+      <ul>
+        <li>上傳雛形 HTML（或貼第 1 步的規格），說「照這份做出來」。</li>
+        <li>Claude 會先列計畫、做出來、用 Playwright 在 iPhone 尺寸驗證，再合併推上去。</li>
+      </ul>
+      <div class="lbl">會用到的技能</div>
+      <span class="chip">file-intake</span><span class="chip">brainstorming</span><span class="chip">writing-plans</span>
+      <span class="chip">design-taste-frontend</span><span class="chip">ui-ux-pro-max</span><span class="chip">test-driven-development</span><span class="chip">e2e-testing</span>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">6</span><span class="tt"><b>上線成網頁 App（PWA）</b><small><span class="where">GitHub Pages（自動）</span> 免費</small></span></summary>
+    <div class="body">
+      <ul>
+        <li>由 GitHub Actions 工作流部署到 GitHub Pages，網址像 <code>https://帳號.github.io/repo名稱/</code>。</li>
+        <li>要能「安裝」：網址要是 HTTPS（GitHub Pages 就是），manifest 要有 <code>name</code>（或 <code>short_name</code>）、
+          192px 與 512px 圖示、<code>start_url</code>、<code>display</code>。
+          <a class="src" href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable" target="_blank" rel="noopener">MDN</a></li>
+        <li>iPhone：用 Safari 打開網址 → 分享 → <b>加入主畫面</b>。</li>
+        <li>GitHub Pages 的限制：網站最大 1GB、每月流量軟上限 100GB、不能拿來經營網路商店。
+          <a class="src" href="https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+      <div class="lbl">會用到的技能</div>
+      <span class="chip">pwa 組合</span><span class="chip">performance-optimization</span><span class="chip">app-guardrails-audit</span>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">7</span><span class="tt"><b>加資料、AI、自動化</b><small><span class="where">Claude Code＋GitHub Actions</span></small></span></summary>
+    <div class="body">
+      <ul>
+        <li><b>資料自動更新</b>：GitHub Actions 排程（例如每天 06:00 抓台股官方 OpenAPI，存成 JSON 給網頁讀）。技能 <span class="chip">tw-stock</span><span class="chip">web-to-markdown</span>。</li>
+        <li><b>用 AI</b>：金鑰放 GitHub Secrets；在 Actions 或 Cloudflare Worker 裡呼叫，<b>網頁裡不能有金鑰</b>（網頁程式碼任何人都看得到）。
+          模型名稱不寫死，用 <span class="chip">ai-model-router</span>。一定要在 AI 服務商後台設每月預算上限。</li>
+        <li><b>需要藏金鑰的 API</b>：Cloudflare Workers 免費方案每天 10 萬次請求，夠個人 App 用。
+          <a class="src" href="https://developers.cloudflare.com/workers/platform/pricing/" target="_blank" rel="noopener">Cloudflare</a></li>
+      </ul>
+      <div class="lbl">技能組合</div>
+      <span class="chip">actions</span><span class="chip">ai</span><span class="chip">stock</span><span class="chip">backend</span>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">8</span><span class="tt"><b>每次改版的循環</b><small><span class="where">Claude Code</span> 截圖 → 修 → 驗證 → 上線</small></span></summary>
+    <div class="body">
+      <ol>
+        <li>在手機上用，發現問題就截圖，跟 Claude 說「哪裡不對、你希望怎樣」。</li>
+        <li>Claude 先重現問題、再修、跑測試、合併推上去。</li>
+        <li>手機重新整理（或重開 App）看新版。</li>
+      </ol>
+      <div class="lbl">會用到的技能</div>
+      <span class="chip">systematic-debugging</span><span class="chip">focused-fix</span><span class="chip">verification-before-completion</span>
+      <span class="chip">code-reviewer</span>
+      <div class="lbl">要給別人用之前</div>
+      <span class="chip">app-guardrails-audit</span><span class="chip">ship-gate</span><span class="chip">security 組合</span>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">9</span><span class="tt"><b>（選擇）上架 Google Play／App Store</b><small>要付費、要送審</small></span></summary>
+    <div class="body">
+      <p>先把網頁 App 做穩，再決定要不要上架。兩邊的步驟、費用、審核規則，在「平台」分頁。</p>
+    </div>
+  </details>
+
+  <details class="step">
+    <summary><span class="no">10</span><span class="tt"><b>維護</b><small><span class="where">技能庫網頁「健檢更新」</span></small></span></summary>
+    <div class="body">
+      <ul>
+        <li>健檢：貼「防禦準則健檢」指令，檢查記憶體、資料庫、金鑰、PWA 版本號等。</li>
+        <li>更新技能：貼「把技能更新到最新版」指令。</li>
+        <li>skl 每週一自動健檢 <code>.github/apps.json</code> 裡的 App，只用數量回報。</li>
+        <li>GitHub 本身就是程式碼備份；資料庫或使用者資料要另外備份。</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<!-- ───────────── 平台 ───────────── -->
+<section id="tab-platform" hidden>
+  <div class="card">
+    <h2>三種平台比較</h2>
+    <div class="pgrid">
+      <div class="pcard best">
+        <h3>網頁 App（PWA）<span class="badge">先做這個</span></h3>
+        <dl>
+          <dt>開發者費用</dt><dd><b>免費</b></dd>
+          <dt>要電腦嗎</dt><dd>不用</dd>
+          <dt>審核</dt><dd>沒有，推上去就更新</dd>
+          <dt>能做什麼</dt><dd>大部分網頁能做的；iPhone 推播要先加到主畫面（iOS 16.4 起）
+            <a class="src" href="https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/" target="_blank" rel="noopener">WebKit※</a></dd>
+          <dt>公開的個人資訊</dt><dd>無</dd>
+        </dl>
+      </div>
+      <div class="pcard">
+        <h3>Android（Google Play）</h3>
+        <dl>
+          <dt>開發者費用</dt><dd>US$25，一次 <a class="src" href="https://support.google.com/googleplay/android-developer/answer/6112435" target="_blank" rel="noopener">Google※</a></dd>
+          <dt>要電腦嗎</dt><dd>不用（雲端打包＋Play Console 網頁）</dd>
+          <dt>審核</dt><dd>要。2023/11/13 之後開的個人帳號，正式上架前要先封閉測試：至少 12 人、連續 14 天
+            <a class="src" href="https://support.google.com/googleplay/android-developer/answer/14151465" target="_blank" rel="noopener">Google※</a></dd>
+          <dt>能做什麼</dt><dd>把 PWA 包成 App（TWA），或寫原生</dd>
+          <dt>公開的個人資訊</dt><dd>要做開發者身分驗證 <a class="src" href="https://developer.android.com/developer-verification" target="_blank" rel="noopener">Android</a></dd>
+        </dl>
+      </div>
+      <div class="pcard">
+        <h3>iOS（App Store）</h3>
+        <dl>
+          <dt>開發者費用</dt><dd>US$99／年 <a class="src" href="https://developer.apple.com/programs/enroll/" target="_blank" rel="noopener">Apple</a></dd>
+          <dt>要電腦嗎</dt><dd>自己建置要 Mac；用雲端建置（Expo、Codemagic、GitHub Actions 的 macOS）可以不用
+            <a class="src" href="https://docs.expo.dev/build/introduction/" target="_blank" rel="noopener">Expo</a></dd>
+          <dt>審核</dt><dd>要。TestFlight 外部測試的第一個版本也要先過審 <a class="src" href="https://developer.apple.com/testflight/" target="_blank" rel="noopener">Apple</a></dd>
+          <dt>能做什麼</dt><dd>原生能力最完整；只把網站包起來會被退件</dd>
+          <dt>公開的個人資訊</dt><dd>個人帳號的<b>本名會顯示為賣家</b> <a class="src" href="https://developer.apple.com/programs/enroll/" target="_blank" rel="noopener">Apple</a></dd>
+        </dl>
+      </div>
+    </div>
+    <div class="note"><b>建議</b>：先做網頁 App。等每天都在用、功能穩定，真的需要商店時再包裝上架——同一份程式碼可以沿用。</div>
+  </div>
+
+  <div class="card">
+    <h2>Android：把網頁 App 上架到 Google Play</h2>
+    <ol>
+      <li>先把 PWA 做好（manifest、圖示、HTTPS）。</li>
+      <li>用 PWABuilder 包成 Android 專案（它底下用 Google 的 Bubblewrap，做出「Trusted Web Activity」：全螢幕打開你的網站、沒有網址列）。
+        <a class="src" href="https://blog.pwabuilder.com/posts/microsoft-and-google-team-up-to-make-pwas-better-in-the-play-store" target="_blank" rel="noopener">PWABuilder※</a>
+        <a class="src" href="https://developer.chrome.com/docs/android/trusted-web-activity" target="_blank" rel="noopener">Chrome※</a></li>
+      <li>在網站放 <code>/.well-known/assetlinks.json</code> 證明網站是你的（Digital Asset Links）；驗證失敗時會退回成有網址列的瀏覽器分頁。
+        <a class="src" href="https://developer.chrome.com/docs/android/trusted-web-activity/integration-guide" target="_blank" rel="noopener">Chrome※</a></li>
+      <li>註冊 Play Console（US$25 一次），上傳 → 封閉測試 12 人連續 14 天 → 申請正式上架。</li>
+      <li>2026/8/31 起，新 App 和更新都要 target Android 16（API 36）以上。
+        <a class="src" href="https://developer.android.com/google/play/requirements/target-sdk" target="_blank" rel="noopener">Android</a></li>
+    </ol>
+    <div class="lbl">開發者身分驗證（2026–2027）</div>
+    <p>2026/9/30 起，先在巴西、印尼、新加坡、泰國，從參與的商店安裝 App 時會檢查開發者有沒有驗證身分；2027 年擴大到全球的認證裝置。
+      Google Play 上 99% 的 App 已自動登記。只給自己和少數人用，可以用免費的「limited distribution」，最多分享給 20 台裝置、不用身分驗證。
+      <a class="src" href="https://developer.android.com/developer-verification" target="_blank" rel="noopener">Android</a>
+      <a class="src" href="https://developer.android.com/developer-verification/guides/faq" target="_blank" rel="noopener">Android</a></p>
+  </div>
+
+  <div class="card">
+    <h2>iOS：上架到 App Store</h2>
+    <ol>
+      <li>選做法：<b>Capacitor</b>（沿用網頁 App 的程式碼包成 iOS App）或 <b>Expo</b>（React Native，一份程式碼出 iOS 和 Android）。
+        Capacitor 自己建置 iOS 要 macOS＋Xcode。<a class="src" href="https://capacitorjs.com/docs/getting-started/environment-setup" target="_blank" rel="noopener">Capacitor</a></li>
+      <li>沒有 Mac 就用雲端建置：Expo 的 iOS 建置跑在 Expo 的 macOS 雲端，也能幫你管簽章憑證
+        <a class="src" href="https://docs.expo.dev/build/introduction/" target="_blank" rel="noopener">Expo</a>；
+        Codemagic 個人帳號每月 500 分鐘 macOS M2 免費 <a class="src" href="https://docs.codemagic.io/billing/pricing/" target="_blank" rel="noopener">Codemagic※</a>；
+        GitHub Actions 公開 repo 的 macOS runner 也免費 <a class="src" href="https://docs.github.com/en/actions/reference/runners/github-hosted-runners" target="_blank" rel="noopener">GitHub</a>。</li>
+      <li>加入 Apple Developer Program（US$99／年，報名時以當地貨幣顯示）。免費的 Apple 帳號只能用 Xcode 裝到自己的裝置測試（最多 3 台、7 天後失效，而且要有 Mac），不能用 TestFlight、不能上架。
+        <a class="src" href="https://developer.apple.com/programs/" target="_blank" rel="noopener">Apple</a>
+        <a class="src" href="https://developer.apple.com/support/compare-memberships/" target="_blank" rel="noopener">Apple</a></li>
+      <li>上傳到 App Store Connect（要用 Xcode 26 以上建置）<a class="src" href="https://developer.apple.com/news/upcoming-requirements/" target="_blank" rel="noopener">Apple</a>
+        → TestFlight 測試（內部最多 100 人、外部最多 10,000 人，每個測試版本可測 90 天）
+        <a class="src" href="https://developer.apple.com/testflight/" target="_blank" rel="noopener">Apple</a>
+        <a class="src" href="https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/" target="_blank" rel="noopener">Apple</a> → 送審。</li>
+    </ol>
+    <div class="lbl">最常被退件的原因</div>
+    <ul>
+      <li><b>規則 4.2</b>：「App 要有功能、內容和介面，超越重新包裝的網站」。只把網站包一層很容易被退，要加 App 才有的價值（推播、離線、小工具、相機等）。</li>
+      <li><b>規則 5.1.1</b>：一定要有隱私權政策連結；App 能註冊帳號，就必須能在 App 裡刪除帳號。</li>
+    </ul>
+    <p><a class="src" href="https://developer.apple.com/app-store/review/guidelines/" target="_blank" rel="noopener">Apple App Review Guidelines</a></p>
+  </div>
+</section>
+
+<!-- ───────────── 費用 ───────────── -->
+<section id="tab-cost" hidden>
+  <div class="card">
+    <h2>要花多少錢</h2>
+    <div class="note"><b>最省路線（網頁 App）</b>：只要 Claude 訂閱（Pro 月繳 US$20），其他都免費。
+      加上 Google Play：再加 US$25（一次）。加上 App Store：再加 US$99／年。</div>
+    <table class="tbl stack">
+        <tr><th>項目</th><th>價格</th><th>什麼時候需要</th></tr>
+        <tr><td>Claude Pro</td><td>月繳 US$20；年繳每月 US$17（含 Claude Code）<a class="src" href="https://claude.com/pricing" target="_blank" rel="noopener">Claude</a></td><td>一定要（雲端 Claude Code 要 Pro 以上）</td></tr>
+        <tr><td>Claude Max</td><td>每月 US$100 起 <a class="src" href="https://claude.com/pricing" target="_blank" rel="noopener">Claude</a></td><td>用量很大、Pro 常常用完時</td></tr>
+        <tr><td>GitHub（公開 repo）</td><td>免費：Pages、Actions 標準 runner 不限量（含 macOS）<a class="src" href="https://docs.github.com/en/actions/reference/runners/github-hosted-runners" target="_blank" rel="noopener">GitHub</a></td><td>一律</td></tr>
+        <tr><td>GitHub（私人 repo）</td><td>免費帳號每月 2,000 分鐘；超過 Linux 每分鐘 US$0.006、macOS 每分鐘 US$0.062；Pages 要付費方案
+          <a class="src" href="https://docs.github.com/en/billing/concepts/product-billing/github-actions" target="_blank" rel="noopener">GitHub</a></td><td>不想公開程式碼時（不建議，見「注意」）</td></tr>
+        <tr><td>Cloudflare Workers</td><td>免費：每天 10 萬次請求、每次 10ms CPU；付費每月 US$5 起
+          <a class="src" href="https://developers.cloudflare.com/workers/platform/pricing/" target="_blank" rel="noopener">Cloudflare</a></td><td>需要藏金鑰的 API 代理、簡單後端</td></tr>
+        <tr><td>AI API</td><td>依用量計費（看<a href="ai.html">AI 指南</a>）</td><td>App 裡有 AI 功能時；<b>一定要設每月預算上限</b></td></tr>
+        <tr><td>Google Play</td><td>US$25，一次 <a class="src" href="https://support.google.com/googleplay/android-developer/answer/6112435" target="_blank" rel="noopener">Google※</a></td><td>上架 Android</td></tr>
+        <tr><td>Apple Developer Program</td><td>US$99／年（報名時顯示當地貨幣）<a class="src" href="https://developer.apple.com/programs/enroll/" target="_blank" rel="noopener">Apple</a></td><td>上架 iOS、用 TestFlight</td></tr>
+        <tr><td>Expo 雲端建置</td><td>免費方案每月有限量的低優先建置，用完不會被收費，等下個月；Starter 每月 US$19
+          <a class="src" href="https://docs.expo.dev/billing/plans/" target="_blank" rel="noopener">Expo</a>
+          <a class="src" href="https://docs.expo.dev/billing/faq/" target="_blank" rel="noopener">Expo</a></td><td>沒有 Mac 要做 iOS App</td></tr>
+        <tr><td>Codemagic</td><td>個人帳號每月 500 分鐘 macOS M2 免費；超過每分鐘約 US$0.095
+          <a class="src" href="https://docs.codemagic.io/billing/pricing/" target="_blank" rel="noopener">Codemagic※</a></td><td>同上（另一個選擇）</td></tr>
+        <tr><td>商店抽成</td><td>Apple 小型企業方案 15%（前一年收益 100 萬美元以下）<a class="src" href="https://developer.apple.com/app-store/small-business-program/" target="_blank" rel="noopener">Apple</a>；
+          Google 2026 年 3 月宣布調降、分地區分階段實施，以 Play Console 顯示為準 <a class="src" href="https://support.google.com/googleplay/android-developer/answer/112622" target="_blank" rel="noopener">Google※</a></td><td>App 有收錢時</td></tr>
+        <tr><td>網域（可選）</td><td>一年大約 US$10–20，依結尾和註冊商而定（<b>未查證</b>，看註冊商報價）</td><td>想要自己的網址時；GitHub Pages 預設網址免費</td></tr>
+    </table>
+    <p class="hint">價格未含稅；美元以外的貨幣與實際金額以各服務的帳單頁為準。</p>
+  </div>
+</section>
+
+<!-- ───────────── 注意 ───────────── -->
+<section id="tab-caution" hidden>
+  <div class="card">
+    <h2>金鑰與隱私</h2>
+    <ul>
+      <li><b>金鑰絕對不放網頁程式碼裡</b>：網頁 App 的程式碼任何人都看得到。放 GitHub Secrets，讓 Actions 或 Cloudflare Worker 使用。</li>
+      <li>公開 repo 的程式碼、commit 紀錄、Issue 全部公開；工作單位、個資等不想公開的東西不要 commit。網站加 <code>noindex</code>，不讓搜尋引擎收錄。</li>
+      <li>GitHub Pages 不能拿來經營網路商店，也不要用來傳送密碼或信用卡號。
+        <a class="src" href="https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits" target="_blank" rel="noopener">GitHub</a></li>
+      <li>上架 App Store 的個人帳號，<b>本名會公開顯示為賣家</b>；不想公開本名要用公司（組織）帳號。
+        <a class="src" href="https://developer.apple.com/programs/enroll/" target="_blank" rel="noopener">Apple</a></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>iPhone 網頁 App 的眉角</h2>
+    <ul>
+      <li>Safari 對沒在用的網站，會在 7 天後清掉它存在手機裡的資料；<b>加到主畫面的 App 另外計算</b>，只算你實際打開的天數。
+        重要資料不要只存在手機，要能同步到雲端或匯出。
+        <a class="src" href="https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/" target="_blank" rel="noopener">WebKit※</a></li>
+      <li>推播：iOS 16.4 起支援，但要先加到主畫面，而且要使用者按按鈕才能請求通知權限；不需要 Apple 開發者會員。
+        <a class="src" href="https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/" target="_blank" rel="noopener">WebKit※</a></li>
+      <li>安裝：iPhone 要從 Safari 的分享選單手動「加入主畫面」，把這一步寫在 App 的說明裡。</li>
+    </ul>
+    <div class="lbl">經驗提醒（沒有附官方出處，是開發時常踩的坑）</div>
+    <ul>
+      <li>輸入框字小於 16px，iPhone 點下去會自動放大畫面。</li>
+      <li>瀏海和底部橫條：用 <code>viewport-fit=cover</code> 加 <code>env(safe-area-inset-*)</code> 留空間。</li>
+      <li>改版後手機一直看到舊版：要有版本號機制，讓 App 自己發現新版就重新載入。</li>
+      <li>一定要在自己的 iPhone 上實際點一遍，模擬器看起來沒問題不代表真機沒問題。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>上架審核</h2>
+    <ul>
+      <li>App Store 規則 4.2：只把網站包一層會被退件。<a class="src" href="https://developer.apple.com/app-store/review/guidelines/" target="_blank" rel="noopener">Apple</a></li>
+      <li>有註冊功能就要能在 App 裡刪除帳號；要有隱私權政策連結（App 內和 App Store Connect 都要放）。</li>
+      <li>Google Play 新的個人帳號：正式上架前要先封閉測試 12 人、連續 14 天，中途退出的不算。
+        <a class="src" href="https://support.google.com/googleplay/android-developer/answer/14151465" target="_blank" rel="noopener">Google※</a></li>
+      <li>審核要時間，不要等到最後一天才送。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>法規（台灣）</h2>
+    <ul>
+      <li><b>個資</b>：向別人蒐集個資（姓名、電話、Email）時，要告知蒐集者是誰、目的、資料類別、利用期間與方式、當事人的權利、不提供的影響。
+        <a class="src" href="https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=I0050021&flno=8" target="_blank" rel="noopener">個資法第 8 條※</a></li>
+      <li><b>股票類 App</b>：法律定義的「證券投資顧問」，是「取得報酬」並對有價證券提供分析意見或推介建議；未經許可經營，可處 5 年以下有期徒刑，
+        併科新臺幣 100 萬元以上 5,000 萬元以下罰金。自己用沒問題；要收費提供個股建議給別人，先找專業確認。
+        <a class="src" href="https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=G0400121&flno=4" target="_blank" rel="noopener">投顧法第 4 條※</a>
+        <a class="src" href="https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=G0400121&flno=107" target="_blank" rel="noopener">第 107 條※</a></li>
+      <li><b>資料來源</b>：抓別人網站的資料要看對方的使用規範；有官方 API 就用 API。</li>
+    </ul>
+    <p class="hint">以上是一般資訊、不是法律意見。</p>
+  </div>
+
+  <div class="card">
+    <h2>費用控制</h2>
+    <ul>
+      <li>AI API 一定要在服務商後台設每月預算上限；用 <span class="chip">ai-model-router</span> 選便宜的等級。</li>
+      <li>私人 repo 的 Actions 分鐘數會用完，macOS 每分鐘約是 Linux 的 10 倍（US$0.062 對 US$0.006）。
+        <a class="src" href="https://docs.github.com/en/billing/concepts/product-billing/github-actions" target="_blank" rel="noopener">GitHub</a></li>
+      <li>Expo 免費方案的建置額度用完不會被收費，要等下個月或升級。<a class="src" href="https://docs.expo.dev/billing/faq/" target="_blank" rel="noopener">Expo</a></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ───────────── 起手式 ───────────── -->
+<section id="tab-start" hidden>
+  <div class="card">
+    <h2>起手式產生器</h2>
+    <p class="hint">填一填、勾一勾，下面兩段指令會跟著變。<b>A 段</b>貼給 Claude App（聊天）做規格和雛形；<b>B 段</b>貼給新 repo 的 Claude Code。</p>
+    <div class="lbl">App 一句話</div>
+    <textarea id="gDesc" class="in" placeholder="例如：每天收盤後自動整理我關注的 10 檔股票，手機打開就能看漲跌和新聞重點"></textarea>
+    <div class="lbl">給誰用</div>
+    <select id="gWho" class="in">
+      <option value="自己">只有我自己</option>
+      <option value="家人朋友">家人朋友（少數人）</option>
+      <option value="公開給任何人">公開給任何人</option>
+    </select>
+    <div class="lbl">平台</div>
+    <div class="checks">
+      <label><input type="checkbox" id="pPwa" checked disabled> 網頁 App（一定先做）</label>
+      <label><input type="checkbox" id="pAndroid"> 之後上架 Google Play</label>
+      <label><input type="checkbox" id="pIos"> 之後上架 App Store</label>
+    </div>
+    <div class="lbl">需要</div>
+    <div class="checks">
+      <label><input type="checkbox" id="nSchedule"> 資料自動更新（排程）</label>
+      <label><input type="checkbox" id="nStock"> 股票資料</label>
+      <label><input type="checkbox" id="nAi"> 用 AI</label>
+      <label><input type="checkbox" id="nLogin"> 要登入</label>
+      <label><input type="checkbox" id="nPay"> 要收錢</label>
+      <label><input type="checkbox" id="nOffline"> 要能離線用</label>
+      <label><input type="checkbox" id="nDesign"> 畫面要特別好看</label>
+    </div>
+
+    <h3>A 段：貼給 Claude App（聊天）</h3>
+    <textarea id="outChat" class="out" readonly></textarea>
+    <div class="row"><button class="btn" data-copy="outChat">複製 A 段</button></div>
+
+    <h3>B 段：貼給新 repo 的 Claude Code</h3>
+    <p class="hint">技能組合：<span id="gPacks" class="chip"></span></p>
+    <textarea id="outCode" class="out" readonly></textarea>
+    <div class="row"><button class="btn" data-copy="outCode">複製 B 段</button></div>
+  </div>
+</section>
+
+<div class="card">
+  <h2>出處</h2>
+  <p class="hint">2026-10-17 查證。標 ※ 的，是這次的網路環境連不到那個網站，只能用限定官方網域的搜尋確認；建議點開原文再看一次。</p>
+  <ul class="srcs" id="srcs"></ul>
+</div>
+</main>
+
+<footer>
+  費用、規定、方案都會變；決定花錢或上架前，請點出處確認最新內容。
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const APP_VER = "__APP_VER__";
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 無痕模式 */ } },
+};
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1600); }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    // 舊版 Safari 或非 https 時 clipboard API 會失敗，退回選取文字後 execCommand
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    let ok = false; try { ok = document.execCommand("copy"); } catch { ok = false; }
+    ta.remove(); if (!ok) { toast("無法自動複製，請長按文字框手動複製"); return; }
+  }
+  toast("已複製 ✓");
+}
+
+/* ── 分頁 ── */
+const TABS = ["flow", "platform", "cost", "caution", "start"];
+function showTab(id) {
+  if (!TABS.includes(id)) id = "flow";
+  for (const b of document.querySelectorAll("nav.tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === id));
+  for (const t of TABS) $("tab-" + t).hidden = t !== id;
+  store.set("guide-tab", id);
+}
+
+/* ── 起手式產生器 ── */
+// 跟技能庫網頁（index.html）同一套技能庫取得方式與「裝完接著做」規則
+const REPO = "https://github.com/xin7355-collab/skl";
+const FETCH_CMD = `(git -C /tmp/skl pull -q 2>/dev/null || git clone -q --depth 1 ${REPO} /tmp/skl)`;
+const FOLLOW_UP = `裝好後不要停，接著做：\n` +
+  `1. 先列出「執行方案」：每個新技能在這個 App 要拿來做什麼、會改哪些檔案、技能需要的套件或工具怎麼裝` +
+  `（寫進 package.json／requirements.txt／工作流，下次開工作階段才還在）、怎麼驗證、有沒有費用或要我準備的東西（金鑰、帳號）。\n` +
+  `2. 列完就直接照方案做，不用等我回覆；需要我提供的東西（金鑰、帳號、付款），或這個 repo 的 CLAUDE.md 沒授權的動作，才先停下來問我。\n` +
+  `3. 每一項做完就驗證（有測試就跑；網頁用 Playwright 開手機尺寸看），照 CLAUDE.md 合併推送，最後回報做了什麼、驗過什麼、沒驗到什麼。`;
+const INPUTS = ["gDesc", "gWho", "pAndroid", "pIos", "nSchedule", "nStock", "nAi", "nLogin", "nPay", "nOffline", "nDesign"];
+const val = (id) => { const e = $(id); return e.type === "checkbox" ? e.checked : e.value.trim(); };
+
+function packsOf(o) {
+  const p = ["core", "pwa"];
+  if (o.nSchedule || o.nStock) p.push("actions");
+  if (o.nStock) p.push("stock");
+  if (o.nAi) p.push("ai");
+  if (o.nLogin || o.nPay) p.push("security");
+  if (o.nDesign) p.push("visual");
+  return p;
+}
+function chatPrompt(o) {
+  const desc = o.gDesc || "（請在這裡寫：這個 App 要做什麼）";
+  const plats = ["網頁 App（PWA）"].concat(o.pAndroid ? ["之後上架 Google Play"] : [], o.pIos ? ["之後上架 App Store"] : []);
+  const needs = [o.nSchedule && "資料自動更新", o.nStock && "股票資料", o.nAi && "AI", o.nLogin && "登入", o.nPay && "收錢",
+    o.nOffline && "離線使用", o.nDesign && "畫面設計"].filter(Boolean);
+  const extra = [
+    o.pIos && "- 我之後想上 App Store：提醒我審查規則 4.2（只把網站包起來會被退），規格裡列出 App 才有的功能。",
+    o.pAndroid && "- 我之後想上 Google Play：先用網頁 App 設計，之後用 PWABuilder 包裝；新個人帳號要先封閉測試 12 人 14 天。",
+    o.nAi && "- 會用到 AI：金鑰不能放在網頁裡。寫清楚 AI 在哪裡呼叫（GitHub Actions 或 Cloudflare Worker）、每月大概多少錢、要設預算上限。",
+    o.nLogin && "- 要登入：寫清楚用什麼方式登入、存哪些資料；有註冊就要能刪除帳號。",
+    o.nPay && "- 要收錢：列出收款方式、手續費或商店抽成，這一版先不要做金流。",
+    o.nStock && "- 股票資料：用官方 OpenAPI；如果之後要收費提供買賣建議給別人，提醒我投顧法規。",
+    o.nOffline && "- 要能離線用：寫清楚哪些功能離線可用、資料怎麼同步，不要只存在手機裡。",
+    o.nSchedule && "- 資料要自動更新：寫清楚多久更新一次、從哪裡抓、失敗時怎麼通知我。",
+  ].filter(Boolean);
+  return `我想做一個 App：${desc}\n` +
+    `給誰用：${o.gWho}。我只有 iPhone、沒有電腦，想用免費的做法（GitHub Pages＋GitHub Actions），之後會用 Claude Code 開發。\n` +
+    `平台：${plats.join("、")}。` + (needs.length ? `需要：${needs.join("、")}。` : "") + `\n請你：\n` +
+    `1. 先一次問我最多 5 個問題，把需求問清楚，等我回答再繼續。\n` +
+    `2. 寫一頁規格：核心功能（最多 3 個）、畫面清單、資料從哪來、平台建議、可能的費用與風險。\n` +
+    `3. 做一個手機尺寸的單一 HTML 可點擊雛形（假資料、不要放任何金鑰），讓我在手機上直接看、可以再改。` +
+    (extra.length ? `\n注意：\n${extra.join("\n")}` : "");
+}
+function codePrompt(o) {
+  const desc = o.gDesc || "（這個 App 要做什麼）";
+  const packs = packsOf(o).join(",");
+  const extra = [
+    o.nSchedule && "資料用 GitHub Actions 排程自動更新，失敗要讓我知道（不是默默失敗）。",
+    o.nStock && "股票資料用 tw-stock 技能抓證交所官方 OpenAPI。",
+    o.nAi && "AI 的金鑰放 GitHub Secrets，在 Actions 或 Cloudflare Worker 呼叫，網頁裡不能有金鑰；用 ai-model-router，模型名稱不寫死，提醒我設預算上限。",
+    o.nLogin && "登入功能先列出做法與費用給我選，有註冊就要能刪除帳號。",
+    o.nPay && "收錢先不要做，列出金流選項、手續費與商店抽成給我。",
+    o.nOffline && "要能離線用（service worker），重要資料要能同步或匯出，不要只存在手機。",
+    o.pAndroid && "之後要上架 Google Play：先把 PWA 做穩，最後評估用 PWABuilder 包裝的步驟與費用。",
+    o.pIos && "之後要上架 App Store：先把 PWA 做穩，最後列出規則 4.2 需要的 App 功能、雲端建置方式與費用。",
+  ].filter(Boolean);
+  return `這是新的 App repo：${desc}\n請照下面做：\n` +
+    `1. 從 ${REPO} 取得技能庫：${FETCH_CMD}\n` +
+    `2. 用 app-bootstrap 安裝技能組合：${packs}（先 --dry-run 再正式安裝），建立 CLAUDE.md 工作守則，` +
+    `填第 7 節：這個 App 是什麼、給${o.gWho}用、資料從哪來。\n` +
+    `3. 照我接著貼的規格（或上傳的雛形 HTML）做出第一版：手機優先的網頁 App（PWA），用 GitHub Pages 部署，網站加 noindex，` +
+    `做完給我網址。` + (extra.length ? `\n另外：\n- ${extra.join("\n- ")}` : "") + `\n` + FOLLOW_UP;
+}
+function paintGen() {
+  const o = Object.fromEntries(INPUTS.map((id) => [id, val(id)]));
+  $("outChat").value = chatPrompt(o);
+  $("outCode").value = codePrompt(o);
+  $("gPacks").textContent = packsOf(o).join(", ");
+  store.set("guide-gen", o);
+}
+function loadGen() {
+  const o = store.get("guide-gen", {});
+  for (const id of INPUTS) {
+    if (!(id in o)) continue;
+    const e = $(id);
+    if (e.type === "checkbox") e.checked = !!o[id]; else e.value = o[id];
+  }
+  for (const id of INPUTS) $(id).addEventListener($(id).type === "checkbox" || $(id).tagName === "SELECT" ? "change" : "input", paintGen);
+  paintGen();
+}
+
+/* ── 出處清單：從頁面上的連結自動整理，避免清單和內文對不起來 ── */
+function listSources() {
+  const seen = new Map();
+  for (const a of document.querySelectorAll("main a.src")) {
+    const u = a.href; if (!seen.has(u)) seen.set(u, a.textContent.replace(/^↗/, ""));
+  }
+  const ul = $("srcs");
+  for (const [u, name] of seen) {
+    const li = document.createElement("li"); const a = document.createElement("a");
+    a.href = u; a.target = "_blank"; a.rel = "noopener"; a.textContent = u;
+    li.append(name.endsWith("※") ? "※ " : "", a); ul.appendChild(li);
+  }
+}
+
+async function checkVersion() {
+  if (APP_VER.startsWith("__")) return;
+  try { const r = await fetch("version.json", { cache: "no-store" }); if (!r.ok) return;
+    const v = await r.json(); if (v.ver && v.ver !== APP_VER) location.reload(); } catch { /* 離線略過 */ }
+}
+
+for (const b of document.querySelectorAll("nav.tabs button")) b.addEventListener("click", () => { showTab(b.dataset.tab); window.scrollTo(0, 0); });
+for (const b of document.querySelectorAll("[data-copy]")) b.addEventListener("click", () => copyText($(b.dataset.copy).value));
+showTab(store.get("guide-tab", "flow"));
+loadGen();
+listSources();
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkVersion(); });
+</script>
+</body>
+</html>
