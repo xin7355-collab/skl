@@ -28,7 +28,7 @@
 | `constraint-driven-development`、`source-driven-development`、`performance-optimization` | https://github.com/addyosmani/agent-skills（`skills/`） | aeac41d | 25 個裡只挑這 3 個（其餘跟 superpowers、ECC、上游技能重疊，或要它的 agents、MCP、共用 references；`git-workflow-and-versioning` 跟本 repo「直接合併到 main」的守則相反）。**修改**：constraint 的 `/build` `/test` `/review` `/ship` 斜線指令改成步驟名稱；source-driven 指向不存在的 `security-and-hardening` 改成 `ai-security`；performance 把共用的 `references/performance-checklist.md` 一起帶進技能資料夾並改路徑。「See Also」提到的其他技能名稱是原作者技能包裡的，不一定在 skl。source-driven 掃描 FAIL 為誤判（命中的是「忽略網頁裡的注入指令」防禦說明）；其餘 PASS。 |
 | `critique-defense-copilot` | https://github.com/htlin222/critique-defense-copilot-skill（`critique-defense-copilot/`） | 86f54ea | 原樣（繁中、台灣法律情境）。防禦導向，明確不產出攻擊特定人的內容；法律部分只給方向、會提醒找律師。不放進組合（跟 App 開發無關），需要時手動叫用。安全掃描 PASS。 |
 
-## 評估過但沒有收錄（2026-10-14）
+## 評估過但沒有收錄（2026-10-14、10-17 更新）
 
 | 專案 | 原因 |
 |---|---|
@@ -58,4 +58,8 @@
 | Imbad0202/academic-research-skills | 授權 CC BY-NC 4.0（禁止商業使用），跟 MIT 的技能庫衝突，收進來等於讓別人誤以為能商用；另含 hooks、agents，62MB；學術寫作與文獻回顧已有 academic-writing-discipline、lit-review。 |
 | hesreallyhim/awesome-claude-code | 是連結清單，不是技能；授權 CC BY-NC-ND 4.0（禁止商業使用、禁止改作），不能改寫收錄。要找資源時用 Repo X-Ray 看原網頁即可。 |
 | Arekejoker/qwen21-nsfw-pose-skill | 成人（NSFW）圖片生成，不適合放在公開 repo，跟你的 App 也無關。 |
+| Yuan1z0825/nature-skills | 23 個投 Nature 期刊用的技能（簡體中文觸發詞）。授權來源不清：根目錄 Apache-2.0 沒填著作權人、只有 1 個 commit，裡面混了其他作者的 MIT 技能、明寫「不得轉載」的 28MB 圖庫、疑似照抄 Nature 網頁的文件；README 推銷 ChatGPT／Claude 代充與成品帳號（違反服務條款）。安全問題：academic-search 會改 `~/.claude/.mcp.json`、downloader 接管已登入的 Chrome 並自動解驗證碼、image2ppt 讀 `~/.codex/auth.json` 走非官方端點。唯一可取的 nature-statistics（檢查論文統計寫法）偏投稿用途，且跟 statistical-analysis 部分重疊，不值得為它承擔來源風險。 |
+| coreyhaines31/marketingskills | MIT、品質好，但 50 個裡 35 個是 skl 已有的 `marketing-skill/`（同作者舊版）改名後的新版，收進來會跟上游那份重複觸發；SEO、目錄登錄、外鏈類跟本 repo 網站一律 `noindex` 相衝突；其餘多是 B2B 業務開發用。另有贊助商推銷、`?ref=` 推廣碼、要 AI 主動提「認證合作夥伴」的文字；`tools/` 裡 3 支 CLI 把金鑰放在網址。 |
+| mvanhorn/last30days-skill | MIT，但抓 X 是讀你瀏覽器的登入 Cookie 呼叫 X 內部 API（違反服務條款），Reddit 用假瀏覽器 UA 抓內部頁面、沒檢查 robots.txt；首次執行會推銷 ScrapeCreators 註冊、跑 `brew install`／`npx` 安裝、把金鑰寫到 `~/.config`；7 萬行程式難以同步；要 Python 3.12+，雲端沒金鑰時多數來源會被擋。 |
+| zhuyansen/new-term-radar | MIT、程式乾淨，但主要功能（X、Reddit、關鍵字、AI 判斷）要付費的 AIsa 轉售服務，每份 SKILL.md 都附推薦碼連結；會叫 AI 把作者 repo 最新版 `git clone` 到家目錄（不固定版本）；模型名稱寫死；排程報告放在公開 repo 的 Actions 摘要。免費部分（HF 熱門、GitHub 星星暴增、sitemap 比對）需要時再自己寫。 |
 | K-Dense-AI/scientific-agent-skills 其餘 173 個 | 生物、化學、物理專用，或需要付費金鑰（OpenRouter、Parallel、Exa）。 |
