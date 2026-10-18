@@ -5,6 +5,8 @@
   search   <query>            Semantic Scholar 關鍵字搜尋(找相關文獻)
   arxiv    <query>            arXiv 搜尋(預印本)
   verify   --title "..."      跨 Crossref + Semantic Scholar 驗證一筆文獻是否存在、書目是否正確
+                              (中文標題改走 --doi：doi.org 內容協商取書目、標題正規化後完全相同才算吻合)
+  selftest                    離線自我測試(中文標題查核，不連網)
   paper    <id>               取單篇詳細資料含摘要(id 可為 DOI:10.x/y、ARXIV:2301.12345、S2 paperId)
   crossref-doi <doi>          Crossref 權威書目資料(DOI → 完整欄位)
   export   --doi 10.x/y --format ris|bibtex     產生引用檔(doi.org content negotiation)
@@ -24,6 +26,7 @@ import re
 import sys
 import threading
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -1429,8 +1432,133 @@ def crossref_interval():
     return 0.34 if os.environ.get("CROSSREF_MAILTO") else 1.0
 
 
-def verify_one(title, authors, year):
+# ---------- 中文文獻（skl 增修，2026-10）----------
+# Crossref／S2 的標題搜尋對中文標題幾乎查不到（中文期刊多半不在這兩個索引），以前一律回
+# unsupported_title。有 DOI 時其實可以查：doi.org 對 Crossref、DataCite 等註冊機構的 DOI
+# 支援內容協商，直接回 CSL JSON 書目，免費、不用金鑰。
+# 做法概念參考 academic-research-skills 的 chinese_literature_client.py（CC BY-NC 4.0，未複製程式碼）。
+CSL_ACCEPT = "application/vnd.citationstyles.csl+json"
+NO_DOI_NOTE = "中文文獻沒有 DOI 無法自動查核，請人工確認"
+
+
+def has_cjk(t):
+    return bool(re.search(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]", t or ""))
+
+
+def norm_cjk_title(t):
+    """中文標題正規化：NFKC 把全形英數與標點轉半形，再去掉書名號、引號、空白與所有標點，英文轉小寫。
+    不做簡繁轉換：簡繁對應不是一對一（「發／髮」都對應「发」），自動轉換會把不同的字當成同一個，
+    讓寫錯的標題蒙混過關；寧可簡繁不同時判不吻合、交給人看。"""
+    t = unicodedata.normalize("NFKC", t or "").lower()
+    return "".join(ch for ch in t if ch.isalnum())
+
+
+def doi_csl(doi):
+    """doi.org 內容協商：回 CSL JSON（dict）。查無丟 HTTPError 404；回的不是 JSON（註冊機構不支援
+    內容協商時 doi.org 會轉去出版社網頁）丟 ValueError。"""
+    url = "https://doi.org/" + urllib.parse.quote(_clean_doi(doi), safe="/")
+    raw = http_get(url, {"Accept": CSL_ACCEPT, "User-Agent": "lit-review-skill/1.0"}, 1.0, "doi")
+    data = json.loads(raw)
+    if not isinstance(data, dict):
+        raise ValueError("doi.org 回應不是書目物件")
+    return data
+
+
+def _csl_text(v):
+    if isinstance(v, list):
+        return str(v[0]) if v else ""
+    return str(v or "")
+
+
+def norm_csl(csl, doi):
+    """CSL JSON → 跟其他來源一樣的候選格式。中文作者常是 literal 或 family＋given（姓在前、不加空白）。"""
+    authors = []
+    for a in csl.get("author") or []:
+        if not isinstance(a, dict):
+            continue
+        if a.get("literal"):
+            authors.append(str(a["literal"]))
+        else:
+            fam, giv = str(a.get("family") or ""), str(a.get("given") or "")
+            authors.append(fam + giv if has_cjk(fam + giv) else ", ".join(x for x in (fam, giv) if x))
+    year = None
+    for k in ("issued", "published-print", "published-online", "created"):
+        parts = (csl.get(k) or {}).get("date-parts") if isinstance(csl.get(k), dict) else None
+        if parts and parts[0] and str(parts[0][0]).isdigit():
+            year = int(parts[0][0])
+            break
+    return {"title": _csl_text(csl.get("title")), "original_title": _csl_text(csl.get("original-title")) or None,
+            "authors": authors, "year": year, "venue": _csl_text(csl.get("container-title")) or None,
+            "doi": _clean_doi(csl.get("DOI") or doi), "source": "doi.org"}
+
+
+def verify_cjk(title, authors, year, doi, fetch_csl=None):
+    """中文標題的查核：沒有 DOI 照實說查不了；有 DOI 就取 doi.org 書目，標題正規化後完全相同才算吻合。
+    不用相似度：中文標題差一兩個字常常就是另一篇（「之研究」「初探」、碩論與期刊版），模糊比對會互相認證。"""
+    fetch_csl = fetch_csl or doi_csl
+    result = {"query": {"title": title, "authors": authors or None, "year": year, "doi": doi or None},
+              "candidates": []}
+    if not (doi or "").strip():
+        result["verdict_hint"] = "unsupported_title"
+        result["absence_note"] = NO_DOI_NOTE
+        result["manual_check_hint"] = "用原文標題（不要翻譯）查 Google Scholar、華藝線上圖書館、臺灣博碩士論文知識加值系統"
+        return result
+    try:
+        csl = fetch_csl(doi)
+    except urllib.error.HTTPError as e:
+        if e.code in (406, 415):
+            # 406：這個 DOI 的註冊機構不支援 CSL 內容協商，跟「回網頁不是 JSON」同一種情況
+            result["verdict_hint"] = "unsupported_title"
+            result["absence_note"] = ("這個 DOI 的註冊機構沒有透過 doi.org 提供書目資料（常見於部分中文 DOI），"
+                                      "無法自動查核，請人工確認")
+            return result
+        if e.code == 404:
+            result["verdict_hint"] = "not_found"
+            result["absence_note"] = ("doi.org 查無這個 DOI（404）：DOI 可能寫錯；查無 ≠ 文獻不存在，"
+                                      "請用原文標題人工確認")
+        else:
+            result["verdict_hint"] = "partial_failure"
+            result["doi_error"] = str(e)
+            result["absence_note"] = "doi.org 查詢失敗（HTTP %d），不可解讀為查無；請稍後重試或人工查證" % e.code
+        return result
+    except ValueError:
+        result["verdict_hint"] = "unsupported_title"
+        result["absence_note"] = ("這個 DOI 的註冊機構沒有透過 doi.org 提供書目資料（常見於部分中文 DOI），"
+                                  "無法自動查核，請人工確認")
+        return result
+    except OSError as e:
+        result["verdict_hint"] = "partial_failure"
+        result["doi_error"] = str(e)
+        result["absence_note"] = "連不上 doi.org，不可解讀為查無；請稍後重試或人工查證"
+        return result
+    cand = norm_csl(csl, doi)
+    want = norm_cjk_title(title)
+    hit = bool(want) and want in {norm_cjk_title(cand["title"]), norm_cjk_title(cand["original_title"])}
+    yd = abs(cand["year"] - year) if (year and cand["year"]) else None
+    cand["match"] = {"title_exact_normalized": hit, "year_diff": yd}
+    result["candidates"] = [cand]
+    basis = {"match_path": "doi_exact_title", "title_exact_normalized": hit, "year_diff": yd}
+    result["identity_basis"] = basis
+    if not hit:
+        result["verdict_hint"] = "not_found"
+        result["doi_title_mismatch"] = True
+        result["absence_note"] = ("DOI 指向的文獻標題跟引用的不同（doi.org：「%s」），可能是 DOI 或標題寫錯，"
+                                  "也可能只是簡繁或用字不同；請人工確認" % (cand["title"] or "（無標題）"))
+        return result
+    if yd is not None and yd > 1:
+        basis["identity_confidence"] = "low"
+        basis["downgrade_reasons"] = [f"年份差 {yd} 年(>1)"]
+        result["verdict_hint"] = "similar_found"
+        return result
+    basis["identity_confidence"] = "high" if yd is not None else "medium"
+    result["verdict_hint"] = "found"
+    return result
+
+
+def verify_one(title, authors, year, doi=None):
     """單筆驗證的純邏輯（不印出、不 exit），供 verify 與 verify-batch 共用。"""
+    if not has_latin(title) and has_cjk(title):
+        return verify_cjk(title, authors, year, doi)
     result = {"query": {"title": title, "authors": authors or None, "year": year},
               "candidates": []}
     if not has_latin(title):
@@ -1569,7 +1697,7 @@ def cmd_verify_batch(args):
             au = it.get("authors")
             if isinstance(au, str):
                 au = [a.strip() for a in au.split(";") if a.strip()]
-            r = verify_one(it.get("title") or "", au or [], it.get("year"))
+            r = verify_one(it.get("title") or "", au or [], it.get("year"), it.get("doi"))
             if it.get("n") is not None:
                 r["n"] = it["n"]
             results[i] = r
@@ -1596,7 +1724,7 @@ def cmd_verify(args):
                          ensure_ascii=False))
         sys.exit(1)
     authors = [a.strip() for a in (args.authors or "").split(";") if a.strip()]
-    result = verify_one(args.title, authors, args.year)
+    result = verify_one(args.title, authors, args.year, args.doi)
     print(json.dumps(result, ensure_ascii=False, indent=1))
     # 查詢未完成或標題無法比對，必須讓自動化偵測得到：exit 0 只代表「查完且有結論」
     if result["verdict_hint"] in ("partial_failure", "unsupported_title"):
@@ -1700,12 +1828,16 @@ def main():
     p.add_argument("--title", required=True)
     p.add_argument("--authors", help="分號分隔，如 'Smith, J.; Chen, L.'")
     p.add_argument("--year", type=int)
+    p.add_argument("--doi", help="中文標題用：有 DOI 就經 doi.org 取書目比對標題")
     p.set_defaults(func=cmd_verify)
 
     p = sub.add_parser("verify-batch", help="一次驗證多筆引用（JSON 陣列，跨引用併行）")
-    p.add_argument("file", help="JSON：[{title, authors?, year?, n?}, ...]")
+    p.add_argument("file", help="JSON：[{title, authors?, year?, doi?, n?}, ...]")
     p.add_argument("--workers", type=int, default=4, help="併行數（預設 4）")
     p.set_defaults(func=cmd_verify_batch)
+
+    p = sub.add_parser("selftest", help="離線自我測試（中文標題查核，不連網）")
+    p.set_defaults(func=lambda a: sys.exit(selftest()))
 
     p = sub.add_parser("paper", help="取單篇詳細資料含摘要")
     p.add_argument("id", help="DOI:10.x/y | ARXIV:2301.12345 | S2 paperId")
@@ -1788,6 +1920,100 @@ def main():
                           "note": "這是查詢失敗，不是查無此文獻；請稍後重試"},
                          ensure_ascii=False))
         sys.exit(1)
+
+
+def selftest():
+    """離線自我測試（skl 增修）：中文標題的正規化與 doi.org 查核，全部用假資料，不連網。"""
+    fails = []
+
+    def check(cond, name):
+        print(("PASS " if cond else "FAIL ") + name)
+        if not cond:
+            fails.append(name)
+
+    check(norm_cjk_title("《臺灣 ＡＩ　教育》：初探！") == norm_cjk_title("臺灣AI教育初探") == "臺灣ai教育初探",
+          "正規化：全形轉半形、去書名號／空白／標點、英文小寫")
+    check(norm_cjk_title("台灣教育") != norm_cjk_title("臺灣教育") and norm_cjk_title("数据") != norm_cjk_title("數據"),
+          "不做簡繁轉換（台／臺、数／數視為不同）")
+    check(norm_cjk_title("「深度學習」之研究（2020）") == "深度學習之研究2020", "保留數字、去掉各種括號")
+    check(has_cjk("深度學習") and not has_cjk("Deep learning") and not has_cjk("Ελληνικά"), "認得中文字")
+
+    r = verify_one("台灣高等教育之研究", ["王小明"], 2020)
+    check(r["verdict_hint"] == "unsupported_title" and r["absence_note"] == NO_DOI_NOTE and not r["candidates"],
+          "沒有 DOI 的中文標題：照實回「%s」、不打 API" % NO_DOI_NOTE)
+    r = verify_one("台灣高等教育之研究", [], None, "   ")
+    check(r["verdict_hint"] == "unsupported_title", "DOI 是空白字串也當沒有")
+    r = verify_one("Ελληνικός τίτλος", [], None)
+    check(r["verdict_hint"] == "unsupported_title" and "拉丁" in r["absence_note"], "非中文的非拉丁標題照舊回 unsupported_title")
+
+    csl = {"title": "臺灣高等教育之研究：以 AI 為例", "DOI": "10.1234/ABC", "container-title": ["教育學刊"],
+           "author": [{"family": "王", "given": "小明"}, {"literal": "陳大文"}, {"family": "Smith", "given": "J."}],
+           "issued": {"date-parts": [[2020, 5]]}}
+    seen = []
+
+    def fake(d):
+        seen.append(d)
+        return csl
+    r = verify_cjk("《臺灣高等教育之研究：以ＡＩ為例》", [], 2020, "https://doi.org/10.1234/abc", fake)
+    c = r["candidates"][0]
+    check(r["verdict_hint"] == "found" and r["identity_basis"]["identity_confidence"] == "high",
+          "有 DOI、標題正規化後完全相同 → found")
+    check(c["authors"] == ["王小明", "陳大文", "Smith, J."] and c["year"] == 2020 and c["venue"] == "教育學刊"
+          and c["source"] == "doi.org", "CSL 書目轉成候選：中文姓名不加空白、literal、英文姓名、年份、期刊")
+    r = verify_cjk("台灣高等教育之研究：以AI為例", [], 2020, "10.1234/abc", fake)
+    check(r["verdict_hint"] == "not_found" and r.get("doi_title_mismatch") and "簡繁" in r["absence_note"],
+          "差一個字（台／臺）就不算吻合，說明可能原因、請人工確認")
+    r = verify_cjk("臺灣高等教育之研究", [], None, "10.1234/abc", fake)
+    check(r["verdict_hint"] == "not_found", "標題少了副標也不算吻合（不用相似度）")
+    r = verify_cjk("臺灣高等教育之研究：以AI為例", [], 2015, "10.1234/abc", fake)
+    check(r["verdict_hint"] == "similar_found" and "年份差" in r["identity_basis"]["downgrade_reasons"][0],
+          "標題相同但年份差 >1 → 降為 similar_found")
+    r = verify_cjk("臺灣高等教育之研究：以AI為例", [], None, "10.1234/abc", fake)
+    check(r["verdict_hint"] == "found" and r["identity_basis"]["identity_confidence"] == "medium",
+          "沒給年份：found 但信心 medium")
+    r = verify_cjk("英文原題", [], None, "10.1/x", lambda d: {"title": "Another", "original-title": ["英文原題"]})
+    check(r["verdict_hint"] == "found", "original-title 相同也算吻合")
+
+    def raise_(e):
+        def f(d):
+            raise e
+        return f
+    r = verify_cjk("中文標題", [], None, "10.1/x", raise_(urllib.error.HTTPError("u", 404, "nf", {}, None)))
+    check(r["verdict_hint"] == "not_found" and "404" in r["absence_note"], "DOI 不存在（404）→ not_found 並說明")
+    r = verify_cjk("中文標題", [], None, "10.1/x", raise_(urllib.error.HTTPError("u", 503, "busy", {}, None)))
+    check(r["verdict_hint"] == "partial_failure" and r.get("doi_error"), "doi.org 5xx → partial_failure（查詢未完成 ≠ 查無）")
+    r = verify_cjk("中文標題", [], None, "10.1/x", raise_(urllib.error.URLError("down")))
+    check(r["verdict_hint"] == "partial_failure", "連不上 doi.org → partial_failure")
+    r = verify_cjk("中文標題", [], None, "10.1/x", raise_(urllib.error.HTTPError("u", 406, "na", {}, None)))
+    check(r["verdict_hint"] == "unsupported_title", "406（不支援內容協商）→ 無法自動查核，不當成查詢失敗")
+    r = verify_cjk("中文標題", [], None, "10.1/x", raise_(ValueError("html")))
+    check(r["verdict_hint"] == "unsupported_title" and "人工確認" in r["absence_note"],
+          "註冊機構不支援內容協商（回網頁不是 JSON）→ 無法自動查核、請人工確認")
+
+    calls = []
+
+    def fake_get(url, headers=None, min_interval=0.0, bucket="default", **kw):
+        calls.append((url, headers, bucket))
+        return json.dumps(csl)
+    g = globals()
+    orig = g["http_get"]
+    g["http_get"] = fake_get
+    try:
+        d = doi_csl("doi:10.1234/中文 1")
+        g["http_get"] = lambda *a, **k: "<html>landing page</html>"
+        try:
+            doi_csl("10.1/x")
+            not_json = False
+        except ValueError:
+            not_json = True
+    finally:
+        g["http_get"] = orig
+    check(d == csl and calls[0][0] == "https://doi.org/10.1234/%E4%B8%AD%E6%96%87%201"
+          and calls[0][1]["Accept"] == CSL_ACCEPT and calls[0][2] == "doi",
+          "doi.org 內容協商：網址編碼、Accept 標頭、跟其他 doi.org 呼叫共用限流")
+    check(not_json, "doi.org 回網頁（不是 JSON）→ ValueError")
+    print("\n自我測試" + ("全部通過" if not fails else "有 %d 項失敗" % len(fails)))
+    return 1 if fails else 0
 
 
 if __name__ == "__main__":

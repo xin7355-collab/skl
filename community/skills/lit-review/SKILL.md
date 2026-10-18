@@ -142,7 +142,7 @@ python scripts/lit_api.py export-xml picked.json > refs.xml                 # En
 
 從文章的參考文獻列表(或文內引用)逐筆處理：
 
-0. **中文文獻**：標題為中文、或明顯是台灣/中國期刊與學位論文者，這些 API 查不到。若環境有 Google Scholar 搜尋工具(如 MCP 的 google-scholar search_papers)，用**原文標題**(不要翻譯)加作者查存在性：查到 → 標註「Google Scholar 查證，信心中等」(GS 含非正式來源，書目欄位仍不可靠，只做存在性與粗略比對)；查無、或環境沒有 GS 工具 → 列入「需人工查核」區。無論如何**禁止用英譯標題去英文資料庫硬查**——會產生錯誤配對。
+0. **中文文獻**：標題為中文、或明顯是台灣/中國期刊與學位論文者，這些 API 查不到。**引用附 DOI 時先跑 `verify --title "原文標題" --doi 10.x/y`**（`verify-batch` 每筆可加 `doi`）：經 doi.org 取書目，標題正規化（全形轉半形、去書名號與標點，不做簡繁轉換）後完全相同才回 `found`，標題不同回 `not_found` 並附 `doi_title_mismatch`；沒有 DOI 會回 `unsupported_title`「中文文獻沒有 DOI 無法自動查核，請人工確認」。其餘照下面做。若環境有 Google Scholar 搜尋工具(如 MCP 的 google-scholar search_papers)，用**原文標題**(不要翻譯)加作者查存在性：查到 → 標註「Google Scholar 查證，信心中等」(GS 含非正式來源，書目欄位仍不可靠，只做存在性與粗略比對)；查無、或環境沒有 GS 工具 → 列入「需人工查核」區。無論如何**禁止用英譯標題去英文資料庫硬查**——會產生錯誤配對。
 1. **存在性**：**整份列表用 `verify-batch`，不要逐筆開行程**——把引用整理成 `[{n, title, authors, year}, ...]` 的 JSON 後一次跑完（實測比逐筆快兩倍以上：逐筆每次都付一次 Python 啟動成本，且兩個服務的等待完全不重疊）。單筆才用 `verify --title "..." --authors "..." --year N`。兩者判定邏輯共用同一份程式碼。看 `verdict_hint` 與 `candidates`:
    - `found`：存在，進下一步。
    - `similar_found`：標題相近但有出入——人工比對候選，可能是版本差異(preprint vs 正式版)、副標題被省略、也可能是真的寫錯，判讀後歸類。
