@@ -75,10 +75,18 @@ jobs:
             business-operations commercial research-ops \
             compliance-os markdown-html xin-toolkit web ops scripts
 
+      - name: Ensure ffmpeg (for video self-tests)
+        # 影片剪輯的自我測試要真的轉檔一次；runner 沒有 ffmpeg 時先裝。
+        # --no-install-recommends 少裝建議套件、快很多；timeout 防止 apt 卡住時拖到整個 job 逾時。
+        timeout-minutes: 8
+        run: |
+          command -v ffmpeg >/dev/null || {
+            sudo apt-get update -qq
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends ffmpeg
+          }
+
       - name: xin-toolkit self-tests (blocking)
         run: |
-          # 影片剪輯的自我測試要真的轉檔一次；runner 沒有 ffmpeg 時先裝。
-          command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
           python3 xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py selftest
           python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
           python3 web/build_catalog.py selftest
