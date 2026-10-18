@@ -30,3 +30,6 @@
 # ai-model-router 用「已下架的模型名稱」當例子，說明為什麼不能寫死；點名舊型號正是重點。
 xin-toolkit/skills/ai-model-router/SKILL.md :: 不再寫死模型名稱
 xin-toolkit/skills/ai-model-router/SKILL.md :: 已被 Google 停用
+
+# skill_eval 的健檢練習題故意寫死一個已退役的模型，考 AI 抓不抓得到「寫死模型名稱」；改掉就測不到了。
+ops/skill_eval.py :: "ai.py": "import os

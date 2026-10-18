@@ -68,6 +68,87 @@ exit 0
 """
 
 
+# 技能清單的成本（官方 Skills／設定文件）：每個技能的名稱＋說明每一輪都放進對話；總長超過預算
+# （上下文的 1%，保底 8,000 字元）時，最少用的技能說明會被拿掉，Claude 就不容易自己想到要用它。
+# 每個技能的說明最多顯示 1,536 字元。裝太多、或兩個技能做同一件事，都會讓「該用哪個」變難判斷。
+LISTING_BUDGET = 8000
+LISTING_DESC_CAP = 1536
+LISTING_MANY = 15
+_STOP = set("use when the and for with this that from into your skill skills user users asks ask using used also "
+            "any are can not you all its via etc such".split())
+_NAME_STOP = set("app apps development driven senior skill skills pro max the and for with expert helper tool tools".split())
+
+
+def skill_meta(skill_md):
+    """讀 SKILL.md 開頭的 frontmatter（只取單層 key: value，支援多行說明）。讀不到回空 dict。"""
+    try:
+        with open(skill_md, encoding="utf-8", errors="ignore") as f:
+            text = f.read(20000)
+    except OSError:
+        return {}
+    if not text.startswith("---"):
+        return {}
+    end = text.find("\n---", 3)
+    out, key = {}, None
+    for line in text[3:end if end > 0 else len(text)].splitlines():
+        if line and not line[0].isspace() and ":" in line:
+            key, _, v = line.partition(":")
+            key, v = key.strip(), v.strip()
+            out[key] = "" if v in (">", "|", ">-", "|-") else v.strip("\"'")
+        elif key and line.strip():
+            out[key] = (out[key] + " " + line.strip()).strip()
+    return out
+
+
+def _words(text):
+    import re
+    t = text.lower()
+    w = {x for x in re.findall(r"[a-z][a-z0-9]{2,}", t) if x not in _STOP}
+    for run in re.findall(r"[\u4e00-\u9fff]+", t):   # 中文用兩字一組比對
+        w |= {run[i:i + 2] for i in range(len(run) - 1)}
+    return w
+
+
+def listing_report(skill_mds):
+    """skill_mds：{技能資料夾名: SKILL.md 路徑}。回傳清單總長、最大的幾個、可能重疊的配對。"""
+    items = []
+    for folder, path in sorted(skill_mds.items()):
+        m = skill_meta(path)
+        if str(m.get("disable-model-invocation", "")).lower() == "true":
+            continue  # 只能手動叫用的技能，說明不放進清單
+        name = m.get("name") or folder
+        text = (m.get("description", "") + " " + m.get("when_to_use", "")).strip()
+        items.append({"name": name, "chars": len(name) + min(len(text), LISTING_DESC_CAP), "words": _words(text)})
+    overlaps = []
+    for i, a in enumerate(items):
+        for b in items[i + 1:]:
+            if not a["words"] or not b["words"]:
+                continue
+            j = len(a["words"] & b["words"]) / len(a["words"] | b["words"])
+            na = {x for x in a["name"].lower().replace("_", "-").split("-") if len(x) > 2 and x not in _NAME_STOP}
+            nb = {x for x in b["name"].lower().replace("_", "-").split("-") if len(x) > 2 and x not in _NAME_STOP}
+            # 名稱有共同的字且說明相近，或說明本身就很像，才算「可能重疊」；只是提醒，不擋安裝
+            if (na & nb and j >= 0.08) or j >= 0.25:
+                overlaps.append((a["name"], b["name"], round(j, 2)))
+    items.sort(key=lambda x: -x["chars"])
+    return {"count": len(items), "chars": sum(x["chars"] for x in items),
+            "top": [(x["name"], x["chars"]) for x in items[:3]], "overlaps": overlaps}
+
+
+def listing_notes(rep):
+    notes = []
+    top = "、".join(f"{n} {c:,}" for n, c in rep["top"])
+    if rep["chars"] > LISTING_BUDGET:
+        notes.append(f"技能清單約 {rep['chars']:,} 字元（{rep['count']} 個），超過官方保底預算 {LISTING_BUDGET:,} 字元："
+                     f"最少用的技能說明會被拿掉、比較不會被自動叫用，而且每一輪都多花用量。建議移除用不到的；最大的是 {top}。")
+    elif rep["count"] > LISTING_MANY:
+        notes.append(f"這個 App 裝了 {rep['count']} 個技能（清單約 {rep['chars']:,} 字元）：建議只留 5～15 個真的用得到的，"
+                     "越多越難判斷該用哪個。")
+    for a, b, _ in rep["overlaps"][:5]:
+        notes.append(f"可能重疊：{a} 和 {b} 的說明很像，確認兩個都需要；只留一個比較不會用錯。")
+    return notes
+
+
 def load_packs(path=PACKS_FILE):
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
@@ -264,6 +345,20 @@ def install(target, pack_names, force=False, dry_run=False, write_claude_md=True
     if with_hook and not dry_run and (res["installed"] or res["updated"]):
         install_hook(target, res)
 
+    # 裝完（或試跑時預估裝完）整個 App 的技能清單有多大、有沒有重疊
+    mds = {}
+    if os.path.isdir(skills_root):
+        for n in os.listdir(skills_root):
+            if os.path.isfile(os.path.join(skills_root, n, "SKILL.md")):
+                mds[n] = os.path.join(skills_root, n, "SKILL.md")
+    if dry_run:
+        for rel in wanted:
+            n = os.path.basename(rel.rstrip("/"))
+            if n in res["installed"] or n in res["updated"]:
+                mds[n] = os.path.join(source_root, rel, "SKILL.md")
+    res["listing"] = listing_report(mds)
+    res["notes"] += listing_notes(res["listing"])
+
     if not dry_run and (res["installed"] or res["updated"]):
         manifest.update({
             "source_repo": "https://github.com/xin7355-collab/skl",
@@ -324,6 +419,9 @@ def _print(res, dry_run):
         print(f"  ✗ {n}：{why}")
     for n, why in res.get("warnings", []):
         print(f"  ⚠ {n}：安全掃描提醒（{why}）。有連網或讀寫檔案的技能常見，已安裝，建議看一下用途是否合理")
+    lst = res.get("listing")
+    if lst:
+        print(f"技能清單：{lst['count']} 個、每一輪約 {lst['chars']:,} 字元（官方保底預算 {LISTING_BUDGET:,}）")
     for note in res["notes"]:
         print(f"※ {note}")
     if res["installed"] or res["updated"]:
@@ -479,6 +577,34 @@ def selftest():
                              env={**os.environ, "CLAUDE_PROJECT_DIR": tgt3})
         check(out.returncode == 0 and "[skl 健檢]" in out.stdout, "hook 實際執行會輸出健檢摘要且不擋開工")
 
+    # 技能清單大小與重疊
+    with tempfile.TemporaryDirectory() as d:
+        def mk(name, desc, extra=""):
+            os.makedirs(os.path.join(d, name))
+            with open(os.path.join(d, name, "SKILL.md"), "w", encoding="utf-8") as f:
+                f.write(f"---\nname: {name}\ndescription: >\n  {desc}\n{extra}---\n# x\n")
+            return os.path.join(d, name, "SKILL.md")
+        small = {"a": mk("a", "Short helper for dates."), "b": mk("b", "Parse CSV files quickly.")}
+        rep = listing_report(small)
+        check(rep["count"] == 2 and rep["chars"] == len("a") + 23 + len("b") + 24 and not listing_notes(rep),
+              "小清單：長度照實算（多行說明也讀得到），不出提醒")
+        big = dict(small, **{f"s{i}": mk(f"s{i}", "x" * 3000) for i in range(6)})
+        rep = listing_report(big)
+        check(rep["chars"] > LISTING_BUDGET and rep["top"][0][1] == len("s0") + LISTING_DESC_CAP
+              and any("超過官方保底預算" in n for n in listing_notes(rep)), "超過預算會提醒，每個說明最多算 1,536 字元")
+        hidden = {"h": mk("h", "y" * 9000, "disable-model-invocation: true\n")}
+        check(listing_report(hidden)["count"] == 0, "只能手動叫用的技能不算進清單")
+        many = {f"m{i}": mk(f"m{i}", f"Tool number {i} for topic{i}.") for i in range(LISTING_MANY + 1)}
+        check(any("5～15" in n for n in listing_notes(listing_report(many))), "裝超過 15 個會建議精簡")
+        dup = {"database-designer": mk("database-designer", "Design relational database schemas, tables, indexes and migrations."),
+               "database-schema-designer": mk("database-schema-designer", "Design database schemas with tables, indexes, migrations and ERD."),
+               "pomodoro": mk("pomodoro", "Focus timer with breaks.")}
+        rep = listing_report(dup)
+        check([o[:2] for o in rep["overlaps"]] == [("database-designer", "database-schema-designer")]
+              and any("可能重疊" in n for n in listing_notes(rep)), "名稱和說明都相近的技能列為可能重疊，不相關的不列")
+        zh = {"x": mk("x", "整理台股月營收與殖利率"), "y": mk("y", "台股月營收與殖利率整理工具")}
+        check(listing_report(zh)["overlaps"], "中文說明也比得出重疊")
+
     lines = catalog_lines()
     paths = [ln.split("｜")[0] for ln in lines if "｜" in ln and not ln.startswith("#")]
     check(len(paths) > 300 and all(os.path.isfile(os.path.join(REPO_ROOT, p, "SKILL.md")) for p in paths),
@@ -507,6 +633,8 @@ def main(argv=None):
     u.add_argument("--dry-run", action="store_true")
     u.add_argument("--no-security-scan", action="store_true")
     u.add_argument("--no-hook", action="store_true")
+    lp = sub.add_parser("listing", help="檢查一個 repo 的技能清單有多大、有沒有功能重疊的技能")
+    lp.add_argument("--target", default=".")
     sub.add_parser("selftest", help="離線自我測試")
     hp = sub.add_parser("hash", help="印出技能資料夾的內容指紋（加進 security-reviewed.json 用）")
     hp.add_argument("path")
@@ -520,9 +648,25 @@ def main(argv=None):
     if args.cmd == "catalog":
         print("\n".join(catalog_lines()))
         return 0
+    if args.cmd == "listing":
+        root = os.path.join(os.path.abspath(args.target), ".claude", "skills")
+        mds = {n: os.path.join(root, n, "SKILL.md") for n in (os.listdir(root) if os.path.isdir(root) else [])
+               if os.path.isfile(os.path.join(root, n, "SKILL.md"))}
+        if not mds:
+            print("這個 repo 沒有裝任何技能（.claude/skills/ 是空的）。")
+            return 0
+        rep = listing_report(mds)
+        print(f"技能清單：{rep['count']} 個、每一輪約 {rep['chars']:,} 字元（官方保底預算 {LISTING_BUDGET:,}）")
+        print("最大的：" + "、".join(f"{n} {c:,}" for n, c in rep["top"]))
+        for note in listing_notes(rep):
+            print("※ " + note)
+        if not listing_notes(rep):
+            print("沒有超過預算，也沒有看起來重疊的技能。")
+        return 0
     if args.cmd == "list":
         for name, p in load_packs().items():
-            print(f"{name:9} {p['desc']}")
+            size = listing_report({os.path.basename(x): os.path.join(REPO_ROOT, x, "SKILL.md") for x in p["skills"]})["chars"]
+            print(f"{name:9} {p['desc']}（清單約 {size:,} 字元）")
             for s in p["skills"]:
                 print(f"          - {os.path.basename(s)}")
         print("（app-guardrails-audit 每次都會裝）")

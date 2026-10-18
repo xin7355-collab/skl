@@ -717,6 +717,53 @@
       <li>步數和花費上限是最後一道防線（見教學第 7 步）。</li>
     </ul>
   </div>
+
+  <div class="card" id="tech-layers">
+    <h2>技能、MCP、CLAUDE.md 差在哪</h2>
+    <p class="hint">都是「讓 Claude 做得更好」的東西，但放進對話的時機不同：每次都放的越少越好，用到才放的可以多一點。</p>
+    <table class="tbl stack">
+      <tr><th>東西</th><th>是什麼</th><th>什麼時候放進對話</th><th>適合放什麼</th></tr>
+      <tr><td>CLAUDE.md（工作守則）</td><td data-h="是什麼">每次都要遵守的規則</td>
+        <td data-h="放進對話">每次對話整份；越長越佔用量、越不容易全部照做，官方建議 200 行內
+          <a class="src" href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">Claude</a></td>
+        <td data-h="適合">每個任務都要守的規則、常用指令、專案資訊</td></tr>
+      <tr><td>.claude/rules/（加 paths）</td><td data-h="是什麼">只跟某些檔案有關的規則</td>
+        <td data-h="放進對話">讀或改到那些檔案時才放
+          <a class="src" href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">Claude</a></td>
+        <td data-h="適合">某一頁、某個模組才需要的細節</td></tr>
+      <tr><td>技能（Skill）</td><td data-h="是什麼">教它「怎麼做」某件事的說明書，可附腳本</td>
+        <td data-h="放進對話">平常只放名稱＋一句說明（每一輪都在）；用到才放全文
+          <a class="src" href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">Claude</a></td>
+        <td data-h="適合">有固定步驟的工作、你自己的腳本與檢查</td></tr>
+      <tr><td>MCP 連接器</td><td data-h="是什麼">給它「手」去碰別的系統（Gmail、GitHub、資料庫）</td>
+        <td data-h="放進對話">平常只放工具名稱，用到才載入工具說明
+          <a class="src" href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener">Claude</a></td>
+        <td data-h="適合">你常從某個服務複製資料貼進對話時；只接信得過的</td></tr>
+      <tr><td>Hook</td><td data-h="是什麼">一定會執行的程式，不靠 AI 記得</td>
+        <td data-h="放進對話">不佔對話；事件發生時（例如開工）自動跑。要「不管 AI 怎麼想都要擋下」就用它
+          <a class="src" href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">Claude</a></td>
+        <td data-h="適合">一定要做的檢查，例如開工健檢</td></tr>
+    </table>
+
+    <h3>技能要裝多少才好</h3>
+    <ul>
+      <li>技能庫裡沒裝的不花用量；裝進 App 的，每一個的名稱＋說明每一輪都會放進對話，不管有沒有用到。
+        <a class="src" href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">Claude</a></li>
+      <li>總長超過約上下文的 1%（保底 8,000 字元）時，最少用的技能說明會被拿掉，Claude 就比較不會自己想到要用它。
+        <a class="src" href="https://code.claude.com/docs/en/env-vars" target="_blank" rel="noopener">Claude</a></li>
+      <li>建議每個 App 只裝 5～15 個真的用得到的；功能重疊的留一個。<span class="chip">app-bootstrap</span> 安裝時會算清單大小，超過或重疊會提醒。</li>
+      <li>研究結果（只用搜尋確認）：精選的技能平均讓通過率提高 16.2 個百分點，但有些任務反而變差；AI 自己寫的技能平均沒有幫助；
+        2～3 段的精簡技能比一大份完整文件好
+        <a class="src" href="https://arxiv.org/abs/2602.12670" target="_blank" rel="noopener">arXiv※</a>。
+        另一份測試裡，56% 的情況技能根本沒被叫用
+        <a class="src" href="https://vercel.com/blog/agents-md-outperforms-skills-in-our-agent-evals" target="_blank" rel="noopener">Vercel※</a>。</li>
+      <li>skl 自己的對照測試（同一個題目、同一份工作守則，只差有沒有裝技能，各跑 2 次，2026-10-18）：
+        台股資料 5.5 比 3.5 分（滿分 6，沒技能時不會用官方 OpenAPI、沒開 WAL）、App 健檢 11 比 10 分（滿分 11）、
+        AI 自動挑模型 5 比 4 分（滿分 6）。重講常識的技能幫助不大，有用的是你自己的規則、腳本和檢查。
+        <a href="https://github.com/xin7355-collab/skl/blob/main/docs/skill-evals.md" target="_blank" rel="noopener">完整結果</a></li>
+    </ul>
+    <p class="good">可以說：「用 bootstrap_app.py listing 檢查這個 repo 的技能清單，用不到、重疊的移掉，只留真的用得到的。」</p>
+  </div>
 </section>
 
 <!-- ───────────── 注意 ───────────── -->

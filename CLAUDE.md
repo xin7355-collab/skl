@@ -46,6 +46,8 @@
   技能需要的套件寫進哪個設定檔、怎麼驗證、有沒有費用），列完就直接做，不用等我回覆。需要我提供的東西
   （金鑰、帳號、付款）或本守則沒授權的動作才先問我；我說「只裝不做」時才停。
 - 不留死碼；改名、搬檔後全專案搜一次舊名稱的殘留參照。
+- CLAUDE.md 每次對話都整份載入，控制在 200 行內：只跟某些檔案有關的細節放 `.claude/rules/`（開頭寫 `paths:`），
+  讀或改到那些檔案才載入。
 
 ## 6. 本專案資訊
 - 用途：個人的 Claude Code 技能庫（fork 自開源 claude-skills，MIT），加上自製外掛
@@ -59,24 +61,15 @@
     工作流（手動執行）。
   - `xin-toolkit/skills/app-bootstrap/assets/CLAUDE.template.md`：給其他 App 的工作守則範本
     （含 PWA + Actions 章節）。改守則時兩邊都要改。
-  - `web/index.html`：技能挑選網頁（GitHub Pages，`pages.yml` 部署）；`web/build_catalog.py` 產生
-    `catalog.json`（部署時才產生，不進 git）；`web/zh.json`：每個技能的中文說明（只給網頁顯示用）；
-    `web/categories.json`：技能用途分類規則（由上而下比對，可用 overrides 指定）。「健檢更新」的「該裝哪些技能」
-    （`advicePrompt`，只建議不安裝；App 清單讀部署時複製的 `apps.json`，用原生 `<select>`，不要用 `<datalist>`——iPhone Safari 常選不到；可一鍵開 X-Ray 顧問）。
-  - `web/dev-guide.html`（App 開發全流程）、`web/agent.html`（AI Agent 製作流程）：兩頁同一套結構——路線圖（可點的流程圖）、
-    教學（每一步：目標／在哪裡／怎麼做／要貼的／會看到／完成標準／卡住怎麼辦，可打勾）、起手式（一題一題的精靈）、範例（完整案例＋範例庫＋我的 App）、
-    比較、注意、技術、參考。共用程式在 `web/guide/guide.js`＋`guide.css`（部署時複製到 `_site/guide/`，網址帶 `?v=__APP_VER__`）；
-    題目、範例、參考資源是頁面裡的 `<script type="application/json" id="wiz-def|templates|refs">`，改了要跑 `python3 web/check_guides.py`
-    （範例答案要對得上題目、分類與種類要在清單裡、頁面內連結要存在）。範例至少 25 個；參考的開源專案用 `xray.html?repo=` 開，要先確認 repo 存在。
-    費用與規定**一律附官方出處**、頁首寫查證日；出處清單由頁面上的 `a.src` 自動整理，只能靠搜尋確認的標 ※。更新內容要重新查證並改查證日。
-    「裝完接著做」規則 `FOLLOW_UP` 在 guide.js，跟 index.html 一字不差（E2E 比對）。舊版存檔（`guide-gen`／`agent-gen`）由各頁 `migrate()` 轉成精靈答案，
-    不認得的值回到預設。存檔鍵：`guide-*-v2`／`agent-*-v2`、進度 `guide-done-v1`／`agent-done-v1`、Agent 做法 `agent-way`。
-    範例與案例只用公開 App（StockAI-DB、PriceHub）的架構，不寫工作相關 App 的內容。
-    dev-guide 的選項用到的規定（LINE、推播、地圖等）出處放「注意」的「功能的眉角」。
-    agent 依 `pickWay` 由簡到繁建議做法（Cowork → Routine → GitHub Actions → 自己寫 API），教學只顯示選的做法的步驟；B 段裝組合 `ai`＋`agent`。
+  - 網頁（GitHub Pages，`pages.yml` 部署）：`web/index.html` 技能挑選、`web/dev-guide.html`＋`web/agent.html` 兩份教學
+    （共用 `web/guide/`）、`web/ai.html` AI 指南、`web/xray.html` Repo X-Ray。各頁的細節規則在 `.claude/rules/`，
+    讀或改到那些檔案時才自動載入。共同規則：費用與規定附官方出處；改 `web/ai/` 的資料後必須跑
+    `python3 web/ai/check_ai_data.py`、改教學頁的內嵌資料後跑 `python3 web/check_guides.py`，通過才能推。
   - `ops/weekly_report.py`＋`Weekly maintenance report` 工作流：每週一 08:00 健檢 `.github/apps.json` 列的 App、
     比對上游（基準在 `.github/upstream-sync.json`）、檢查中文說明覆蓋率 → 只寫數量的 Issue。
     同步上游後要更新 upstream-sync.json 的 commit。
+  - `ops/skill_eval.py`：自製技能「有技能／沒技能」對照測試（`run` 用 `claude -p` 跑、會用掉用量，手動執行；`selftest` 在 CI）。
+    結果記在 `docs/skill-evals.md`；改了自製技能想知道有沒有變好就重跑。
   - `xin-toolkit/skills/file-intake`：使用者上傳檔案要「做出來」時的標準流程。
   - `xin-toolkit/skills/ai-model-router`：App 呼叫 AI 的自動挑模型模組（`scripts/model_router.py`、`assets/model_router.js`，
     兩邊規則要一致；selftest 都在 CI 跑）。組合 `ai`。
@@ -84,33 +77,10 @@
     真實網路驗證用 `Web to markdown smoke test` 工作流（改到技能時自動跑）。組合 `python`。
   - `xin-toolkit/skills/auto-video-edit`：全自動影片剪輯（ffmpeg）；`Video auto edit` 工作流每 30 分鐘處理
     以 video 開頭的「草稿 Release」裡的影片，成品傳回同一個草稿（草稿不公開）。
-  - `web/ai.html`＋`web/ai/models.json`、`web/ai/features.json`：AI 模型與功能指南（含 Cowork 分頁：分區對照、範例只放通用情境，不放工作單位等敏感資訊）。資料由每週 Routine 自動
-    研究更新（自我進化）；改資料後必須跑 `python3 web/ai/check_ai_data.py`，通過才能推。跑分一律附出處網址。
-  - `web/xray.html`：Repo X-Ray（使用者提供的單檔工具，GitHub 專案透視）。合併搜尋器（網址直接掃、關鍵字搜尋）、
-    上一步／瀏覽器返回不重查、搜尋結果右側大字星星數（`fmtStars`）＋小字檔案大小與排序、localStorage 快取 1 小時（超過 200KB 不存）省 API 額度。
-    熱門推薦由 `web/build_trending.py` 在 `Deploy web page`（每天 06:00 排程＋push）收集成 `trending.json`（不進 git）；
-    另有模糊搜尋（同義詞＋OR 放寬＋本機重排）、結果內模糊篩選、成長速度（★/天）、
-    繁中翻譯（Google 免費端點，熱門清單部署時預翻）、專案類型判斷與「參考它做我的 App」提示。
-    分三個分頁（探索 GitHub／我的 App／紀錄）；App 顧問只給自己的 App（apps.json 或 xin7355-collab 帳號），外部專案不跑。
-    看過／下載過／收藏紀錄存 localStorage `xray-hist-v1`；「白話重點」取代技術指紋、API 端點、檔案類型分佈。
-    批次勾選（localStorage `xray-pick-v1`，用途範本 `PURPOSES`，股票類自動補回測檢查）→ 複製網址＋要求給 Claude；
-    每次複製記在 `xray-picklog-v1` 與紀錄的 cp 欄位。搜尋一次 100 筆；分類籤 `CATS`／`catsOf`（手機上分類）＋進階條件（GitHub qualifier）。
-    翻譯快取 `xray-tr-v2`（v1 有混送時存下的未翻譯英文，已棄用）；翻譯請求 10 秒逾時、每批翻好就重畫。
-    說明文件清單每份附一句中文說明（SKILL.md description／第一段，摘要快取 `xray-docsum-v1`）；授權、行為準則等制式文件用 `DOC_KNOWN`
-    直接標中文、不送翻譯（省請求避免被 Google 限流）。翻譯被限流（429／連線失敗）時 `trFetch` 斷路 3 分鐘。
-    專案地圖 `paintMap`（資料夾用途規則 `DIR_ROLES`，只用 `res.skel`）；「複製整包重點給 AI」`buildPack`（上限 `PACK_CAP`，只用已抓內容）；
-    外部深入看 `EXT_TOOLS`（私人 repo 不顯示）。README 取路徑最淺的那份（`.claude/skills/x/README.md` 不能搶走根目錄的）。
-    Python 判斷只看主要依賴（`pyMainDeps`，dev 群組不算）；有 `[project]` 的 pyproject 是套件，docs 裡的 index.html 不算網站。
-    翻譯：簡體也送去轉繁體、簡體與英文分批送（混送時英文會原樣傳回）；簡體字表在 xray.html 的 SIMP_RE 與
-    build_trending.py 的 SIMP，兩邊要一致。
-    「我的 App」＋「App 顧問」：規則在 `web/advisor_rules.json`（推薦技能路徑必須存在，`web/check_advisor_rules.py` 檢查），
-    部署時複製 `.github/apps.json` 成 `apps.json`。新增 App 就加進 apps.json（可填 `url`：線上網址，X-Ray 優先顯示）。
-    `.claude/`、`.agents/` 等隱藏資料夾裡的 SKILL.md 是裝進來的技能，不算技能包。
-    Token 可勾「記在這支手機」存 localStorage（使用者要求；只建議唯讀 Token，畫面只顯示末 4 碼，只送 api.github.com）。
   - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
     使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
-  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（oil-ui、hairline-create、live-panel、huashu-art-motion、manimgx、archify、ui-ux-pro-max、karpathy-guidelines、answer-me-with-html、constraint-driven-development、source-driven-development、performance-optimization、critique-defense-copilot、humanizer、zh-tw-humanizer、tw-writing、voice-profile-extraction、lit-review、academic-writing-discipline、design-taste-frontend、redesign-existing-projects、ponytail、wireframe、qa-acceptance、statistical-analysis、statsmodels、polars、markitdown，MIT）；來源、版本與修改
-    記在 `community/README.md`（oil-ui 已移除自動更新與推銷；huashu-art-motion 的字型不進 repo，用 fetch_fonts.py 下載驗證；評估過沒收的也列在裡面，避免重複評估）。組合 `visual`、`writing`、`research`。
+  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（MIT），組合 `visual`、`writing`、`research`。
+    來源、版本、修改與「評估過沒收的」都記在 `community/README.md`——評估新專案前先查，避免重複評估。
   - `xin-toolkit/skills/app-bootstrap/assets/security-reviewed.json`：掃描 FAIL 但人工審查為誤判的技能清單，
     以內容指紋（`bootstrap_app.py hash <路徑>`）綁定；技能一改就失效、要重審。不要為了「裝得上」隨便加。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。
@@ -127,7 +97,8 @@
     （`python3 web/build_catalog.py --missing` 會列出缺的）。
   - 新增技能後跑：`python3 scripts/check_frontmatter.py --all`、`python3 scripts/check_paths.py --all`、
     兩支工具的 `selftest`。
-  - 不要把上游的 `.claude/settings.json`（會自動載入第三方外掛）或 `.mcp.json` 加回來。
+  - 不要把上游的 `.claude/settings.json`（會自動載入第三方外掛）、`.mcp.json`、`.claude/commands/`（上游維護者自己的指令，
+    會開 PR、刪分支，跟本守則衝突，已刪除）加回來；同步上游時也要排除。
   - `.claude/skills/` 是用 app-bootstrap 從本 repo 複製給「skl 自己的工作階段」用的 11 個技能（清單在
     `.claude/skills/.skl-vendor.json`）；原始檔改了之後跑
     `python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py update --target . --no-hook` 同步。

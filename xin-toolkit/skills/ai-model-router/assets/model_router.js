@@ -73,6 +73,8 @@
       this.sleep = opts.sleep || sleep;
       this.override = opts.override || {};      // 例如 { fast: "gemini-2.5-flash" }，等同 Python 的環境變數覆寫  // guardrails: ignore（範例／測試資料）
       this.log = opts.log || ((m) => console.warn(m));
+      // 跟 Python 版一樣等 60 秒：對方卡住不回時，不要一直等到 Worker／瀏覽器把整個請求砍掉
+      this.timeoutMs = opts.timeoutMs || 60000;
       this._ids = null; this._at = 0; this._good = {};
     }
     _headers(key) {
@@ -83,14 +85,18 @@
       return { Authorization: "Bearer " + key };
     }
     async _http(method, url, headers, payload) {
+      // 逾時當成暫時性錯誤（狀態 0），跟連線失敗一樣走指數退避重試；計時要包含讀完回應內容
+      const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctl ? setTimeout(() => ctl.abort(), this.timeoutMs) : null;
       try {
         const r = await this.fetch(url, { method, headers: Object.assign({}, headers, payload ? { "Content-Type": "application/json" } : {}),
-                                          body: payload ? JSON.stringify(payload) : undefined });
+                                          body: payload ? JSON.stringify(payload) : undefined, signal: ctl ? ctl.signal : undefined });
         let body = {}; try { body = await r.json(); } catch (e) { body = {}; }
         const ra = r.headers && r.headers.get && r.headers.get("retry-after");
         if (ra && /^\d+$/.test(ra)) body._retry_after = ra;
         return [r.status, body];
       } catch (e) { return [0, {}]; }
+      finally { if (timer) clearTimeout(timer); }
     }
     async models(refresh) {
       if (!refresh && this._ids && Date.now() - this._at < TTL) return this._ids;
@@ -198,6 +204,15 @@
     r = new ModelRouter("groq", { keys: ["secret-123"], sleep: async () => {}, log: () => {}, fetch: mk(ids, () => [500, {}]) });
     try { await r.chat("best", [{ role: "user", content: "x" }]); t(false, "全部失敗要丟錯"); }
     catch (e) { t(!String(e.message).includes("secret-123") && e.message.includes("試過"), "全部失敗：中文錯誤、不洩漏金鑰"); }
+    // 對方一直不回：逾時後重試，最後丟出中文錯誤，而不是永遠卡住
+    // 假伺服器只在被中止時才結束；沒有逾時機制的話會永遠卡住，所以外面再包 3 秒的保險
+    const hang = async (url, init) => (init.method === "GET" ? { status: 200, json: async () => ({ data: [{ id: "llama-3.1-8b-instant" }] }), headers: { get: () => null } }
+      : new Promise((_, rej) => { if (init.signal) init.signal.addEventListener("abort", () => rej(new Error("aborted"))); }));
+    let calls = 0;
+    r = new ModelRouter("groq", { keys: ["k"], sleep: async () => { calls++; }, log: () => {}, fetch: hang, timeoutMs: 20 });
+    const out = await Promise.race([r.chat("fast", [{ role: "user", content: "x" }], { escalate: false }).catch((e) => e),
+      new Promise((res) => setTimeout(() => res("卡住"), 3000))]);
+    t(out instanceof Error && calls === 3 && out.message.includes("服務忙碌"), "對方不回應：逾時後退避重試 3 次，再丟出中文錯誤（不會卡住）");
     console.log("\n自我測試" + (ok ? "全部通過" : "有失敗"));
     return ok ? 0 : 1;
   }

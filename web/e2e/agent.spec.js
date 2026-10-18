@@ -74,6 +74,19 @@ test('費用表每一列都有出處，或明寫「未查證」；出處清單�
   await expect(page.locator('#srcs li').filter({ hasText: '※' }).first()).toBeVisible();
 });
 
+test('「技能、MCP、CLAUDE.md 差在哪」每一列都附出處，研究結果標 ※', async ({ page }) => {
+  await page.goto('/agent.html');
+  await tab(page, 'tech');
+  const card = page.locator('#tech-layers');
+  await expect(card).toBeVisible();
+  const rows = card.locator('table tr').filter({ has: page.locator('td') });
+  await expect(rows).toHaveCount(5);
+  for (let i = 0; i < 5; i++) expect(await rows.nth(i).locator('a.src').count(), await rows.nth(i).innerText()).toBeGreaterThan(0);
+  for (const name of ['arXiv※', 'Vercel※']) await expect(card.locator('a.src', { hasText: name })).toHaveCount(1);
+  await expect(page.locator('#srcs li').filter({ hasText: 'arxiv.org' })).toContainText('※');
+  await expectNoHorizontalScroll(page);
+});
+
 test.describe('選做法與進度', () => {
   test('教學只顯示選的做法的步驟，進度也只算那些；預設是 Routine', async ({ page }) => {
     await page.goto('/agent.html');

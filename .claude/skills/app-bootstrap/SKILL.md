@@ -35,6 +35,10 @@ description: 把 skl 技能庫裡挑好的技能組合（core／pwa／actions／
    - **開工自動健檢**：加上 SessionStart hook（`.claude/hooks/skl-session-start.sh`），每次開對話先回報
      問題數量，技能超過 14 天沒更新會提醒；合併進既有 `.claude/settings.json`，不覆蓋原設定（`--no-hook` 可關）。
    - 目標沒有 `CLAUDE.md` → 建立工作守則範本；已有 → 不覆蓋，提示合併。
+   - **技能清單大小與重疊**：每個技能的名稱＋說明每一輪都會放進對話，總長超過官方保底預算（8,000 字元）時，
+     最少用的技能說明會被拿掉、比較不會被自動叫用。安裝（含試跑）最後會列出清單大小；超過預算、裝超過 15 個、
+     或有兩個技能說明很像時會提醒。照提醒精簡：只留這個 App 真的用得到的 5～15 個，重疊的留一個。
+     隨時可以用 `bootstrap_app.py listing --target .` 檢查。
 4. 若新建了 `CLAUDE.md`：依專案實際情況填第 7 節；不是 PWA + Actions 架構就刪掉第 6 節。
 5. 裝完立刻跑一次 `app-guardrails-audit` 做健檢，把結果回報給使用者。
 6. commit：`.claude/skills/` 與 `CLAUDE.md`（commit 訊息寫裝了哪些組合、來源 commit）。
