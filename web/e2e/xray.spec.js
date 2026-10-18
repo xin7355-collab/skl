@@ -1,5 +1,7 @@
-// Repo X-Ray（web/xray.html）：掃描判讀、專案地圖、打包給 AI、搜尋結果、勾選、說明文件、返回
-const { test, expect, expectNoHorizontalScroll } = require('./fixtures');
+// Repo X-Ray（web/xray.html）：掃描判讀、專案地圖、打包給 AI、搜尋結果、勾選、說明文件、返回、
+// 複製失敗的手動面板、App 顧問推薦、只問這段、敏感檔名、自動產生資料夾、首次 commit、限流、熱門清單
+const { test, expect, expectNoHorizontalScroll, REPOS, RATE, commitsOf } = require('./fixtures');
+const ADV_RULES = require('../advisor_rules.json');
 
 async function scan(page, repo) {
   await page.goto('/xray.html?repo=' + repo);
@@ -115,5 +117,260 @@ test.describe('搜尋結果', () => {
     await page.goBack();
     await expect(page.locator('#rrows button[data-i]')).toHaveCount(3);
     expect(searches()).toBe(before);
+  });
+});
+
+test.describe('複製', () => {
+  // iPhone Safari 常在 await 之後擋剪貼簿：模擬兩種複製方法都失敗
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator.clipboard, 'writeText', { value: () => Promise.reject(new DOMException('Write permission denied.', 'NotAllowedError')) });
+      document.execCommand = () => false;
+    });
+  });
+
+  test('自動複製被擋時，顯示已全選的文字框可以手動拷貝', async ({ page }) => {
+    await scan(page, 'demo/pwa-app');
+    await page.locator('#packbtn').click();
+    const panel = page.locator('#copyfb');
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText('長按');
+    const ta = page.locator('#copyfb-ta');
+    const v = await ta.inputValue();
+    expect(v).toContain('https://github.com/demo/pwa-app');
+    expect(v).toContain('## 目錄地圖');
+    const sel = await ta.evaluate((el) => ({ s: el.selectionStart, e: el.selectionEnd, n: el.value.length, focus: document.activeElement === el }));
+    expect(sel).toEqual({ s: 0, e: sel.n, n: sel.n, focus: true });
+    // 沒真的複製到，就不能說「已複製」，也不能記成複製過
+    await expect(page.locator('#toast')).not.toContainText('已複製');
+    const hist = await page.evaluate(() => JSON.parse(localStorage.getItem('xray-hist-v1') || '{}')['demo/pwa-app']);
+    expect(hist && hist.cp).toBeFalsy();
+    await expectNoHorizontalScroll(page);
+    await page.locator('#copyfb-close').click();
+    await expect(panel).toBeHidden();
+  });
+
+  test('只問這段在複製失敗時也走同一個面板', async ({ page }) => {
+    await scan(page, 'demo/pwa-app');
+    await page.locator('#map summary').filter({ hasText: 'src/' }).click();
+    await page.locator('#map details[open] .askseg').click();
+    await expect(page.locator('#copyfb')).toBeVisible();
+    expect(await page.locator('#copyfb-ta').inputValue()).toContain('資料夾：src/');
+  });
+});
+
+test('專案地圖「只問這段」：只複製這個資料夾＋repo 網址，比整包短很多', async ({ page }) => {
+  await scan(page, 'demo/pwa-app');
+  await page.locator('#map summary').filter({ hasText: 'src/' }).click();
+  await page.locator('#map details[open] .askseg').click();
+  await expect(page.locator('#toast')).toContainText('已複製');
+  const t = await page.evaluate(() => navigator.clipboard.readText());
+  expect(t).toContain('https://github.com/demo/pwa-app');
+  expect(t).toContain('資料夾：src/（主程式');
+  expect(t).toContain('只針對這個資料夾');
+  expect(t).not.toContain('docs/');
+  expect(t.length).toBeLessThan(600);
+  await expectNoHorizontalScroll(page);
+});
+
+test.describe('App 顧問（自己的 App）', () => {
+  const title = (id) => ADV_RULES.rules.find((r) => r.id === id).title;
+  // busy-app 同時命中：沒 CLAUDE.md（weight 3）＋四條 weight 2（沒 Actions、有畫面沒測試、爬蟲、呼叫 AI）
+  const URGENT = ['no-claude', 'no-ci', 'no-tests-ui', 'scrape', 'llm'];
+
+  test('同樣急的規則輪流推薦：每條命中的規則至少一個技能進名單', async ({ page }) => {
+    await scan(page, 'xin7355-collab/busy-app');
+    await expect(page.locator('#sec-advisor')).toBeVisible();
+    for (const id of URGENT) await expect(page.locator('#advisor .rule').filter({ hasText: title(id) })).toHaveCount(1);
+    await page.locator('#adv-install').click();
+    await expect(page.locator('#toast')).toContainText('已複製');
+    const t = await page.evaluate(() => navigator.clipboard.readText());
+    const lines = t.split('\n').filter((l) => l.startsWith('- '));
+    expect(lines).toHaveLength(12);
+    // 以前整條攤平：爬蟲 5 個技能先吃光名額，「呼叫 AI 模型」一個都進不去
+    for (const id of URGENT) expect(lines.some((l) => l.endsWith('（' + title(id) + '）')), id + ' 要有技能進名單').toBe(true);
+  });
+
+  test('pickWant：weight 高的組先輪完；同組每條規則輪流出一個；已裝與重複的跳過', async ({ page }) => {
+    await scan(page, 'demo/pypkg');
+    const r = await page.evaluate(() => pickWant([
+      { title: 'A', weight: 2, skills: ['x/a1', 'x/a2', 'x/a3', 'x/a4', 'x/a5'] },
+      { title: 'B', weight: 2, skills: ['x/b1', 'x/b2', 'x/b3', 'x/b4', 'x/b5'] },
+      { title: 'C', weight: 2, skills: ['x/a1', 'x/c2', 'x/c3', 'x/c4', 'x/c5'] },
+      { title: 'D', weight: 5, skills: ['x/d1'] },
+      { title: 'E', weight: 0, skills: ['x/e1'] },
+    ], new Set(['b1'])));
+    expect(r.want).toEqual(['x/d1', 'x/a1', 'x/b2', 'x/c2', 'x/a2', 'x/b3', 'x/c3', 'x/a3', 'x/b4', 'x/c4', 'x/a4', 'x/b5']);
+    expect(r.more).toBe(3);
+    expect(r.why['x/a1']).toBe('A');
+  });
+
+  test('顧問每一項都有「只問這段」，複製那一項的標題、原因與建議技能', async ({ page }) => {
+    await scan(page, 'xin7355-collab/busy-app');
+    const rule = page.locator('#advisor .rule').filter({ hasText: title('llm') });
+    await rule.locator('.askseg').click();
+    const t = await page.evaluate(() => navigator.clipboard.readText());
+    expect(t).toContain('https://github.com/xin7355-collab/busy-app');
+    expect(t).toContain(title('llm'));
+    expect(t).toContain('ai-model-router');
+    expect(t).not.toContain(title('scrape'));
+    expect(t.length).toBeLessThan(1500);
+    await expectNoHorizontalScroll(page);
+  });
+});
+
+test.describe('敏感檔名警示', () => {
+  const risks = async (page) => page.locator('#risk .risk div i').allInnerTexts();
+
+  test('抓登入設定檔與金鑰資料夾，放過 .env 範本與「講 token 的檔」', async ({ page }) => {
+    await scan(page, 'demo/secrets-app');
+    const r = await risks(page);
+    for (const f of ['.env.production', '.npmrc', '.pypirc', '.git-credentials', '.netrc', '.htpasswd', '.ssh/config', '.aws/credentials', '.gnupg/pubring.kbx'])
+      expect(r, f).toContain(f);
+    for (const f of ['.env.example', 'src/tokenizer.py', 'docs/token-economics.md', 'README.md']) expect(r, f).not.toContain(f);
+  });
+
+  test('抓 id_ed25519、.p12／.p8／.pfx、service-account*.json；公鑰 .pub 不算', async ({ page }) => {
+    await scan(page, 'demo/gen-app');
+    const r = await risks(page);
+    for (const f of ['certs/app.p12', 'certs/ios-push.p8', 'certs/win.pfx', 'certs/id_ed25519', 'certs/service-account-prod.json']) expect(r, f).toContain(f);
+    expect(r).not.toContain('certs/id_ed25519.pub');
+  });
+});
+
+test('專案地圖：自動產生的資料夾標「不用看」並排在最後；要有證據才算', async ({ page }) => {
+  await scan(page, 'demo/gen-app');
+  const rows = page.locator('#map summary');
+  const texts = await rows.allInnerTexts();
+  const at = (name) => texts.findIndex((t) => t.includes(' ' + name));
+  const GEN = ['node_modules/', 'dist/', 'build/', '.next/', 'storybook-static/', 'mypkg.egg-info/', 'coverage/', 'venv/'];
+  for (const g of GEN) {
+    expect(at(g), g + ' 要出現在地圖上').toBeGreaterThan(-1);
+    expect(texts[at(g)], g).toContain('自動產生，不用看');
+    expect(at(g), g + ' 要排在根目錄後面').toBeGreaterThan(at('（根目錄）'));
+  }
+  // node_modules 檔案最多（30 個），但真正的資料夾全部排在它前面
+  expect(texts[0]).not.toContain('自動產生');
+  for (const real of ['src/', 'certs/', 'backend/', 'env/']) expect(at(real), real).toBeLessThan(at('（根目錄）'));
+  // 叫 env 但沒有 pyvenv.cfg：不能標成自動產生
+  expect(texts[at('env/')]).not.toContain('自動產生');
+  const body = (name) => page.locator('#map details', { has: page.locator('summary', { hasText: name }) }).locator('.ms');
+  await rows.filter({ hasText: 'src/' }).click();
+  await expect(body('src/')).toContainText('__snapshots__/ ♻️ 自動產生，不用看');
+  await rows.filter({ hasText: 'backend/' }).click();
+  await expect(body('backend/')).toContainText('.venv/ ♻️ 自動產生，不用看');
+  await expectNoHorizontalScroll(page);
+});
+
+test.describe('首次 commit', () => {
+  const day = (full) => { const c = commitsOf(REPOS[full]); return c[c.length - 1].commit.author.date.slice(0, 10); };
+  const commitCalls = (net, full) => net.api.filter((p) => p === '/repos/' + full + '/commits').length;
+
+  test('照 Link 的 last 頁碼抓最後一頁的最後一筆；比建立日早很多照實寫', async ({ page, net }) => {
+    await scan(page, 'demo/pwa-app');
+    const chip = page.locator('#v-first');
+    await expect(chip).toContainText('首次 commit：' + day('demo/pwa-app'));
+    await expect(chip).toContainText(/約 1,?500 天前/);
+    await expect(chip).toContainText(/比 GitHub 建立日早 1,?100 天/);
+    expect(commitCalls(net, 'demo/pwa-app')).toBe(2);
+    expect(net.api.filter((p) => p.startsWith('/repositories/'))).toEqual([]);
+    // 存在手機的快取：重新整理不再花額度
+    await page.reload();
+    await expect(page.locator('#v-first')).toContainText('首次 commit：' + day('demo/pwa-app'));
+    expect(commitCalls(net, 'demo/pwa-app')).toBe(2);
+  });
+
+  test('只有一頁（Link 沒有 last）就用第一頁那筆；比建立日晚也照實寫', async ({ page, net }) => {
+    await scan(page, 'demo/skillpack');
+    const chip = page.locator('#v-first');
+    await expect(chip).toContainText('首次 commit：' + day('demo/skillpack') + '（約 10 天前）');
+    await expect(chip).toContainText('比 GitHub 建立日晚 390 天');
+    expect(commitCalls(net, 'demo/skillpack')).toBe(1);
+  });
+
+  test('搜尋列表不查首次 commit', async ({ page, net }) => {
+    await page.goto('/xray.html');
+    await page.locator('#url').fill('stock app');
+    await page.locator('#go').click();
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(3);
+    expect(net.api.filter((p) => p.endsWith('/commits'))).toEqual([]);
+  });
+});
+
+test.describe('GitHub 限流', () => {
+  const searchOnce = async (page) => {
+    await page.goto('/xray.html');
+    await page.locator('#url').fill('stock app');
+    await page.locator('#go').click();
+  };
+  const limited = (extra) => ({ status: 429, headers: Object.assign({}, RATE, extra), contentType: 'application/json',
+    body: JSON.stringify({ message: 'You have exceeded a secondary rate limit. Please wait a few minutes before you try again.' }) });
+
+  test('Retry-After 太久：不在背景空等，直接說要等幾秒', async ({ page, net }) => {
+    net.apiOverride = (u) => (u.pathname === '/search/repositories' ? limited({ 'retry-after': '120' }) : undefined);
+    await searchOnce(page);
+    await expect(page.locator('#results')).toContainText('GitHub 限流，約 120 秒後再試');
+    expect(net.api.filter((p) => p === '/search/repositories')).toHaveLength(1);
+  });
+
+  test('Retry-After 很短：照 GitHub 給的時間等完自動重試', async ({ page, net }) => {
+    let n = 0;
+    net.apiOverride = (u) => (u.pathname === '/search/repositories' && n++ === 0 ? limited({ 'retry-after': '1' }) : undefined);
+    await searchOnce(page);
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(3);
+    expect(net.api.filter((p) => p === '/search/repositories')).toHaveLength(2);
+  });
+
+  test('額度用完：照 x-ratelimit-reset（時間戳）算還要幾秒，並提醒可以加 Token', async ({ page, net }) => {
+    net.apiOverride = (u) => (u.pathname === '/repos/demo/pwa-app'
+      ? limited({ 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': String(Math.floor(Date.now() / 1000) + 600) }) : undefined);
+    await page.goto('/xray.html?repo=demo/pwa-app');
+    await expect(page.locator('#status')).toContainText(/GitHub 限流，約 (599|600) 秒後再試（約 10 分鐘）/);
+    await expect(page.locator('#status')).toContainText('Token');
+  });
+});
+
+test.describe('熱門清單（trending.json）', () => {
+  const day = (n) => new Date(Date.now() - n * 864e5).toISOString();
+  const item = (full, stars, extra = {}) => Object.assign({
+    full_name: full, description: 'Trending project ' + full, stargazers_count: stars, language: 'TypeScript',
+    pushed_at: day(1), created_at: day(20), size: 1200, html_url: 'https://github.com/' + full, topics: [], license: 'MIT',
+  }, extra);
+  test.use({
+    trendingJson: {
+      generated_at: new Date().toISOString().slice(0, 19), stale: false, failed: [],
+      lists: [
+        { id: 'rising', title: '竄升最快', desc: '跟上一次收集比，平均每天多最多星', q: '', stale: false, items: [item('demo/fast', 9000, { gain_per_day: 120.5 })] },
+        { id: 'top', title: '歷來星數最高', desc: '全 GitHub 最多人收藏的專案', q: 'stars:>50000', stale: false, items: [item('demo/old-giant', 400000)] },
+        // build_trending.py 新加的清單：沒有 desc 也要能顯示
+        { id: 'breakout', title: '爆紅新星', q: '', stale: false, items: [
+          item('demo/rocket', 4321, { new: true, first_seen: '2026-10-17' }),
+          item('demo/steady', 2100, { new: false }),
+        ] },
+      ],
+      snapshot: {},
+    },
+  });
+
+  test('照 trending.json 列出所有清單（含新的爆紅新星），第一次上榜的加 🆕', async ({ page }) => {
+    await page.goto('/xray.html');
+    const links = page.locator('#trend a[data-t]');
+    await expect(links).toHaveText(['🚀 竄升最快', '歷來星數最高', '💥 爆紅新星']);
+    await links.filter({ hasText: '爆紅新星' }).click();
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(2);
+    await expect(page.locator('#status')).not.toContainText('undefined');
+    const row = (n) => page.locator('#rrows button[data-i]').filter({ hasText: n });
+    await expect(row('demo/rocket').locator('.newin')).toHaveText('🆕 新上榜');
+    await expect(row('demo/rocket').locator('.newin')).toHaveAttribute('title', /2026-10-17/);
+    await expect(row('demo/steady').locator('.newin')).toHaveCount(0);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test('沒有 new 欄位的清單跟以前一樣，不加 🆕', async ({ page }) => {
+    await page.goto('/xray.html');
+    await page.locator('#trend a[data-t="top"]').click();
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(1);
+    await expect(page.locator('#rrows .newin')).toHaveCount(0);
+    await expect(page.locator('#rrows')).not.toContainText('🆕');
   });
 });

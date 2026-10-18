@@ -151,6 +151,25 @@ section{margin-top:26px}
 .map .ms{padding:0 0 10px 18px;font-size:12px;line-height:1.7;color:var(--muted)}
 .map .ms b{font-family:var(--mono);font-weight:400;color:var(--text)}
 .map .more{font-size:12px;color:var(--muted);padding:8px 0}
+/* 自動產生的資料夾：顏色調淡，一眼看出可以略過 */
+.map details.gen .mn,.map details.gen .mr,.map .mg{opacity:.55}
+.map .ma{margin-top:6px}
+/* 「只問這段」：小顆、虛線框，跟主要動作按鈕分得出來；高度 30px 以上手指才點得到 */
+button.askseg{background:transparent;color:var(--cyan);border:1px dashed rgba(72,211,192,.45);border-radius:4px;
+  padding:5px 9px;min-height:30px;font-size:11px;font-weight:600;white-space:nowrap;flex:none}
+.adv .rule .rh{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.adv .rule .rh b{flex:1;min-width:0}
+/* 自動複製失敗時的手動複製面板（iPhone Safari 在非使用者操作的時機會擋剪貼簿） */
+.copyfb{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;justify-content:flex-end;background:rgba(5,7,10,.72)}
+.copyfb.on{display:flex}
+.copyfb .cbox{background:var(--panel);border-top:1px solid var(--line);border-radius:12px 12px 0 0;
+  padding:12px 16px calc(16px + env(safe-area-inset-bottom));max-height:82vh;display:flex;flex-direction:column;gap:8px}
+.copyfb .ch{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--amber);font-weight:600}
+.copyfb .ch span{flex:1;min-width:0}
+.copyfb .ch button{padding:7px 14px;flex:none}
+.copyfb .hint{margin-top:0;font-family:var(--body);font-size:13px;color:var(--text)}
+.copyfb textarea{width:100%;min-height:200px;flex:1;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:4px;
+  padding:10px;font-family:var(--mono);font-size:16px;line-height:1.5;-webkit-user-select:text;user-select:text}
 .plain .ok{color:var(--cyan)}
 details.adv-more{margin-top:26px}
 details.adv-more>summary{cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--cyan);list-style:none;padding:8px 0}
@@ -166,6 +185,7 @@ details.adv-more>summary::-webkit-details-marker{display:none}
 .batch .bh{font-family:var(--mono);font-size:11px;color:var(--muted)}
 .batch .br{color:var(--amber);font-family:var(--mono);font-size:12px;word-break:break-all;margin-top:4px}
 .hb.new{color:var(--red);border-color:rgba(224,104,95,.45)}
+.hb.newin{color:#12151B;background:var(--cyan);border-color:var(--cyan);font-weight:700;margin-left:2px}
 .results button.was{border-left:3px solid rgba(72,211,192,.5)}
 .logf{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;font-family:var(--mono);font-size:11px}
 .logf a{color:var(--text);border:1px solid var(--line);border-radius:3px;padding:3px 8px;cursor:pointer}
@@ -532,6 +552,13 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="copyfb" id="copyfb" role="dialog" aria-modal="true" aria-labelledby="copyfb-t">
+  <div class="cbox">
+    <div class="ch"><span id="copyfb-t">📋 請手動複製</span><button class="ghost" id="copyfb-close">關閉</button></div>
+    <div class="hint">這個瀏覽器擋下了自動複製。文字已經全選：長按文字 → 「全選」→「拷貝」，再貼到 Claude。</div>
+    <textarea id="copyfb-ta" readonly aria-label="要複製的文字"></textarea>
+  </div>
+</div>
 <div class="pickbar" id="pickbar" role="button">☑ 已勾選 <span id="pickn">0</span> 個 ・ 整理並複製 ›</div>
 <div class="sheet" id="picksheet">
   <div class="vhead"><span class="vp">☑ 批次勾選的專案</span><button id="pick-close">關閉</button></div>
@@ -583,7 +610,35 @@ function showRate(h){
 
 class Fail extends Error{ constructor(code,msg){ super(msg); this.code=code; } }
 
-/* 指數退避（exponential backoff retry）：403 / 429 / 5xx 重試，額度歸零則立刻中止（重試無意義） */
+/* 被限流時 GitHub 會說要等多久：先看 Retry-After（次級限流），再看 x-ratelimit-reset。
+   寫法參考 last30days 的 retry_delay_from_headers()（MIT，github.com/mvanhorn/last30days-skill），自己改寫成 JS。
+   x-ratelimit-reset ≥ 1e8 是 GitHub 的「恢復時間點」（Unix 秒），比它小的是「再幾秒」（其他服務的寫法）。
+   GitHub 每個回應都帶 x-ratelimit-reset（主要額度那一小時的重置時間），額度沒用完時它跟這次被擋無關，
+   拿來當等待時間會把一般的 403 誤報成「限流 3600 秒」，所以只有 remaining 是 0 或沒給 remaining 時才採用。
+   回傳秒數；兩個標頭都沒有就回 null（交給原本的指數退避）。 */
+const RATE_WAIT_MAX=20;   // 20 秒內就在背景等完自動重試；更久就停下告訴使用者，手機畫面不能一直卡著
+function retryDelayFromHeaders(h,now){
+  now=now||Date.now();
+  const ra=h.get("retry-after");
+  if(ra!=null && ra!==""){
+    let v=Number(ra);
+    if(!isFinite(v)){ const t=Date.parse(ra); v=isNaN(t)?NaN:(t-now)/1000; }   // Retry-After 也可以是 HTTP 日期
+    if(isFinite(v)) return Math.max(1,Math.ceil(v));
+  }
+  const rem=h.get("x-ratelimit-remaining"), rs=h.get("x-ratelimit-reset");
+  if(rs!=null && rs!=="" && (rem==null || Number(rem)<=0)){
+    let v=Number(rs);
+    if(isFinite(v)){ if(v>=1e8) v=v-now/1000; return Math.max(1,Math.ceil(v)); }
+  }
+  return null;
+}
+function rateMsg(sec,h){
+  const out=h.get("x-ratelimit-remaining")==="0";
+  return "GitHub 限流，約 "+sec+" 秒後再試"+(sec>=120?"（約 "+Math.ceil(sec/60)+" 分鐘）":"")+
+    (out ? "：API 額度用完了"+(S.token?"。":"，加一組 Token 可以直接拉到 5000/hr。") : "。");
+}
+
+/* 指數退避（exponential backoff retry）：403 / 429 / 5xx 重試；GitHub 有說要等多久就照它的時間等，太久就停 */
 async function raw(url, tries){
   tries = tries || 0;
   const headers = { "Accept":"application/vnd.github+json" };
@@ -602,10 +657,13 @@ async function raw(url, tries){
   if(r.status===401 && S.token) throw new Fail("401","Token 無效或已過期：打開「Token」區按「忘記 Token」，到 GitHub 重新產生一組再貼上。");
   if(r.status===404) throw new Fail("404", S.token ? "找不到這個 repo，或你的 Token 沒有開放這個私人 repo 的讀取權限。" : "找不到這個 repo，或它是私有的（私人 repo 要先加上 Token）。");
   if(r.status===403 || r.status===429){
-    if(r.headers.get("x-ratelimit-remaining")==="0"){
-      const t=+r.headers.get("x-ratelimit-reset")*1000;
-      const m=Math.max(1,Math.ceil((t-Date.now())/60000));
-      throw new Fail("RATE","API 額度用完了，約 "+m+" 分鐘後恢復。加一組 Token 可以直接拉到 5000/hr。");
+    const wait=retryDelayFromHeaders(r.headers);
+    if(wait!=null){
+      // 比 GitHub 說的時間早重試只會再被擋、白花額度；要等太久就停下來說清楚，不在背景空轉
+      if(wait>RATE_WAIT_MAX || tries>=4) throw new Fail("RATE",rateMsg(wait,r.headers));
+      toast("GitHub 限流，等 "+wait+" 秒後自動重試…");
+      await sleep(wait*1000+Math.random()*250);
+      return raw(url,tries+1);
     }
     if(tries<4){ await sleep(600*Math.pow(2,tries)+Math.random()*300); return raw(url,tries+1); }
     throw new Fail("403","GitHub 拒絕了這次請求。");
@@ -847,10 +905,28 @@ function signalsOf(res,pkg,repo,readme){
 }
 function ruleHits(rules,sig){ return rules.filter(r=>(r.when||[]).every(w=>w[0]==="!"?!sig[w.slice(1)]:!!sig[w])); }
 const WANT_CAP=12;   // 一次建議太多技能反而沒人裝；依急迫程度取前 12 個
+/* 同一個急迫程度（weight）的規則輪流出技能：每條先出第一個、再輪第二個。
+   以前是整條攤平，排前面、技能多的規則（例如爬蟲有 5 個）會把 12 個名額吃光，
+   同樣急的「呼叫 AI 模型」一個都進不了名單。weight 高的那組全部輪完才輪下一組，急的永遠先裝。 */
 function pickWant(hits,installed){
   const bn=p=>p.replace(/\/+$/,"").split("/").pop(), want=[], why={};
-  hits.slice().sort((a,b)=>(b.weight==null?1:b.weight)-(a.weight==null?1:a.weight))
-    .forEach(r=>r.skills.forEach(p=>{ if(!installed.has(bn(p)) && want.indexOf(p)<0){ want.push(p); why[p]=r.title; } }));
+  const wt=r=>r.weight==null?1:r.weight;
+  const groups=[...new Set(hits.map(wt))].sort((a,b)=>b-a);
+  groups.forEach(g=>{
+    // 每條規則一個指標；某條的下一個技能已經被別條拿走，就往後找，讓每一輪每條規則都真的多出一個
+    const q=hits.filter(r=>wt(r)===g).map(r=>({r:r,i:0}));
+    for(let left=true; left; ){
+      left=false;
+      q.forEach(x=>{
+        const sk=x.r.skills||[];
+        while(x.i<sk.length){
+          const p=sk[x.i++];
+          if(!installed.has(bn(p)) && want.indexOf(p)<0){ want.push(p); why[p]=x.r.title; break; }
+        }
+        if(x.i<sk.length) left=true;
+      });
+    }
+  });
   return {want:want.slice(0,WANT_CAP),why:why,more:Math.max(0,want.length-WANT_CAP)};
 }
 /* 「找同類專案」：優先用主題標籤；沒有就從英文描述或名稱挑關鍵字 */
@@ -883,7 +959,7 @@ async function advise(res,pkg,repo,loc,ref,readme){
   const on=Object.keys(ADV.signals).filter(k=>sig[k]);
   let html='<div class="sig">'+(on.length?on.map(k=>'<span class="chip">'+esc(ADV.signals[k])+'</span>').join(""):'<span class="chip">沒有特別的技術訊號</span>')+
     (installed.size?'<span class="chip">已裝 skl 技能 <b>'+installed.size+'</b></span>':'')+'</div>';
-  html+=hits.map(r=>'<div class="rule"><b>'+esc(r.title)+'</b><p>'+esc(r.why)+'</p>'+
+  html+=hits.map((r,i)=>'<div class="rule"><div class="rh"><b>'+esc(r.title)+'</b>'+askBtn("rule",i)+'</div><p>'+esc(r.why)+'</p>'+
     r.skills.map(p=>'<span class="sk"><code>'+esc(base(p))+'</code> '+esc(zh[p]||"")+
       (installed.has(base(p))?' <span class="ok">✓ 已裝</span>':'')+'</span>').join("")+
     (r.search||[]).map(q=>'<button class="gq" data-gq="'+esc(q.q)+'">🔍 '+esc(q.q)+'｜'+esc(q.why)+'</button>').join("")+'</div>').join("");
@@ -893,8 +969,36 @@ async function advise(res,pkg,repo,loc,ref,readme){
   html+='<div class="acts">'+(want.length?'<button class="ghost" id="adv-install">📋 複製：幫這個 App 裝最急的 '+want.length+' 個技能</button>'+(pw.more?'<span class="hint">另有 '+pw.more+' 個次要建議，先裝這批</span>':''):'<span class="hint">建議的技能都已經裝了 👍</span>')+
     '<button class="ghost" id="adv-fix">🩺 複製：請 Claude 依診斷改善這個 App</button></div>';
   box.innerHTML=html;
-  S.adv={full:loc.owner+"/"+loc.repo,want:want,why:why,hits:hits};
+  S.adv={full:loc.owner+"/"+loc.repo,want:want,why:why,hits:hits,zh:zh};
 }
+/* 「只問這段」：只想問某一個資料夾或某一項建議時，整包重點（buildPack，上萬字）太長、Claude 也會分心；
+   這裡只放 repo 網址＋那一段內容＋要它針對這段回答，短到手機剪貼簿一定放得下。 */
+function askBtn(kind,i){ return '<button type="button" class="askseg" data-ask="'+kind+'" data-ai="'+i+'" aria-label="只問這段：複製提示給 Claude">💬 只問這段</button>'; }
+function askPrompt(kind,i){
+  if(kind==="map"){
+    const m=(S.mapData||[])[i], full=S.pack&&S.pack.full; if(!m||!full) return null;
+    return "GitHub 專案 https://github.com/"+full+" 的其中一段（Repo X-Ray「專案地圖」）：\n"+
+      "- 資料夾："+(m.name==="（根目錄）"?m.name:m.name+"/")+"（"+(m.role||"用途不明")+"，"+m.n+" 個檔案）"+
+      (m.subs.length?"\n- 主要子資料夾："+m.subs.join("、"):"")+
+      "\n請只針對這個資料夾，用白話解釋它在這個專案裡負責什麼、要看懂它先讀哪幾個檔案；"+
+      (m.gen?"它看起來是自動產生的，也請確認它該不該放進版控。":"有值得改進的地方也給建議。")+"我用 iPhone、沒有電腦。";
+  }
+  if(kind==="rule"){
+    const a=S.adv, r=a&&a.hits[i]; if(!r) return null;
+    const base=p=>p.replace(/\/+$/,"").split("/").pop();
+    return "我的 App https://github.com/"+a.full+" 的其中一項（Repo X-Ray「App 顧問」）：\n"+
+      "- "+r.title+"："+r.why+
+      (r.skills&&r.skills.length?"\n- 建議的 skl 技能："+r.skills.map(p=>base(p)+((a.zh||{})[p]?"（"+a.zh[p]+"）":"")).join("、"):"")+
+      "\n請只針對這一項，說明在這個 repo 裡具體要改哪些檔案、怎麼做，以及不做會有什麼風險；適合的話直接動手改。我用 iPhone、沒有電腦。";
+  }
+  return null;
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-ask]"); if(!b) return;
+  e.preventDefault();
+  const t=askPrompt(b.dataset.ask,+b.dataset.ai);
+  if(t) copyText(t,"已複製 ✓ 貼到 Claude 就能問這段"); else toast("這段的資料還沒準備好，等掃描完成再按");
+});
 
 /* ══ 一鍵健檢全部 App：每個 App 只花 2 次 API（repo 資料＋檔案樹），其餘走 raw 不計額度。
    依規則的 weight 加總成「急迫分數」排序。私人 App 沒 Token 就略過並標示（還沒設定，不算失敗）；
@@ -1171,6 +1275,9 @@ async function scanTree(nodes){
       if(!d){ d={n:0,ext:new Map()}; res.skel.set(key,d); }
       d.n++;
       if(ext) d.ext.set(ext,(d.ext.get(ext)||0)+1);
+      // 虛擬環境的證據：pyvenv.cfg 就放在這一格（venv/pyvenv.cfg、backend/.venv/pyvenv.cfg）。
+      // 只記一個旗標，不留檔名清單；沒有它，叫 env/ 的資料夾可能是真的程式碼，不能亂標
+      if(seg.length<=3 && seg[seg.length-1].toLowerCase()==="pyvenv.cfg" && seg.slice(0,-1).join("/")===key) d.venv=true;
 
       // 檔案指紋
       for(let k=0;k<FILE_RULES.length;k++){
@@ -1223,10 +1330,8 @@ async function scanTree(nodes){
 
       /* 敏感檔案警示：只記路徑，永遠不讀內容 */
       if(res.risks.length<12){
-        if(/(^|\/)\.env$/.test(low)||/(^|\/)\.env\.(local|production)$/.test(low)) res.risks.push([path,"環境變數檔被 commit 進版控"]);
-        else if(/\.(pem|key|p12|keystore|jks)$/.test(low)) res.risks.push([path,"憑證或簽章金鑰檔"]);
-        else if(/(^|\/)id_rsa$/.test(low)) res.risks.push([path,"SSH 私鑰"]);
-        else if(/(serviceaccount|credentials|secret)[\w-]*\.json$/.test(low)) res.risks.push([path,"服務帳號憑證"]);
+        const why=sensitiveWhy(path);
+        if(why) res.risks.push([path,why]);
       }
 
       /* 優先候選：檔名就長得像 API 層 */
@@ -1253,6 +1358,57 @@ async function scanTree(nodes){
     await sleep(0); // 讓出主執行緒，避免大 repo 卡住 UI
   }
   return res;
+}
+
+/* ── 敏感檔名判斷：只看路徑，永遠不讀內容 ──
+   做法參考 graphify 的 graphify/detect.py（_is_sensitive、_generic_keyword_hit、_is_env_template；
+   Apache-2.0，github.com/Graphify-Labs/graphify），只參考判斷順序，程式是自己寫的 JS。
+   以前只認 .env／.pem／id_rsa，漏掉 .npmrc、.git-credentials、id_ed25519 這些常夾帶 Token 的檔；
+   「secret」又是任意子字串就算，連 secretlint.json 都會報。現在分三層：
+   1. 放在 .ssh／.aws／.gnupg／.gcloud 裡的檔案一律算（金鑰常常沒有副檔名）；
+   2. 特定檔名與副檔名（.env 系列、金鑰、登入設定檔）；.env.example 這類範本是刻意放進來的，不算；
+   3. token／secret／password 這類通用字，只有在檔名結尾（api_token.txt）或檔名很短（secrets.yml）時才算；
+      tokenizer.py、token-economics.md 是「講 token 的檔」，不是「裝 token 的檔」。 */
+const CRED_DIRS=new Set([".ssh",".aws",".gnupg",".gcloud"]);
+const SENS_RULES=[
+  [/^\.(env|envrc)(\.|$)/,"環境變數檔被 commit 進版控"],
+  [/\.(pem|key|p12|pfx|p8|keystore|jks)$/,"憑證或簽章金鑰檔"],
+  [/(^|[^a-z0-9])(id_rsa|id_dsa|id_ecdsa|id_ed25519)$/,"SSH 私鑰"],
+  [/^(\.npmrc|\.pypirc|\.git-credentials|\.netrc|\.pgpass|\.htpasswd|\.boto)$/,"登入／套件發布設定檔（常夾帶 Token 或密碼，確認裡面沒有）"],
+  [/^service[-_.]?account[^\/]*\.json$/,"服務帳號憑證"]
+];
+const ENV_TEMPLATE=/^\.(env|envrc)\.([^\/]*\.)?(example|sample|template|dist)$/;
+// 通用關鍵字：前面不能接英數（xsecret 不算），後面不能接英文字母（tokenizer 不算）
+const SENS_KW=[/(^|[^a-z0-9])((credential|secret|passwd|password|private_key)s?)(?![a-z])/g,
+  /(^|[^a-z0-9])(tokens?)(?![a-z])/g, /(^|[^a-z0-9])(service[._-]?account)(?![a-z])/g];
+const SENS_SRC=/\.(js|mjs|cjs|ts|tsx|jsx|py|rb|go|rs|java|kt|swift|php|cs|c|cc|cpp|h|vue|svelte|html?|css|scss|sh|sql)$/;   // 真的程式碼：device_token.py 是模組，不是 token
+const SENS_PROSE=/\.(md|markdown|mdx|rst|adoc|org|tex)$/;
+function sensKwHit(stem){
+  const words=stem.split(/[-_\s.]+/).filter(Boolean).length;
+  for(const re of SENS_KW){
+    re.lastIndex=0; let m, hit=false;
+    while((m=re.exec(stem))){
+      hit=true;
+      if(m.index+m[0].length===stem.length) return true;   // 關鍵字在結尾：檔名在說「裡面裝的是什麼」
+      re.lastIndex=m.index+m[0].length;
+    }
+    if(hit && words<=2) return true;                        // 很短的名字（token_config.yaml、secret.txt）
+  }
+  return false;
+}
+function sensitiveWhy(path){
+  const low=String(path).toLowerCase(), seg=low.split("/"), name=seg[seg.length-1];
+  if(seg.slice(0,-1).some(s=>CRED_DIRS.has(s))) return "金鑰資料夾（"+seg.slice(0,-1).find(s=>CRED_DIRS.has(s))+"）裡的檔案";
+  if(ENV_TEMPLATE.test(name)) return null;                  // 範本只有欄位名稱，本來就該進版控
+  const r=SENS_RULES.find(x=>x[0].test(name));
+  if(r) return r[1];
+  // 只去掉最後一個副檔名：token.economics.notes.md 要保留三個字，不能縮成 token
+  const dot=name.lastIndexOf("."), stem=(dot>0?name.slice(0,dot):name).replace(/^\.+/,"");
+  if(!stem || !sensKwHit(stem)) return null;
+  if(SENS_SRC.test(name)) return null;
+  // 文件：多字的主題（password-policy.md）是在講這件事；只有整個檔名就是關鍵字（secrets.md）才像存放處
+  if(SENS_PROSE.test(name) && (stem==="tokens" || !SENS_KW.some(re=>{ re.lastIndex=0; const m=re.exec(stem); return m && m.index===0 && m[0].length===stem.length; }))) return null;
+  return "檔名像是放密碼／Token 的檔案";
 }
 
 function toRoute(low,orig){
@@ -1752,7 +1908,7 @@ const DIR_ROLES=[
   [/^(locales?|i18n|lang|languages|translations?)$/,"🌏","多語系文字"],
   [/^(licenses?|legal)$/,"⚖️","授權條款"],
   [/^(vendor|third_?party|external|deps)$/,"📦","別人的程式（第三方）"],
-  [/^(dist|build|out|target|release|output)$/,"📦","打包好的成品"],
+  [/^(out|target|release|output)$/,"📦","打包好的成品"],   // dist、build 一律算自動產生（GEN_DIRS）
   [/^(src|source|lib|libs|core|internal|pkg|packages|crates|modules|app|python|js|ts|rust|go)$/,"🧩","主程式"]
 ];
 const EXT_WORD={md:"文件",mdx:"文件",txt:"文字",rst:"文件",py:"Python",ipynb:"筆記本",ts:"TypeScript",tsx:"TypeScript 畫面",
@@ -1760,9 +1916,22 @@ const EXT_WORD={md:"文件",mdx:"文件",txt:"文字",rst:"文件",py:"Python",i
   kt:"Kotlin",swift:"Swift",c:"C",cpp:"C++",h:"C 標頭",cs:"C#",rb:"Ruby",php:"PHP",html:"網頁",css:"樣式",scss:"樣式",
   json:"設定／資料",yml:"設定",yaml:"設定",toml:"設定",sh:"指令稿",ps1:"指令稿",sql:"資料庫",csv:"表格資料",
   png:"圖片",jpg:"圖片",jpeg:"圖片",svg:"圖示",gif:"動圖",webp:"圖片",woff:"字型",woff2:"字型",ttf:"字型",mp4:"影片",wasm:"WebAssembly",sha256:"檢查碼",lock:"版本鎖定檔"};
-function dirRole(name,repoName){
+/* 自動產生的資料夾（建置成品、套件、快取、虛擬環境）：檔案多但不用看，標出來並排到最後，免得蓋過真正的程式。
+   做法參考 graphify 的 graphify/detect.py（_SKIP_DIRS、_is_noise_dir；Apache-2.0），只參考做法、自己寫。
+   coverage、venv／env 這種名字也可能是真的程式碼，要有證據才算：coverage 裡有 lcov-report（測試報告），
+   venv 裡有 pyvenv.cfg。證據只用掃描時已有的 res.skel，不為了這個多花請求。 */
+const GEN_DIRS=/^(\.next|__snapshots__|storybook-static|node_modules|dist|build)$|\.egg-info$/;
+function isGenDir(n,node){
+  if(GEN_DIRS.test(n)) return true;
+  if(n==="coverage") return !!(node && node.subs && node.subs.has("lcov-report"));
+  if(n==="venv"||n===".venv"||n==="env") return !!(node && node.venv);
+  return false;
+}
+const GEN_ROLE=["♻️","自動產生，不用看"];
+function dirRole(name,repoName,node){
   const n=String(name).toLowerCase();
   if(n==="（根目錄）") return ["📄","根目錄的設定與說明"];
+  if(isGenDir(n,node)) return GEN_ROLE;
   // Python／Rust 套件常把主程式放在跟 repo 同名的資料夾（manimgx/manimgx）
   if(repoName && n.replace(/[-_]/g,"")===String(repoName).toLowerCase().replace(/[-_]/g,"")) return ["🧩","主程式"];
   const r=DIR_ROLES.find(r=>r[0].test(n));
@@ -1778,22 +1947,30 @@ function paintMap(res,repoName){
     const i=k.indexOf("/"), top=i<0?k:k.slice(0,i), sub=i<0?"":k.slice(i+1);
     let t=tops.get(top); if(!t){ t={n:0,ext:new Map(),subs:new Map()}; tops.set(top,t); }
     t.n+=d.n; d.ext.forEach((c,e)=>t.ext.set(e,(t.ext.get(e)||0)+c));
-    if(sub){ const s0=t.subs.get(sub)||{n:0,ext:new Map()}; s0.n+=d.n; d.ext.forEach((c,e)=>s0.ext.set(e,(s0.ext.get(e)||0)+c)); t.subs.set(sub,s0); }
+    if(!sub && d.venv) t.venv=true;
+    if(sub){ const s0=t.subs.get(sub)||{n:0,ext:new Map()}; s0.n+=d.n; d.ext.forEach((c,e)=>s0.ext.set(e,(s0.ext.get(e)||0)+c)); if(d.venv) s0.venv=true; t.subs.set(sub,s0); }
   }
-  const all=[...tops.entries()].sort((a,b)=>(a[0]==="（根目錄）")-(b[0]==="（根目錄）")||b[1].n-a[1].n);
+  // 先算好每個資料夾的用途：排序、畫面、「只問這段」與打包都用同一份，才不會對不上
+  const role=new Map(); tops.forEach((t,name)=>role.set(name,dirRole(name,repoName,t)));
+  const gen=name=>role.get(name)===GEN_ROLE;
+  // 一般資料夾照檔案數 → 根目錄 → 自動產生的（node_modules 動輒上萬檔，放前面會把主程式擠出前 16 名）
+  const all=[...tops.entries()].sort((a,b)=>gen(a[0])-gen(b[0])||(a[0]==="（根目錄）")-(b[0]==="（根目錄）")||b[1].n-a[1].n);
+  const subsOf=t=>[...t.subs.entries()].map(([sn,sd])=>[sn,sd,dirRole(sn,repoName,sd)])
+    .sort((a,b)=>(a[2]===GEN_ROLE)-(b[2]===GEN_ROLE)||b[1].n-a[1].n);
   const MAXTOP=16, list=all.slice(0,MAXTOP), rest=all.slice(MAXTOP);
-  S.mapData=all.slice(0,40).map(([name,t])=>{ const r=dirRole(name,repoName);
-    return {name:name,role:r?r[1]:(extHint(t.ext)?"主要是 "+extHint(t.ext):""),n:t.n,
-            subs:[...t.subs.entries()].sort((a,b)=>b[1].n-a[1].n).slice(0,8).map(s=>s[0]+"("+s[1].n+")")}; });
+  S.mapData=all.slice(0,40).map(([name,t])=>{ const r=role.get(name);
+    return {name:name,role:r?r[1]:(extHint(t.ext)?"主要是 "+extHint(t.ext):""),n:t.n,gen:gen(name),
+            subs:subsOf(t).slice(0,8).map(s=>s[0]+"("+s[1].n+")")}; });
   if(all.length<2){ $("sec-map").style.display="none"; return; }   // 只有根目錄就沒什麼好畫
-  $("map").innerHTML='<div class="more" style="padding-bottom:0">點資料夾看裡面有什麼；用途是依資料夾名稱判斷，認不出來的就寫主要檔案類型。</div>'+list.map(([name,t])=>{
-    const r=dirRole(name,repoName), hint=extHint(t.ext);
-    const subs=[...t.subs.entries()].sort((a,b)=>b[1].n-a[1].n);
-    const body=subs.length ? subs.slice(0,12).map(([sn,sd])=>{ const sr=dirRole(sn,repoName);
-        return '<div><b>'+esc(sn)+'/</b> '+(sr?sr[0]+' '+esc(sr[1]):esc("主要是 "+extHint(sd.ext)))+' · '+sd.n+' 檔</div>'; }).join("")+
+  $("map").innerHTML='<div class="more" style="padding-bottom:0">點資料夾看裡面有什麼；用途是依資料夾名稱判斷，認不出來的就寫主要檔案類型。♻️ 是建置、安裝時自動產生的，不用看。</div>'+list.map(([name,t],idx)=>{
+    const r=role.get(name), hint=extHint(t.ext);
+    const subs=subsOf(t);
+    const body=(subs.length ? subs.slice(0,12).map(([sn,sd,sr])=>
+        '<div'+(sr===GEN_ROLE?' class="mg"':'')+'><b>'+esc(sn)+'/</b> '+(sr?sr[0]+' '+esc(sr[1]):esc("主要是 "+extHint(sd.ext)))+' · '+sd.n+' 檔</div>').join("")+
         (subs.length>12?'<div>…另有 '+(subs.length-12)+' 個子資料夾</div>':'')
-      : '<div>這層沒有子資料夾'+(hint?'，主要是 '+esc(hint):'')+'</div>';
-    return '<details><summary><span class="mc">'+t.n.toLocaleString()+' 檔</span>'+(r?r[0]:"📁")+' <span class="mn">'+
+      : '<div>這層沒有子資料夾'+(hint?'，主要是 '+esc(hint):'')+'</div>')+
+      '<div class="ma">'+askBtn("map",idx)+'</div>';
+    return '<details'+(gen(name)?' class="gen"':'')+'><summary><span class="mc">'+t.n.toLocaleString()+' 檔</span>'+(r?r[0]:"📁")+' <span class="mn">'+
       esc(name==="（根目錄）"?name:name+"/")+'</span> <span class="mr">'+esc(r?r[1]:(hint?"主要是 "+hint:"其他"))+'</span></summary>'+
       '<div class="ms">'+body+'</div></details>';
   }).join("")+(rest.length?'<div class="more">…另有 '+rest.length+' 個資料夾（'+rest.reduce((a,b)=>a+b[1].n,0)+' 檔）</div>':'');
@@ -2107,6 +2284,62 @@ function showOut(){
   $("status").style.display=vis?"":"none";
 }
 
+/* ── 第一個 commit 的日期：GitHub 的 created_at 是「在 GitHub 上建立 repo」的時間，
+   從別處搬來的專案會比真正開始寫晚很多年；也有人先建空 repo、很久以後才推程式。
+   做法：commits?per_page=1 一頁一筆，Link 標頭 rel="last" 的頁碼就是總筆數，抓那一頁的最後一筆就是最早的 commit。
+   只有一頁（Link 沒有 last）就用第一頁那筆。只在詳細頁查（搜尋列表每筆查會把 60/hr 額度用光），
+   最多 2 次 API，結果跟其他 API 一樣存 localStorage 快取 1 小時。 */
+function lastPage(link){
+  if(!link) return null;
+  const m=String(link).split(",").map(x=>x.match(/<([^>]+)>\s*;\s*rel="?last"?/)).find(Boolean);
+  if(!m) return null;
+  // 只讀頁碼，不直接跟著網址走：GitHub 給的是 /repositories/{id}/commits，路徑跟我們查的不一樣
+  try{ const n=Number(new URL(m[1]).searchParams.get("page")); return n>0?n:null; }catch(e){ return null; }
+}
+async function firstCommit(owner,repo,ref){
+  const key="https://api.github.com/repos/"+owner+"/"+repo+"/commits?first&sha="+ref;
+  if(S.cache.has(key)) return S.cache.get(key);
+  const saved=pcGet(key);
+  if(saved!==undefined){ S.cache.set(key,saved); return saved; }
+  const url="https://api.github.com/repos/"+owner+"/"+repo+"/commits?per_page=1&sha="+encodeURIComponent(ref);
+  const r1=await enqueue(()=>raw(url)), j1=await r1.json();
+  let c=Array.isArray(j1)?j1[0]:null;
+  const last=lastPage(r1.headers.get("link"));
+  if(last && last>1){
+    const j2=await enqueue(()=>raw(url+"&page="+last).then(r=>r.json()));
+    if(Array.isArray(j2) && j2.length) c=j2[j2.length-1];
+  }
+  const cm=c&&c.commit||{};
+  // 用作者日期：rebase、cherry-pick 會改掉 committer 日期，作者日期才是「當初寫的時候」
+  const v={d:(cm.author&&cm.author.date)||(cm.committer&&cm.committer.date)||"",sha:c&&c.sha||""};
+  S.cache.set(key,v); pcSet(key,v);
+  return v;
+}
+async function paintFirstCommit(owner,repo,ref,created){
+  const tok=S.fcTok=(S.fcTok||0)+1;
+  let txt, title="";
+  try{
+    const v=await firstCommit(owner,repo,ref);
+    if(tok!==S.fcTok) return;                     // 已經換到別的專案
+    const t=Date.parse(v.d);
+    if(isNaN(t)) txt="首次 commit：查不到（這個分支沒有 commit）";
+    else{
+      const days=Math.max(0,Math.round((Date.now()-t)/864e5));
+      txt="首次 commit："+v.d.slice(0,10)+"（"+(days?"約 "+days.toLocaleString()+" 天前":"今天")+"）";
+      // 跟 GitHub 建立日差很多時照實寫出來，不修正、不隱藏：這正是使用者想知道的資訊
+      const c=Date.parse(created||""), gap=isNaN(c)?0:Math.round((c-t)/864e5);
+      if(gap>=30) txt+="，比 GitHub 建立日早 "+gap.toLocaleString()+" 天（可能是從別處搬來的）";
+      else if(gap<=-30) txt+="，比 GitHub 建立日晚 "+(-gap).toLocaleString()+" 天";
+      title="commit "+String(v.sha).slice(0,7);
+    }
+  }catch(e){
+    if(tok!==S.fcTok) return;
+    txt="首次 commit：查不到（"+(e.code==="HTTP"&&/409/.test(e.message)?"空的 repo":e.message)+"）";
+  }
+  const el=$("v-first"); if(!el) return;
+  el.textContent=txt; if(title) el.title=title;
+}
+
 /* ── 渲染 ── */
 /* GitHub 認不出的授權（自訂、CC 系列）會回 NOASSERTION；直接寫出來使用者看不懂，也會讓 Claude 以為沒授權 */
 function licText(l){
@@ -2154,7 +2387,9 @@ function render(res,pkg,repo,loc,ref,live,x){
   const full=loc.owner+"/"+loc.repo, prev=histGet(full);
   // 先顯示「之前」的紀錄再記這一次，才看得出是不是重複點開
   $("v-meta").innerHTML=(prev&&(prev.n||prev.g||prev.dl)?'<div style="width:100%;margin-bottom:4px">'+histBadges(full,repo.pushed_at)+'</div>':'')+
-    meta.map(m=>'<span class="chip">'+esc(m[0])+' <b>'+esc(m[1])+'</b></span>').join("");
+    meta.map(m=>'<span class="chip">'+esc(m[0])+' <b>'+esc(m[1])+'</b></span>').join("")+
+    '<span class="chip" id="v-first">首次 commit：<b>查詢中…</b></span>';
+  paintFirstCommit(loc.owner,loc.repo,ref,repo.created_at);
   histMark(full,"seen",{d:String(repo.description||"").slice(0,140),st:repo.stargazers_count,ty:T?T.i+" "+T.n:"",p:repo.pushed_at});
 
   live=live||[];
@@ -2552,7 +2787,9 @@ function paintRows(){
     }
     const hb=histBadges(it.full_name,it.pushed_at);
     return '<button data-i="'+i+'"'+(hb?' class="was"':'')+'><div class="rr">'+pickBox(it.full_name)+'<div class="rmain">'+
-      '<span class="rn">'+esc(it.full_name)+'</span>'+(hb?'<div class="rd">'+hb+'</div>':'')+
+      // 🆕 只在 trending.json 明確寫 new: true（這次第一次上榜）才加；欄位不存在就跟以前一樣
+      '<span class="rn">'+esc(it.full_name)+'</span>'+(it.new===true?' <span class="hb newin" title="'+esc(it.first_seen?"第一次上榜："+it.first_seen:"這次第一次上榜")+'">🆕 新上榜</span>':'')+
+      (hb?'<div class="rd">'+hb+'</div>':'')+
       '<div class="rd">'+typeBadge(quickType(it))+esc(shown||"（沒有描述）")+'</div>'+
       // 星星數放右邊大字（使用者回饋：混在灰色小字裡看不到）；這行只留成長速度
       '<div class="rd" style="font-family:var(--mono);font-size:10px">'+
@@ -2600,12 +2837,18 @@ const TREND_FALLBACK=[
   {id:"month",title:"本月新星",q:()=>"created:>"+daysAgo(30)},
   {id:"ai",title:"AI／大模型",q:()=>"topic:llm"}
 ];
+const TREND_ICON={rising:"🚀",breakout:"💥"};
 function daysAgo(n){ return new Date(Date.now()-n*864e5).toISOString().slice(0,10); }
 S.trend=null;
 async function loadTrend(){
   try{
     const r=await fetch("trending.json",{cache:"no-cache"});
-    if(r.ok){ const d=await r.json(); if(d && d.lists && d.lists.length) S.trend=d; }
+    if(r.ok){
+      const d=await r.json();
+      // 壞掉的清單（沒有 id 或 items）略過，不讓一份格式不對的清單把整個熱門區弄壞
+      if(d && Array.isArray(d.lists)) d.lists=d.lists.filter(l=>l && l.id && Array.isArray(l.items));
+      if(d && d.lists && d.lists.length) S.trend=d;
+    }
   }catch(e){ /* 沒有就用即時查詢 */ }
   paintTrend();
 }
@@ -2613,7 +2856,10 @@ function paintTrend(){
   const d=S.trend;
   if(d){
     const t=new Date(d.generated_at), when=isNaN(t)?"":(t.getMonth()+1)+"/"+t.getDate()+" "+String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
-    $("trend").innerHTML='⭐ 熱門推薦：'+d.lists.map(l=>'<a data-t="'+esc(l.id)+'">'+(l.id==="rising"?"🚀 ":"")+esc(l.title)+'</a>').join("")+
+    // 清單照 trending.json 給的順序全部列出，不寫死 id：build_trending.py 新增清單（例如 breakout 爆紅新星）時這裡不用改。
+    // 認得的 id 才多加圖示；標題本來就以同一個圖示開頭就不重複加
+    $("trend").innerHTML='⭐ 熱門推薦：'+d.lists.map(l=>{ const ic=TREND_ICON[l.id], t=String(l.title||l.id);
+      return '<a data-t="'+esc(l.id)+'">'+(ic&&t.indexOf(ic)!==0?ic+" ":"")+esc(t)+'</a>'; }).join("")+
       '<span class="tnote">每天自動收集・資料時間 '+esc(when)+(d.stale?'・⚠️ 這次收集失敗，顯示的是上一份':'')+'・讀這份清單不耗 API 額度</span>';
   }else{
     $("trend").innerHTML='⭐ 熱門推薦：'+TREND_FALLBACK.map(l=>'<a data-tq="'+l.id+'">'+esc(l.title)+'</a>').join("")+
@@ -2628,7 +2874,7 @@ function showTrend(id,fromHistory){
   S.view="trend"; S.results=l.items.slice(); S.total=l.items.length; S.trendTitle=l.title+(l.stale?"（舊資料）":"");
   S.trendId=id; S.sort="best"; S.filter=""; S.fzGroups=[]; S.qKey="";
   markTrend(id);
-  say("⭐ "+l.title+"："+l.desc,"✓");
+  say("⭐ "+l.title+(l.desc?"："+l.desc:""),"✓");
   showResults();
   if(!fromHistory) pushView({v:"trend",id:id});
 }
@@ -2699,16 +2945,34 @@ function paintRecent(){
 }
 
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),1800); }
-async function copyText(text){
-  try{ await navigator.clipboard.writeText(text); }
+/* 複製：先用剪貼簿 API，不行再用舊的 execCommand；兩個都失敗（iPhone Safari 在 await 之後、
+   不是直接由點擊觸發時常會擋）就把文字放進看得到的面板並全選，讓使用者自己長按拷貝。
+   以前失敗時把隱藏的 textarea 刪掉、只跳「請長按選取」，畫面上根本沒有東西可以選。
+   失敗時改顯示可選取文字框的做法參考 archify 的 archify/explainer/reader.js（MIT，github.com/tt-a1i/archify），程式自己寫。
+   回傳 true＝真的複製到剪貼簿了（呼叫端才記「複製過」、才跳成功訊息）。 */
+async function copyText(text,okMsg){
+  let ok=false;
+  try{ await navigator.clipboard.writeText(text); ok=true; }
   catch(e){
     const ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("readonly","");
     ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select();
-    let ok=false; try{ ok=document.execCommand("copy"); }catch(err){ ok=false; }
-    ta.remove(); if(!ok){ toast("無法自動複製，請長按選取"); return; }
+    try{ ok=document.execCommand("copy"); }catch(err){ ok=false; }
+    ta.remove();
   }
-  toast("已複製 ✓");
+  if(!ok){ showCopyPanel(text); return false; }
+  toast(okMsg||"已複製 ✓");
+  return true;
 }
+function showCopyPanel(text){
+  const ta=$("copyfb-ta");
+  ta.value=text;
+  $("copyfb").classList.add("on");
+  // readonly 的 textarea 在 iPhone 上 select() 不一定有效，再用 setSelectionRange 補一次
+  try{ ta.focus({preventScroll:true}); }catch(e){ ta.focus(); }
+  ta.select(); try{ ta.setSelectionRange(0,text.length); }catch(e){}
+  ta.scrollTop=0;
+}
+function hideCopyPanel(){ $("copyfb").classList.remove("on"); $("copyfb-ta").value=""; }
 
 /* ══════════════════════════════════════════════════════════════
    8. 檔案檢視器：畫面上每個路徑都能點開，不必翻檔案樹
@@ -3260,9 +3524,8 @@ $("packbtn").addEventListener("click",async()=>{
   const d=S.docSums, sums=d&&d.order ? d.order.map((f,i)=>{ const t=d.sums[i]; const z=t&&zhOn()?(zhOf(t)||t):t;
     return [f,String(z||"").replace(/\s+/g," ").trim()]; }).filter(x=>x[1]).slice(0,40) : [];
   const t=buildPack(p,sums);
-  await copyText(t);
-  toast("已複製 ✓ 約 "+t.length.toLocaleString()+" 字，貼到 Claude App 就能問");
-  histMark(p.full,"cp");
+  // 自動複製失敗時會改開手動複製面板，那時不能說「已複製」，也還不算複製過
+  if(await copyText(t,"已複製 ✓ 約 "+t.length.toLocaleString()+" 字，貼到 Claude App 就能問")) histMark(p.full,"cp");
 });
 $("sharebtn").addEventListener("click",async()=>{
   const l=S.last; if(!l) return;
@@ -3286,7 +3549,9 @@ $("v-dl").addEventListener("click",()=>{
   if(c) download(c.path.split("/").pop(), c.txt);
   else window.open($("v-gh").href,"_blank","noopener");   // 圖片/二進位交給 GitHub
 });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("viewer").classList.remove("on"); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ $("viewer").classList.remove("on"); hideCopyPanel(); } });
+$("copyfb-close").addEventListener("click",hideCopyPanel);
+$("copyfb").addEventListener("click",e=>{ if(e.target===$("copyfb")) hideCopyPanel(); });   // 點面板外的暗處也能關
 
 $("go").addEventListener("click",go);
 $("url").addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
