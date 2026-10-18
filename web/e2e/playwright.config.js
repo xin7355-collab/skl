@@ -32,5 +32,7 @@ module.exports = defineConfig({
     url: `http://127.0.0.1:${PORT}/index.html`,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    // 預設是直接 SIGKILL；改送 SIGTERM，serve.py 才有機會刪掉暫存的 ZIP
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },
   },
 });

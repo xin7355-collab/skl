@@ -1,0 +1,31 @@
+# 社群技能測試（community/tests/）用的套件，版本固定：結果才不會因為某天套件改版就忽好忽壞。
+# 要升級時一次改一個、在本機或手動執行工作流跑過再推。
+# 數值套件跟上游 K-Dense tests/skill-requirements.toml 對技能驗證過的版本一致。
+# markitdown 只裝 pdf、docx、pptx、xlsx 四種格式（不用 [all]：會連帶裝語音辨識、Azure、YouTube 等大套件）；
+# pymupdf、python-docx、python-pptx、openpyxl、pillow 是測試用來「做出」假文件的。
+pytest==9.1.1
+
+# statistical-analysis、statsmodels
+numpy==2.5.3
+pandas==3.0.6
+scipy==1.18.1
+matplotlib==3.11.2
+statsmodels==0.15.0
+scikit-learn==1.9.1
+pingouin==0.7.0
+
+# polars
+polars==1.44.2
+pyarrow==26.0.0
+sqlalchemy==2.1.5
+fastexcel==0.21.0
+xlsxwriter==3.2.9
+
+# markitdown
+markitdown[pdf,docx,pptx,xlsx]==0.1.8
+requests==2.34.2
+pymupdf==1.28.2
+python-docx==1.2.0
+python-pptx==1.0.2
+openpyxl==3.1.5
+pillow==13.0.0

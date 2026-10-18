@@ -101,7 +101,7 @@
  "community/skills/source-driven-development": "寫程式前先查官方文件並附出處，查不到就明講「沒驗證」，不憑記憶寫可能過時的 API 用法；也教 AI 忽略網頁裡夾帶的指令與廣告。",
  "community/skills/performance-optimization": "效能優化的紀律：先量測（Core Web Vitals、Lighthouse、實際耗時）找出最慢的一處，只改那一處，再量一次，沒變快就改回來並記下失敗的嘗試；附網頁與後端常見效能問題清單。",
  "community/skills/critique-defense-copilot": "被網友惡意質疑、帶風向、截圖喊告時的冷靜應對教練（繁中、台灣情境）：拆解對方用了哪種操弄手法、預判下一步、攔住你衝動回嘴、分辨哪些該存證或找律師；不幫忙寫攻擊別人的內容。",
- "community/skills/archify": "把系統、流程、資料流、狀態、資料表、時間軸畫成可互動的單檔 HTML 圖（內嵌 SVG、深淺色、可匯出圖片）；也能讀程式碼畫出真實架構，或把請假、租屋、申請流程這類日常事情畫成圖。附嚴格檢查（含真瀏覽器檢查），需要 Node 18 以上與 Chrome。",
+ "community/skills/archify": "把系統、流程、資料流、狀態、資料表、時間軸畫成可互動的單檔 HTML 圖（內嵌 SVG、深淺色、可匯出圖片）；也能讀程式碼畫出真實架構，或把請假、租屋、申請流程這類日常事情畫成圖。v3.2 新增「一頁說明」：把答案做成先講結論、分區塊、附圖表的單頁（跟 answer-me-with-html 功能重疊）。附嚴格檢查（含真瀏覽器檢查），需要 Node 18 以上與 Chrome；一頁說明的介面文字是簡體字。",
  "community/skills/ui-ux-pro-max": "UI／UX 設計資料庫（離線、純 Python）：依產品類型搜尋推薦的版型、風格、配色、字型搭配與 UX 規則，產出一份設計系統；也有 22 種框架（React、Next.js、SwiftUI…）的實作守則與無障礙檢查清單。",
  "community/skills/karpathy-guidelines": "減少 AI 寫程式常犯錯的 4 條守則（來自 Andrej Karpathy 的觀察）：先講清楚假設、最簡單的解法、只改必要的地方、先定義怎麼驗證再動手。跟 superpowers 重疊，需要時手動叫用。",
  "community/skills/manimgx": "數學／3D 解說動畫（3Blue1Brown 那種公式與圖形會動的影片）：用 Python 寫場景、先出分鏡圖檢查重疊再輸出 mp4；寫法跟 Manim 一樣但快很多，數學式與影片編碼都內建（需 Python 3.13 以上，pip 安裝 manimgx）。",

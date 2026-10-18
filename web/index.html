@@ -79,6 +79,9 @@ label.toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; co
 .skill .zh { font-size: 15px; }
 .skill .meta { color: var(--muted); font-size: 12px; word-break: break-all; margin-top: 2px; }
 .skill details p { margin: 6px 0 0; }
+.skill .dl { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.skill .dl a { color: var(--accent); font-weight: 600; text-decoration: none; margin-right: 6px; }
+.skill .dl small { font-size: 12px; }
 .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--accent-soft); color: var(--text); margin-right: 4px; }
 .bar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
@@ -147,7 +150,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 
   <section id="tab-browse" class="card" hidden>
     <h2>瀏覽全部技能</h2>
-    <p class="hint">可以單個複製，也可以勾選多個後從底部一次複製。</p>
+    <p class="hint">可以單個複製，也可以勾選多個後從底部一次複製。要在 claude.ai 網頁版用，按技能下面的「下載 ZIP」再上傳（步驟見「說明」分頁）。</p>
     <div class="filters">
       <input id="q" type="search" placeholder="搜尋：中文或英文，例如 資料庫、SEO、測試" autocomplete="off">
       <select id="cat" aria-label="類別"><option value="">全部類別</option></select>
@@ -209,6 +212,17 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
     <details>
       <summary>「給 Claude 的指令」和「終端機指令」差在哪？</summary>
       <p>給 Claude 的指令是一段中文，貼到對話裡讓 Claude 幫你做完全部步驟（推薦）。終端機指令是給會自己下指令的人用的。</p>
+    </details>
+    <details id="zipHelp">
+      <summary>在 claude.ai 網頁版用技能：下載 ZIP 上傳</summary>
+      <ol>
+        <li>在「瀏覽技能」找到技能，按「下載 ZIP」，iPhone 會存到「檔案」App 的「下載項目」。</li>
+        <li>先確認 claude.ai 的 <b>Settings → Capabilities</b> 已開啟「Code execution and file creation」（技能要靠它才能跑）。</li>
+        <li>到 <b>Customize → Skills</b>，按「＋」→「Create skill」→「Upload a skill」，選剛下載的 ZIP。</li>
+        <li>上傳後在技能清單把它打開。上傳的技能只有你自己看得到。</li>
+      </ol>
+      <p>claude.ai 規定技能描述最多 200 字元，所以 ZIP 裡的描述是縮短版，完整原文放在 SKILL.md 內文第一段。要用到 GitHub 或本機程式的技能（例如 app-bootstrap）在 claude.ai 不一定能用。
+        操作路徑照 <a href="https://support.claude.com/en/articles/12512180-using-skills-in-claude" target="_blank" rel="noopener">Claude 官方說明</a>（2026-10-18 查證）；介面改版時以官方說明為準。</p>
     </details>
     <details>
       <summary>加到 iPhone 主畫面</summary>
@@ -428,13 +442,21 @@ function renderSkills() {
     el.innerHTML =
       `<div class="top"><input type="checkbox" aria-label="勾選">` +
       `<div class="main"><div class="zh"></div><div class="meta"><span class="tag"></span><span class="nm"></span></div>` +
-      `<details><summary>英文原文與路徑</summary><p class="en"></p><p class="pa"></p></details></div>` +
-      `<button class="btn small ghost">複製</button></div>`;
+      `<details><summary>英文原文與路徑</summary><p class="en"></p><p class="pa"></p></details>` +
+      // 只有部署時打包成功的技能才有 zip 欄位（build_zips.py 寫進 catalog.json）；沒有就不顯示，免得點到 404
+      (s.zip ? `<div class="dl"><a class="zip" download></a><small>上傳到 claude.ai：Customize → Skills → ＋ → Upload a skill</small></div>` : "") +
+      `</div><button class="btn small ghost">複製</button></div>`;
     el.querySelector(".zh").textContent = s.zh || s.desc.slice(0, 80);
     el.querySelector(".tag").textContent = catName[s.cat] || "其他";
     el.querySelector(".nm").textContent = s.name;
     el.querySelector(".en").textContent = s.desc;
     el.querySelector(".pa").textContent = s.path;
+    if (s.zip) {
+      const a = el.querySelector("a.zip");
+      a.href = s.zip;   // 用屬性設定而不是拼進 HTML：路徑來自 catalog.json，不讓特殊字元變成標籤
+      a.textContent = "下載 ZIP";
+      a.setAttribute("aria-label", `下載 ${s.name} 的 ZIP`);
+    }
     const cb = el.querySelector("input");
     cb.checked = selSkills.has(s.path);
     cb.addEventListener("change", () => {
