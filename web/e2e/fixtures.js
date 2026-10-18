@@ -47,19 +47,111 @@ const SKILL_FILES = {
   'skills/beta/SKILL.md': '---\nname: beta\ndescription: Beta skill does B.\n---\n',
 };
 
+// 會踩到敏感檔名判斷的各種情況：該抓的（.npmrc、.git-credentials…）和不該抓的（.env.example、tokenizer.py、token-economics.md）
+const SECRET_FILES = {
+  'README.md': '# Secrets demo\n\nA small Node tool.\n',
+  'package.json': JSON.stringify({ name: 'secrets-demo', dependencies: {} }),
+  '.env.example': 'API_KEY=\nDB_URL=\n',
+  '.env.production': 'API_KEY=should-not-be-here\n',
+  '.npmrc': '//registry.npmjs.org/:_authToken=xxx\n',
+  '.pypirc': '[pypi]\nusername = __token__\n',
+  '.git-credentials': 'https://user:pass@github.com\n',
+  '.netrc': 'machine api.example.com login me password x\n',
+  '.htpasswd': 'admin:$apr1$abc\n',
+  '.ssh/config': 'Host *\n',
+  '.aws/credentials': '[default]\n',
+  '.gnupg/pubring.kbx': '',
+  'src/tokenizer.py': 'def tokenize(s):\n    return s.split()\n',
+  'src/index.js': 'console.log(1)\n',
+  'docs/token-economics.md': '# Token economics\n\nWhy prompts cost money.\n',
+};
+
+// 有一堆自動產生資料夾的專案：node_modules 檔案最多，照檔案數排會把主程式擠下去
+const GEN_FILES = {
+  'README.md': '# Gen demo\n\nA web app with build output committed by mistake.\n',
+  'package.json': JSON.stringify({ name: 'gen-demo', dependencies: { react: '18.3.1' } }),
+  'src/main.js': 'export const main = 1\n',
+  'src/lib/util.js': 'export const u = 1\n',
+  'src/__snapshots__/main.test.js.snap': '// Jest Snapshot v1\n',
+  'dist/index.html': '<!doctype html>',
+  'dist/assets/index-4f2a9c.js': '',
+  'build/asset-manifest.json': '{}',
+  '.next/cache/webpack/client.pack': '',
+  '.next/server/app.js': '',
+  'storybook-static/index.html': '<!doctype html>',
+  'mypkg.egg-info/PKG-INFO': 'Name: mypkg\n',
+  'coverage/lcov-report/index.html': '<!doctype html>',
+  'coverage/lcov.info': '',
+  'venv/pyvenv.cfg': 'home = /usr/bin\n',
+  'venv/bin/python': '',
+  'venv/lib/python3.12/site-packages/six.py': '',
+  // 叫 env 但沒有 pyvenv.cfg：是真的程式碼，不能標成自動產生
+  'env/settings.py': 'DEBUG = False\n',
+  'backend/app.py': 'app = None\n',
+  'backend/.venv/pyvenv.cfg': 'home = /usr/bin\n',
+  'backend/.venv/lib/python3.12/site-packages/flask.py': '',
+  'certs/app.p12': '', 'certs/ios-push.p8': '', 'certs/win.pfx': '', 'certs/id_ed25519': '', 'certs/id_ed25519.pub': '',
+  'certs/service-account-prod.json': '{}',
+};
+for (let i = 0; i < 30; i++) GEN_FILES[`node_modules/pkg${String(i).padStart(2, '0')}/index.js`] = '';
+
+// 自己的 App（xin7355-collab 帳號），同時命中好幾條同樣急的顧問規則：
+// 沒 CLAUDE.md、沒 Actions、有畫面沒測試、爬蟲、呼叫 AI。用來確認每條規則都分得到推薦名額
+const BUSY_FILES = {
+  'README.md': '# Busy app\n\nA news scraper that summarizes articles with OpenAI.\n',
+  'package.json': JSON.stringify({ name: 'busy-app', dependencies: { cheerio: '1.0.0', openai: '4.0.0' } }),
+  'index.html': '<!doctype html><html><head><link rel="manifest" href="manifest.json"></head><body></body></html>',
+  'manifest.json': JSON.stringify({ name: 'Busy', short_name: 'Busy', display: 'standalone', icons: [{ src: 'i.png', sizes: '192x192' }] }),
+  'src/scrape.js': "export const go = () => fetch('/feed')\n",
+};
+
+let repoId = 700000;
 const meta = (full, extra = {}) => Object.assign({
+  id: ++repoId,
   name: full.split('/')[1], full_name: full, description: 'Demo project ' + full,
   default_branch: 'main', stargazers_count: 1234, topics: [], language: 'JavaScript',
   license: { spdx_id: 'MIT' }, homepage: null, has_pages: false, private: false,
   pushed_at: iso(2), created_at: iso(400), size: 2048, html_url: 'https://github.com/' + full,
 }, extra);
 
+// commits：總筆數與第一個 commit 是幾天前（「首次 commit」要用）。
+// pwa-app 是從別處搬來的（第一個 commit 比 GitHub 建立日早很多），skillpack 只有 1 個 commit（Link 沒有 last）
 const REPOS = {
-  'demo/pwa-app': { meta: meta('demo/pwa-app'), files: PWA_FILES },
+  'demo/pwa-app': { meta: meta('demo/pwa-app'), files: PWA_FILES, commits: { n: 57, firstDays: 1500 } },
   'demo/private-app': { meta: meta('demo/private-app', { private: true }), files: PWA_FILES },
   'demo/pypkg': { meta: meta('demo/pypkg', { language: 'Python' }), files: PY_FILES },
-  'demo/skillpack': { meta: meta('demo/skillpack', { language: null }), files: SKILL_FILES },
+  'demo/skillpack': { meta: meta('demo/skillpack', { language: null }), files: SKILL_FILES, commits: { n: 1, firstDays: 10 } },
+  'demo/secrets-app': { meta: meta('demo/secrets-app'), files: SECRET_FILES },
+  'demo/gen-app': { meta: meta('demo/gen-app'), files: GEN_FILES },
+  'xin7355-collab/busy-app': { meta: meta('xin7355-collab/busy-app'), files: BUSY_FILES },
 };
+
+// 照 GitHub 的格式：最新的在前面；作者日期從 firstDays 天前平均排到 2 天前
+function commitsOf(repo) {
+  const c = repo.commits || { n: 3, firstDays: 420 };
+  const out = [];
+  for (let k = 0; k < c.n; k++) {
+    const days = c.n === 1 ? c.firstDays : 2 + (c.firstDays - 2) * (k / (c.n - 1));
+    const date = new Date(now - days * 864e5).toISOString().replace(/\.\d{3}Z$/, 'Z');
+    const sha = (repo.meta.id.toString(16) + k.toString(16).padStart(6, '0')).padEnd(40, 'a');
+    out.push({
+      sha, html_url: repo.meta.html_url + '/commit/' + sha,
+      commit: { author: { name: 'dev', email: 'dev@example.com', date }, committer: { name: 'GitHub', email: 'noreply@github.com', date }, message: 'commit ' + k },
+    });
+  }
+  return out;
+}
+
+// GitHub 的 Link 標頭指向 /repositories/{數字 id}/…，不是 /repos/owner/name/…：
+// 網頁要是直接照著網址走，就會打到下面沒有的路徑、被判 404
+function linkHeader(id, params, page, last) {
+  const u = (p) => { const q = new URLSearchParams(params); q.set('page', String(p)); return `<https://api.github.com/repositories/${id}/commits?${q}>`; };
+  const parts = [];
+  if (page > 1) parts.push(`${u(page - 1)}; rel="prev"`);
+  if (page < last) parts.push(`${u(page + 1)}; rel="next"`, `${u(last)}; rel="last"`);
+  if (page > 1) parts.push(`${u(1)}; rel="first"`);
+  return parts.join(', ');
+}
 
 const searchItem = (full, stars, extra = {}) => Object.assign(meta(full, { stargazers_count: stars }), extra);
 const SEARCH_ITEMS = [
@@ -68,8 +160,13 @@ const SEARCH_ITEMS = [
   searchItem('demo/skillpack', 1234567, { description: 'Agent skills pack', language: null }),
 ];
 
-const RATE = { 'x-ratelimit-limit': '60', 'x-ratelimit-remaining': '59', 'x-ratelimit-reset': String(Math.floor(now / 1000) + 3600) };
-const json = (body, status = 200) => ({ status, headers: RATE, contentType: 'application/json', body: JSON.stringify(body) });
+// 真的 api.github.com 每個回應都帶額度標頭，並用 CORS 開放網頁讀 Link、Retry-After 這些標頭
+const RATE = {
+  'x-ratelimit-limit': '60', 'x-ratelimit-remaining': '59', 'x-ratelimit-reset': String(Math.floor(now / 1000) + 3600),
+  'access-control-allow-origin': '*',
+  'access-control-expose-headers': 'ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset',
+};
+const json = (body, status = 200, extra = {}) => ({ status, headers: Object.assign({}, RATE, extra), contentType: 'application/json', body: JSON.stringify(body) });
 
 function apiResponse(url) {
   const p = url.pathname;
@@ -85,6 +182,15 @@ function apiResponse(url) {
     return json({ tree: paths.map((path) => ({ path, type: 'blob', size: String(repo.files[path] || '').length })), truncated: false });
   }
   if (rest === '/languages') return json({});
+  if (rest === '/commits') {
+    const all = commitsOf(repo);
+    const per = Math.min(100, Number(url.searchParams.get('per_page')) || 30);
+    const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+    const last = Math.max(1, Math.ceil(all.length / per));
+    const params = {}; url.searchParams.forEach((v, k) => { if (k !== 'page') params[k] = v; });
+    const link = linkHeader(repo.meta.id, params, page, last);
+    return json(all.slice((page - 1) * per, page * per), 200, link ? { link } : {});
+  }
   return json({ message: 'Not Found' }, 404);
 }
 
@@ -102,15 +208,24 @@ function rawResponse(url) {
 const zhLines = (q) => q.split('\n').map((l) => '中：' + l).join('\n');
 
 async function mockNetwork(context, opts) {
-  const stats = { api: [], raw: 0, translate: 0, blocked: [] };
+  // apiOverride：個別測試可以塞一個 (url) => 回應｜undefined，用來模擬限流等狀況；回 undefined 就照平常回應
+  const stats = { api: [], raw: 0, translate: 0, blocked: [], apiOverride: null };
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') {
-      if (url.pathname === '/trending.json') return route.fulfill({ status: 404, body: '' }); // 只在部署時產生
+      if (url.pathname === '/trending.json') {
+        // 只在部署時產生：預設 404（跟本機開啟一樣）；測試用 test.use({ trendingJson }) 給一份假的
+        if (!opts.trendingJson) return route.fulfill({ status: 404, body: '' });
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(opts.trendingJson) });
+      }
       if (url.pathname === '/apps.json' && opts.appsJson === 'fail') return route.fulfill({ status: 404, body: '' });
       return route.continue();
     }
-    if (url.hostname === 'api.github.com') { stats.api.push(url.pathname); return route.fulfill(apiResponse(url)); }
+    if (url.hostname === 'api.github.com') {
+      stats.api.push(url.pathname);
+      const o = stats.apiOverride && stats.apiOverride(url);
+      return route.fulfill(o || apiResponse(url));
+    }
     if (url.hostname === 'raw.githubusercontent.com') { stats.raw++; return route.fulfill(rawResponse(url)); }
     if (url.hostname === 'translate.googleapis.com') {
       stats.translate++;
@@ -126,8 +241,9 @@ async function mockNetwork(context, opts) {
 
 const test = base.extend({
   appsJson: ['ok', { option: true }],
-  net: [async ({ context, appsJson }, use) => {
-    const stats = await mockNetwork(context, { appsJson });
+  trendingJson: [null, { option: true }],
+  net: [async ({ context, appsJson, trendingJson }, use) => {
+    const stats = await mockNetwork(context, { appsJson, trendingJson });
     await use(stats);
     // 網頁不該偷偷連到沒預期的網站（隱私，也代表有新的外部相依沒被測到）
     expect(stats.blocked, '連到了沒列在 fixtures.js 的外部網站').toEqual([]);
@@ -169,4 +285,4 @@ async function runWizard(page, answers = {}) {
   await expect(page.locator('#wizard h2')).toHaveText('結果：照下面做');
 }
 
-module.exports = { test, expect, REPOS, SEARCH_ITEMS, expectNoHorizontalScroll, runWizard };
+module.exports = { test, expect, REPOS, SEARCH_ITEMS, RATE, commitsOf, expectNoHorizontalScroll, runWizard };
