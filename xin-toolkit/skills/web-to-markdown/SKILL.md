@@ -26,6 +26,13 @@ python3 scripts/web2md.py selftest
 - 批次模式一個一個抓，不併發；同一個網站之間至少隔 `--delay` 秒。
 - 部分失敗時照樣存成功的，最後列出失敗的網址與原因。全部失敗才回傳非 0。
 - 內容沒變就不改檔，排程不會每天產生空 commit。
+- **擋內網位址（SSRF）**：網址的主機是私有網段、本機（127.0.0.1、localhost）、link-local（含雲端中繼資料
+  169.254.169.254）、100.64.0.0/10、保留位址，或用 2130706433、0x7f.1 這類舊寫法偽裝的，一律拒絕。
+  連線當下再查一次 DNS 並直接連檢查過的 IP（擋 DNS 換綁）；每次轉址都重新檢查，不准轉到 `file://` 或其他非 http(s)。
+  有 HTTPS 代理（`HTTPS_PROXY`）時 DNS 由代理代查、本機查不到不算錯，這時靠主機名與 IP 寫法檢查，
+  代理那一端的內網要靠代理自己的出口規則擋。
+- 擋 SSRF 的程式改寫自 Graphify（Apache-2.0），出處與 NOTICE 在 `NOTICE` 與 `web2md.py` 的註解裡；
+  只複製 `web2md.py` 到 App 時，那段註解請保留。
 
 ## 放進 App（每天自動抓）
 
@@ -42,9 +49,9 @@ python3 scripts/web2md.py selftest
 | 架設 | Docker＋Redis＋Postgres＋Playwright，預設資源上限合計約 12GB RAM；或付費雲端 API | 一支 Python 檔，Actions 免費跑 |
 | JavaScript 網站 | 會開瀏覽器渲染 | 不支援，會明確回報 |
 | 搜尋、整站爬、點按鈕 | 有 | 沒有（只抓清單裡的網址） |
-| 授權 | AGPL-3.0（改了拿去提供服務要公開原始碼） | 本技能庫 MIT |
+| 授權 | AGPL-3.0（改了拿去提供服務要公開原始碼） | 本技能庫 MIT（擋 SSRF 的部分改寫自 Graphify，Apache-2.0，見 `NOTICE`） |
 
 ## 驗證
 
-- `selftest` 離線涵蓋以下情況：轉換規則、big5 編碼、robots.txt、404、內容太少、非網頁、503 重試、批次部分失敗、限流間隔、大小上限、內容沒變不改檔。
+- `selftest` 離線涵蓋以下情況：轉換規則、big5 編碼、robots.txt、404、內容太少、非網頁、503 重試、批次部分失敗、限流間隔、大小上限、內容沒變不改檔、擋內網位址（含舊式 IP 寫法、轉址、DNS 換綁、有代理時）。
 - 真實網路由 skl 的 `Web to markdown smoke test` 工作流驗證：改到這個技能時自動跑，也可以手動執行。

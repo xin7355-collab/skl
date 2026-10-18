@@ -57,13 +57,13 @@
    "note": "base64 是瀏覽器截圖 PNG 與 TTS 回傳的音訊；.exec() 是正規表達式；unlink 只刪自己的暫存檔。唯一外連是使用者主動啟用的火山引擎語音（預設關閉）與 skl 加的 fetch_fonts.py（固定 commit＋sha256 驗證）（2026-10-10）"
   },
   "community/skills/lit-review": {
-   "sha256": "fde788bf34aecf071891839f6a5fd836c9d86e573c0d345aa21938b955ceb8ed",
+   "sha256": "8372c3c1413e51d95d185d1ac26b6b79ca401ddf4b782353d345d9b267945418",
    "categories": [
     "CRED-HARVEST",
     "NET-EXFIL"
    ],
    "verdict_at_review": "FAIL",
-   "note": "S2_API_KEY 只放進送往 api.semanticscholar.org 的 x-api-key 標頭、CROSSREF_MAILTO 只給 Crossref／Unpaywall 的禮貌池；只連 semanticscholar、crossref、arxiv、openalex、unpaywall。注意 load_dotenv 會把目前資料夾與家目錄的 .env 全部讀進這支程式的環境變數（只在本機、不外送）（2026-10-14）"
+   "note": "S2_API_KEY 只放進送往 api.semanticscholar.org 的 x-api-key 標頭、CROSSREF_MAILTO 只給 Crossref／Unpaywall 的禮貌池；只連 semanticscholar、crossref、arxiv、openalex、unpaywall、doi.org。注意 load_dotenv 會把目前資料夾與家目錄的 .env 全部讀進這支程式的環境變數（只在本機、不外送）（2026-10-14；2026-10-18 skl 加中文文獻查核後重審：多連 doi.org，只送 DOI 與 Accept 標頭、不帶任何金鑰）"
   },
   "community/skills/design-taste-frontend": {
    "sha256": "b05e75118562d34601f7e0fb54a46dda63b647dbea22a5acdda41c0db56f9d9b",

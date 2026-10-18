@@ -3,6 +3,8 @@
  * 為什麼：寫死模型名稱，供應商一下架整個功能就 404（使用者的 App 實際踩過 gemini-1.5-flash、llama-3.1-8b-instant）。
  * 做法：問官方現在有哪些模型 → 依等級偏好序挑最新 → 404／下架自動換下一個 → 429／5xx 指數退避 →
  *       結果不合格自動升級（fast → smart → best）。金鑰只放 HTTP 標頭，不放網址、不印出來。
+ *       付費供應商（PROVIDERS 的 paid）逾時／連線中斷不重送同一請求（對方可能已處理、已收費），直接換下一個候選；
+ *       一次 chat() 最多送 maxCalls 次請求（預設 12），超過就丟中文錯誤，避免費用失控。規則與 Python 版一致。
  *
  * 用法（瀏覽器：<script src="model_router.js"></script>；Worker／Node：import 或 require）：
  *   const r = new ModelRouter("gemini", { keys: [apiKey] });
@@ -12,13 +14,23 @@
 (function (root) {
   "use strict";
   const TIERS = ["fast", "smart", "best"];
+  // paid：每次呼叫都收費（逾時不重送）。"free_suffix"＝看模型名稱，OpenRouter 以 :free 結尾的免費、其他收費。
+  // Groq／Gemini 預設是免費層所以標 false；開了付費帳單的 App 建立時傳 { paid: true }。
   const PROVIDERS = {
-    groq: { list: "https://api.groq.com/openai/v1/models", chat: "https://api.groq.com/openai/v1/chat/completions", style: "openai" },
-    openrouter: { list: "https://openrouter.ai/api/v1/models", chat: "https://openrouter.ai/api/v1/chat/completions", style: "openai" },
+    groq: { list: "https://api.groq.com/openai/v1/models", chat: "https://api.groq.com/openai/v1/chat/completions", style: "openai", paid: false },
+    openrouter: { list: "https://openrouter.ai/api/v1/models", chat: "https://openrouter.ai/api/v1/chat/completions", style: "openai", paid: "free_suffix" },
     gemini: { list: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",
-              chat: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", style: "gemini" },
-    anthropic: { list: "https://api.anthropic.com/v1/models?limit=100", chat: "https://api.anthropic.com/v1/messages", style: "anthropic" },
+              chat: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", style: "gemini", paid: false },
+    anthropic: { list: "https://api.anthropic.com/v1/models?limit=100", chat: "https://api.anthropic.com/v1/messages", style: "anthropic", paid: true },
   };
+  const DEFAULT_MAX_CALLS = 12;
+  // 沒標 paid 的新供應商當付費：寧可少重試，不要重複收費
+  function isPaid(cfg, model, override) {
+    if (override != null) return !!override;
+    const p = cfg.paid == null ? true : cfg.paid;
+    if (p === "free_suffix") return !String(model).endsWith(":free");
+    return !!p;
+  }
   const PREFS = {
     groq: { fast: [/llama-\d+(\.\d+)?-8b/i, /instant/i, /gpt-oss-20b/i, /llama/i],
             smart: [/llama-\d+(\.\d+)?-70b/i, /gpt-oss-120b/i, /70b/i, /llama/i],
@@ -75,7 +87,12 @@
       this.log = opts.log || ((m) => console.warn(m));
       // 跟 Python 版一樣等 60 秒：對方卡住不回時，不要一直等到 Worker／瀏覽器把整個請求砍掉
       this.timeoutMs = opts.timeoutMs || 60000;
-      this._ids = null; this._at = 0; this._good = {};
+      // 看不懂或小於 1 就用預設並提醒（跟 Python 版讀 MODEL_ROUTER_MAX_CALLS 的規則一樣）
+      const mc = opts.maxCalls == null ? DEFAULT_MAX_CALLS : Math.floor(Number(opts.maxCalls));
+      this.maxCalls = mc >= 1 ? mc : DEFAULT_MAX_CALLS;
+      if (!(mc >= 1)) this.log("⚠️ maxCalls=" + opts.maxCalls + " 看不懂（要填 1 以上的整數），改用預設 " + DEFAULT_MAX_CALLS);
+      this.paid = opts.paid == null ? null : !!opts.paid;
+      this._ids = null; this._at = 0; this._good = {}; this._calls = 0;
     }
     _headers(key) {
       const st = this.cfg.style;
@@ -85,7 +102,7 @@
       return { Authorization: "Bearer " + key };
     }
     async _http(method, url, headers, payload) {
-      // 逾時當成暫時性錯誤（狀態 0），跟連線失敗一樣走指數退避重試；計時要包含讀完回應內容
+      // 逾時當成狀態 0（跟連線失敗一樣）：免費供應商會退避重試，付費供應商由 _call 決定不重送；計時要包含讀完回應內容
       const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
       const timer = ctl ? setTimeout(() => ctl.abort(), this.timeoutMs) : null;
       try {
@@ -144,15 +161,26 @@
       if (st === "anthropic") return (b.content || []).filter((x) => x.type === "text").map((x) => x.text).join("");
       return (((b.choices || [{}])[0].message) || {}).content || "";
     }
+    async _post(url, key, payload, tried) {
+      // 上限算的是「送出去的請求」，包含重試與換金鑰；模型清單（GET）不收費所以不算
+      if (this._calls >= this.maxCalls)
+        throw new Error("[" + this.p + "] 這次已經送出 " + this._calls + " 次 AI 請求（上限 " + this.maxCalls + "）還沒成功，為了避免費用失控先停下。試過：" +
+          (tried.join("；") || "（無）") + "。請確認金鑰有設定、額度還夠，稍後再試；確定要多試幾次就調高 maxCalls 選項。");
+      this._calls++;
+      return this._http("POST", url, this._headers(key), payload);
+    }
     async _call(model, messages, maxTokens, tried) {
       const [url, payload] = this._request(model, messages, maxTokens);
+      const paid = isPaid(this.cfg, model, this.paid);
       for (let ki = 0; ki < Math.max(1, this.keys.length); ki++) {
         for (let attempt = 0; attempt < 4; attempt++) {
-          const [st, body] = await this._http("POST", url, this._headers(this.keys[ki] || ""), payload);
+          const [st, body] = await this._post(url, this.keys[ki] || "", payload, tried);
           if (st === 200) { const t = this._text(body); if (t.trim()) return t; tried.push(model + "（回了空白）"); return null; }
           const err = JSON.stringify(body).slice(0, 300);
           if (st === 404 || (st === 400 && MISSING.test(err))) { tried.push(model + "（已下架或不存在）"); this._ids = null; return "MISSING"; }
           if (st === 401 || st === 403) { tried.push(model + "（第 " + (ki + 1) + " 把金鑰被拒 " + st + "）"); break; }
+          // 逾時／連線中斷時請求可能已被處理（也收費了），只是回應沒送回來：付費服務不重送、也不換金鑰重送
+          if (st === 0 && paid) { tried.push(model + "（逾時或連線中斷；付費服務不重送，避免重複收費）"); return null; }
           if (st === 429 || st >= 500 || st === 0) {
             let wait = Math.min(30, 2 ** (attempt + 1));
             if (body._retry_after) wait = Math.min(60, Math.max(wait, +body._retry_after));
@@ -168,6 +196,7 @@
       opts = opts || {};
       tier = tier === "auto" ? pickTier(messages) : tier;
       if (!TIERS.includes(tier)) throw new Error("不認識的等級：" + tier + "（用 fast／smart／best／auto）");
+      this._calls = 0;   // 上限是每次 chat() 各自計算
       const order = opts.escalate === false ? [tier] : TIERS.slice(TIERS.indexOf(tier));
       const tried = [], avoid = new Set();
       for (const t of order) {
@@ -213,11 +242,62 @@
     const out = await Promise.race([r.chat("fast", [{ role: "user", content: "x" }], { escalate: false }).catch((e) => e),
       new Promise((res) => setTimeout(() => res("卡住"), 3000))]);
     t(out instanceof Error && calls === 3 && out.message.includes("服務忙碌"), "對方不回應：逾時後退避重試 3 次，再丟出中文錯誤（不會卡住）");
+
+    // ── 付費服務逾時不重送、總次數上限（跟 Python 版同一組案例） ──
+    const antSeq = (script) => {
+      const posts = [];
+      const f = async (url, init) => {
+        if (init.method === "GET") return { status: 200, json: async () => ({ data: [{ id: "claude-haiku-5-5" }, { id: "claude-haiku-4-5-20251001" }] }), headers: { get: () => null } };  // guardrails: ignore（範例／測試資料）
+        const m = JSON.parse(init.body).model; posts.push(m);
+        const [st, b] = script(m, posts.length);
+        if (st === 0) throw new TypeError("network");
+        return { status: st, json: async () => b, headers: { get: () => null } };
+      };
+      return [f, posts];
+    };
+    let waits = [];
+    let [fa, posts] = antSeq((m, n) => (n === 1 ? [0, {}] : [200, { content: [{ type: "text", text: "ok:" + m }] }]));
+    r = new ModelRouter("anthropic", { keys: ["k1", "k2"], sleep: async (ms) => { waits.push(ms); }, log: () => {}, fetch: fa });
+    const o1 = await r.chat("fast", [{ role: "user", content: "x" }], { escalate: false });
+    t(JSON.stringify(posts) === JSON.stringify(["claude-haiku-5-5", "claude-haiku-4-5-20251001"]) && o1 === "ok:claude-haiku-4-5-20251001" && !waits.length,  // guardrails: ignore（範例／測試資料）
+      "付費（Claude）逾時：同一請求不重送、不換金鑰重送，直接換下一個候選");
+    [fa, posts] = antSeq(() => [0, {}]);
+    r = new ModelRouter("anthropic", { keys: ["k"], sleep: async () => {}, log: () => {}, fetch: fa });
+    try { await r.chat("fast", [{ role: "user", content: "x" }], { escalate: false }); t(false, "付費全部逾時要丟錯"); }
+    catch (e) { t(posts.length === 2 && e.message.includes("不重送"), "付費全部逾時：每個候選只送一次，錯誤說明為什麼沒重試"); }
+    waits = [];
+    [fa, posts] = antSeq((m, n) => (n === 1 ? [429, {}] : n === 2 ? [529, {}] : [200, { content: [{ type: "text", text: "ok" }] }]));
+    r = new ModelRouter("anthropic", { keys: ["k"], sleep: async (ms) => { waits.push(ms); }, log: () => {}, fetch: fa });
+    t((await r.chat("fast", [{ role: "user", content: "x" }])) === "ok" && waits.join() === "2000,4000" && posts.length === 3,
+      "付費遇到 429／5xx（伺服器明確拒絕、沒處理）照舊退避重試");
+    const seen = [];
+    const orf = async (url, init) => {
+      if (init.method === "GET") return { status: 200, json: async () => ({ data: [{ id: "test/free-model:free" }] }), headers: { get: () => null } };
+      seen.push(1); if (seen.length < 3) throw new TypeError("network");
+      return { status: 200, json: async () => ({ choices: [{ message: { content: "free-ok" } }] }), headers: { get: () => null } };
+    };
+    r = new ModelRouter("openrouter", { keys: ["k"], sleep: async () => {}, log: () => {}, fetch: orf });
+    t((await r.chat("fast", [{ role: "user", content: "x" }])) === "free-ok" && seen.length === 3, "OpenRouter 的 :free 模型不收費 → 逾時照樣重試");
+    t(isPaid(PROVIDERS.openrouter, "vendor/paid-model") && !isPaid(PROVIDERS.openrouter, "x:free") && isPaid(PROVIDERS.anthropic, "x")
+      && !isPaid(PROVIDERS.groq, "x") && isPaid(PROVIDERS.groq, "x", true) && isPaid({}, "x"), "付費判斷：看 PROVIDERS、可覆寫、沒標的當付費");
+    let cnt = 0;
+    const f500 = async (url, init) => (init.method === "GET" ? { status: 200, json: async () => ({ data: ids.map((id) => ({ id })) }), headers: { get: () => null } }
+      : (cnt++, { status: 500, json: async () => ({}), headers: { get: () => null } }));
+    r = new ModelRouter("groq", { keys: ["a", "b"], sleep: async () => {}, log: () => {}, fetch: f500, maxCalls: 5 });
+    try { await r.chat("fast", [{ role: "user", content: "x" }]); t(false, "超過上限要丟錯"); }
+    catch (e) { t(cnt === 5 && e.message.includes("上限 5") && e.message.includes("maxCalls"), "總次數上限：送滿 5 次就停，中文說明怎麼調"); }
+    cnt = 0;
+    try { await r.chat("fast", [{ role: "user", content: "x" }]); } catch (e) { /* 預期會丟錯 */ }
+    t(cnt === 5, "上限每次 chat() 各自計算（下一次重新算）");
+    const warned = [];
+    t(new ModelRouter("groq", { log: (m) => warned.push(m), maxCalls: "abc" }).maxCalls === DEFAULT_MAX_CALLS && warned.length === 1,
+      "maxCalls 看不懂 → 用預設並提醒");
+    t(new ModelRouter("groq", { log: () => {} }).maxCalls === 12, "預設上限 12");
     console.log("\n自我測試" + (ok ? "全部通過" : "有失敗"));
     return ok ? 0 : 1;
   }
 
-  const api = { ModelRouter, rank, pickTier, selftest, TIERS };
+  const api = { ModelRouter, rank, pickTier, isPaid, selftest, TIERS, PROVIDERS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else Object.assign(root, api);
   if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module && process.argv[2] === "selftest")

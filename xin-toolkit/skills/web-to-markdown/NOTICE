@@ -1,0 +1,22 @@
+web-to-markdown（skl 技能庫，MIT）
+
+scripts/web2md.py 裡擋內網位址（SSRF）的部分——_ip_is_blocked、_GuardedHTTPConnection、
+_GuardedHTTPSConnection、_SafeRedirectHandler——改寫自 Graphify 的 graphify/security.py
+（_ip_is_blocked、_SSRFGuardedHTTPConnection、_SSRFGuardedHTTPSConnection、_NoFileRedirectHandler），
+依 Apache License 2.0 使用：https://www.apache.org/licenses/LICENSE-2.0
+來源：https://github.com/Graphify-Labs/graphify
+
+修改內容：錯誤改成中文 FetchError；DNS 查詢可換成假的（離線自我測試）；
+加上舊式 IPv4 寫法、IPv4 對應 IPv6、localhost／雲端中繼資料主機名的檢查；
+經 HTTPS 代理時改成送出前檢查（代理本身通常在 127.0.0.1）。
+
+以下是 Graphify 的 NOTICE 原文：
+
+Graphify
+Copyright 2026 Safi Shamsi and the Graphify contributors.
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Portions of this software were contributed under the MIT License prior to the
+relicensing and remain available under those terms. The original MIT license
+text is retained in LICENSE-MIT.

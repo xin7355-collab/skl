@@ -53,6 +53,15 @@ const text = await r.chat("auto", [{ role: "user", content: prompt }], { validat
 - 官方 `/models` 清單每 6 小時重抓一次；非聊天模型（語音、嵌入、圖片）與預覽版會排在後面或濾掉。
 - 404／`model_decommissioned` → 清快取、避開那個模型、換下一個再打。
 - 429／5xx／網路斷線 → 指數退避 2、4、8 秒（尊重 Retry-After）；401／403 → 換下一把金鑰。
+- **付費供應商逾時不重送**：逾時或連線中斷時，對方可能已經處理完（也收費了）只是回應沒送到，
+  重送等於付兩次錢。所以付費的（`PROVIDERS` 裡 `paid`：Claude 是；OpenRouter 看模型名稱，`:free` 結尾的免費）
+  遇到逾時不重送同一請求、也不換金鑰重送，直接換下一個候選模型，全部不行就報錯。
+  429／5xx 是伺服器明確拒絕、沒有處理，照舊退避重試。Groq／Gemini 預設當免費層；
+  開了付費帳單的 App 要宣告：Python `Router("gemini", paid=True)`、JS `new ModelRouter("gemini", { paid: true, ... })`。
+- **總呼叫次數上限**：一次 `chat()` 最多送出 12 次請求（含重試、換金鑰、換模型、升級），超過就丟中文錯誤。
+  沒有上限時「3 個等級 × 5 個候選 × 多把金鑰 × 4 次重試」最壞會打上百次。
+  調整：Python 環境變數 `MODEL_ROUTER_MAX_CALLS`（或 `Router(max_calls=...)`）、JS 選項 `{ maxCalls: 20 }`。
+  只算送出的 AI 請求，抓模型清單不算。
 - 全部失敗 → 丟出中文錯誤，列出試過哪些模型、可以怎麼做；**絕不印出金鑰**。
 
 ## 遷移檢查清單（改舊 App 時照做）
