@@ -18,6 +18,7 @@ concurrency:
 jobs:
   edit:
     runs-on: ubuntu-latest
+    # 改這個數字時，下面 runner 的 --minutes 也要跟著改。
     timeout-minutes: 150
     env:
       GITHUB_TOKEN: ${{ github.token }}
@@ -26,10 +27,19 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Ensure ffmpeg
-        run: command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+        # 影片工作流沒有 ffmpeg 就什麼都做不了，所以不加 continue-on-error；
+        # --no-install-recommends 少裝幾百 MB 的建議套件，timeout 防止 apt 鏡像站卡住時一路耗到 job 逾時。
+        timeout-minutes: 8
+        run: |
+          command -v ffmpeg >/dev/null || {
+            sudo apt-get update -qq
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends ffmpeg
+          }
 
       - name: Edit pending videos
         run: |
           # 裝在其他 App 時，技能在 .claude/skills 底下。
           [ -d "$SCRIPTS" ] || SCRIPTS=.claude/skills/auto-video-edit/scripts
-          python3 "$SCRIPTS/video_release_runner.py" run --max 1
+          # --minutes 要比上面的 timeout-minutes 小（扣掉 checkout 與裝 ffmpeg 最多約 10 分鐘），
+          # runner 才來得及自己停下、留下 .error 說明，而不是整個 job 被砍、什麼都沒留下。
+          python3 "$SCRIPTS/video_release_runner.py" run --max 1 --minutes 135
