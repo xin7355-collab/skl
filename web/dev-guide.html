@@ -464,9 +464,9 @@
 <pre data-copybox>用 app-bootstrap 安裝技能組合 video，並把 auto-video-edit 技能附的工作流範本放到 .github/workflows/。
 先 --dry-run 再正式安裝；裝完照技能說明跑一次 selftest 給我看。</pre></div>
         <div class="cstep"><b>2. 傳影片</b>Safari 打開 <code>https://github.com/你的帳號/repo/releases/new</code>：標籤填 <code>video-</code> 開頭（例如 <code>video-1018</code>），把影片拖進附件。</div>
-        <div class="cstep"><b>3. 寫選項（可省略）</b>內文一行一個：<code>模式: short</code>（直式精華，Reels／Shorts）、<code>模式: jumpcut</code>（只去空白，適合講解）、<code>長度: 45</code>、<code>直式</code>。然後按 <b>Save draft</b>（存成草稿，不要按 Publish）。</div>
-        <div class="cstep"><b>4. 等結果</b>每 30 分鐘自動檢查一次；急的話到 repo 的 Actions → Video auto edit → <b>Run workflow</b>。剪好的 <code>原檔名-edited-模式.mp4</code> 會出現在同一個草稿裡。<br>✅ 下載回手機播放，空白被剪掉、聲音大小一致。</div>
-        <div class="cstep"><b>5. 失敗時</b>草稿裡會多一個 <code>.error1.txt</code> 寫原因，下一輪自動重試，最多 3 次；看完原因刪掉 .error 檔就會再試。太長的影片先分段再傳。</div>
+        <div class="cstep"><b>3. 寫選項（可省略）</b>內文一行一個：<code>模式: short</code>（直式精華，Reels／Shorts）、<code>模式: jumpcut</code>（只去空白，適合講解）、<code>長度: 45</code>、<code>直式</code>；螢幕錄影或橫的影片不想被裁掉，寫 <code>直式: 模糊背景</code>（原畫面完整放中間、背景用模糊的同一畫面）。然後按 <b>Save draft</b>（存成草稿，不要按 Publish）。</div>
+        <div class="cstep"><b>4. 等結果</b>每 30 分鐘自動檢查一次；急的話到 repo 的 Actions → Video auto edit → <b>Run workflow</b>。剪好的 <code>原檔名-edited-模式.mp4</code> 會出現在同一個草稿裡，另附一張 <code>原檔名-preview.jpg</code>（3×3 縮圖，標出每段的原片時間），不用下載影片就能先看保留了哪幾段。<br>✅ 下載回手機播放，空白被剪掉、聲音大小一致。</div>
+        <div class="cstep"><b>5. 失敗時</b>草稿裡會多一個 <code>.error1.txt</code> 寫原因，下一輪自動重試，最多 3 次（處理到一半被砍掉也算一次，不會卡住後面的影片）。要重新試：刪掉這部影片的 <code>.start*</code> 和 <code>.error*</code> 檔。檔名有 <code>too-long</code> 的是估計一輪剪不完（每輪最多約 135 分鐘，1080p 去空白約可處理 1.5 小時內的影片），不會自動重試：請分段上傳或改用 short／highlight 模式。</div>
         <div class="cstep"><b>6. 限制（誠實說）</b>「精華」只看聲音與鏡頭切換，不懂畫面內容；不會自動上字幕（語音辨識要另外的模型或付費 API，要加先設預算上限）。</div>
       </div>
     </details>
