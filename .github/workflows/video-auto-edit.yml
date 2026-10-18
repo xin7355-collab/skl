@@ -23,7 +23,11 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
       SCRIPTS: xin-toolkit/skills/auto-video-edit/scripts
     steps:
+      # contents: write 是給 Release API 上傳成品用的（走 GITHUB_TOKEN 環境變數），不 git push，
+      # 所以不必把 token 留在 .git/config。
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Ensure ffmpeg
         run: command -v ffmpeg >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)

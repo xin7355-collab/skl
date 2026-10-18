@@ -108,6 +108,30 @@
    ],
    "verdict_at_review": "FAIL",
    "note": "命中的第 110 行是防禦說明：叫 AI 忽略抓來的網頁裡「ignore previous instructions」這類注入指令（2026-10-17）"
+  },
+  "engineering/skills/ship-gate": {
+   "sha256": "4248e6585dd45dce7202460dac221cd49943cf41f23a62040562f93a732b4cf0",
+   "categories": [
+    "SCANNER-BYPASS"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "skl 補充掃描：3 行掃描抑制標記。拿掉標記重掃只多出 2 筆 CODE-EXEC，都是檢查項目的說明文字裡寫到 eval()（第 308、500 行），第 498 行是變數相加；沒有真的執行程式（2026-10-18）"
+  },
+  "finance/skills/stock-analysis": {
+   "sha256": "03498d82822d4f229ed46326e2d97b65cfdd64738db3302a56e4f1db41cacf1f",
+   "categories": [
+    "SCANNER-BYPASS"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "skl 補充掃描：references/sectors/holdco-assetmgr.md 第 58 行的抑制標記。拿掉標記重掃只多出 1 筆 PROMPT-EXFIL，是控股公司 LTV／雙重槓桿的財務指標表格，沒有存取檔案或憑證（2026-10-18）"
+  },
+  "engineering/skills/skill-security-auditor": {
+   "sha256": "96258058a4e3f8507c40b634b1e6836d8b227745e90d59d069e350ff145c48d6",
+   "categories": [
+    "SCANNER-BYPASS"
+   ],
+   "verdict_at_review": "FAIL",
+   "note": "skl 補充掃描：掃描工具本身要寫出危險字串，所以大量使用抑制標記。拿掉標記重掃多出 21 筆，逐筆看過：18 筆是偵測規則的 regex／risk／fix 文字與 SKILL.md、threat-model.md 的威脅範例表；3 筆 shutil.rmtree 只刪自己 mkdtemp 建的暫存資料夾（2026-10-18）"
   }
  }
 }

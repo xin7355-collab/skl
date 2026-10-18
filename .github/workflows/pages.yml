@@ -40,8 +40,12 @@ jobs:
             echo "::notice::GitHub Pages 尚未開啟，略過部署。到 https://github.com/${GITHUB_REPOSITORY}/settings/pages 把 Source 設為 GitHub Actions。"
           fi
 
+      # 這個工作流有 pages／id-token 寫入權限，但只上傳 Pages 成品、不 git push：
+      # 不把 token 留在 .git/config，後面的建置步驟（含第三方 action）就讀不到。
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5

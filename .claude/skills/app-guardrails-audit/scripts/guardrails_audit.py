@@ -23,6 +23,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 
@@ -43,9 +44,18 @@ HTML_EXT = {".html", ".htm"}
 SEV_ORDER = {"error": 0, "warn": 1, "info": 2}
 
 
-def _rule(rid, sev, exts, pattern, msg, fix):
+def _rule(rid, sev, exts, pattern, msg, fix, fake=None):
     return {"id": rid, "sev": sev, "exts": exts,
-            "re": re.compile(pattern) if pattern else None, "msg": msg, "fix": fix}
+            "re": re.compile(pattern) if pattern else None, "msg": msg, "fix": fix, "fake": fake}
+
+
+def _fake_secret(tok):
+    """文件與測試常見的假金鑰：AWS 官方範例 AKIA…EXAMPLE、整串同一個字（sk-ant-aaaa…）。
+    這些不是外洩，報成「必修」只會讓人習慣忽略紅燈。"""
+    if "EXAMPLE" in tok.upper():
+        return True
+    body = re.sub(r"^(sk-ant-|sk-proj-|gh[pousr]_|github_pat_|AIza|xox[bp]-|AKIA)", "", tok)
+    return len(set(body.replace("-", "").replace("_", ""))) <= 3
 
 
 # 單行規則：一行命中就回報。
@@ -55,9 +65,16 @@ LINE_RULES = [
           "金鑰／Token 放在網址參數裡",
           "改用 HTTP 標頭（例如 Authorization / x-api-key）；網址會出現在錯誤訊息、代理記錄與瀏覽器歷史。"),
     _rule("hardcoded-secret", "error", CODE_EXT | {".json", ".env", ".txt", ".md"},
-          r"(sk-ant-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AIza[0-9A-Za-z_-]{30,}|xox[bp]-[A-Za-z0-9-]{20,})",
+          # AWS／OpenAI 專案金鑰／GitHub 各種 token（ghp_ gho_ ghu_ ghs_ ghr_）／私鑰檔頭參考
+          # rehan-remade/universal-modder um/publish.py（MIT，Copyright (c) 2026 Rehan and universal-modder contributors）
+          r"(sk-ant-[A-Za-z0-9_-]{20,}|sk-proj-[A-Za-z0-9_-]{32,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}"
+          r"|AIza[0-9A-Za-z_-]{30,}|xox[bp]-[A-Za-z0-9-]{20,}|\bAKIA[0-9A-Z]{16}\b"
+          # 私鑰檔頭要後面「接著就是金鑰內容」才算（行尾，或 JSON 裡的 \n 加 base64）；
+          # 掃描工具的規則字串、文件表格只寫檔頭，不是外洩。
+          r"|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----(?:[\"']*\s*$|\\n[A-Za-z0-9+/]{20,}))",
           "疑似把真的金鑰寫進程式碼",
-          "立刻到服務商後台撤銷這把金鑰，改放 GitHub Secrets / 環境變數；git 歷史裡也要清掉。"),
+          "立刻到服務商後台撤銷這把金鑰，改放 GitHub Secrets / 環境變數；git 歷史裡也要清掉。",
+          fake=_fake_secret),
     _rule("log-secret", "warn", CODE_EXT,
           r"(print\(|console\.(log|info|debug)\(|echo ).*\b(token|api_?key|secret|password)\b",
           "可能把金鑰印到 log",
@@ -85,13 +102,62 @@ LINE_RULES = [
 ]
 
 
-def _iter_files(root, max_bytes, skipped):
+# 機密檔名：這些檔案本身就是金鑰或帳密，內容掃描不一定抓得到（.p12 是二進位、.env 的值沒有固定格式）。
+# 檔名規則參考 Graphify-Labs/graphify graphify/detect.py 的 _is_sensitive（Apache-2.0／MIT，Copyright (c) 2026 Safi Shamsi）。
+_ENV_TEMPLATE = (".example", ".sample", ".template", ".dist")
+
+
+def _sensitive_name(name, path):
+    """回傳 (等級, 說明) 或 None。等級是「確定被 commit」時用的；沒 commit 時呼叫端會降級。"""
+    low = name.lower()
+    if re.match(r"\.env(rc)?(\..+)?$", low):
+        return None if low.endswith(_ENV_TEMPLATE) else ("error", ".env 環境變數檔（通常放金鑰）")
+    if low in {"id_rsa", "id_ed25519", "id_ecdsa", "id_dsa"}:
+        return ("error", "SSH 私鑰")
+    if low.endswith((".p12", ".pfx")):
+        return ("error", "憑證＋私鑰封裝檔")
+    if low.endswith(".pem"):
+        # .pem 也可能只是公開的 CA 憑證（例如 cacert.pem）；只有裡面真的有私鑰才算
+        try:
+            with open(path, "rb") as f:
+                return ("error", "PEM 私鑰") if b"PRIVATE KEY" in f.read(65536) else None
+        except OSError:
+            return ("error", "PEM 檔（讀不到內容，當成私鑰處理）")
+    if low in {".git-credentials", ".netrc", "_netrc"}:
+        return ("error", "Git／網路登入帳密檔")
+    if re.match(r"service[-_]?account.*\.json$", low):
+        return ("error", "雲端服務帳號金鑰（JSON）")
+    if low in {".npmrc", ".pypirc"}:
+        # 常常只有套件來源設定、沒有 token，所以只建議檢查
+        return ("warn", "套件發佈設定檔（可能含發佈 token）")
+    return None
+
+
+def _git_status_sets(root):
+    """回傳 (已追蹤檔案, 未追蹤也沒被忽略的檔案)；不是 git repo 或沒有 git 時回 None。"""
+    def ls(*extra):
+        out = subprocess.run(["git", "-C", root, "ls-files", "-z", *extra],
+                             capture_output=True, timeout=60)
+        if out.returncode != 0:
+            raise OSError(out.stderr.decode("utf-8", "replace")[:200])
+        return {p.replace("/", os.sep) for p in out.stdout.decode("utf-8", "replace").split("\0") if p}
+    try:
+        return ls(), ls("--others", "--exclude-standard")
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def _iter_files(root, max_bytes, skipped, sensitive=None):
     for dirpath, dirnames, filenames in os.walk(root):
         rel_dir = os.path.relpath(dirpath, root)
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS
                        and not os.path.normpath(os.path.join(rel_dir, d)).startswith(SKIP_REL_PREFIXES)]
         for name in filenames:
             path = os.path.join(dirpath, name)
+            if sensitive is not None:
+                hit = _sensitive_name(name, path)
+                if hit:
+                    sensitive.append((os.path.relpath(path, root), hit))
             ext = os.path.splitext(name)[1].lower()
             if name.startswith(".env"):
                 ext = ".env"
@@ -131,7 +197,8 @@ def audit(root, max_kb=1024):
     pwa_marker_file = None
     has_app_ver = False
 
-    for path, ext in _iter_files(root, max_kb * 1024, skipped):
+    sensitive = []
+    for path, ext in _iter_files(root, max_kb * 1024, skipped, sensitive):
         rel = os.path.relpath(path, root)
         base = os.path.basename(path)
         is_workflow = rel.replace(os.sep, "/").startswith(".github/workflows/") and ext in {".yml", ".yaml"}
@@ -144,13 +211,14 @@ def audit(root, max_kb=1024):
                  "mkdir": False}
         sqlite_lines, http_line, tee_lines, share_window = [], None, [], 0
         share_start, share_has_files, share_has_title = None, False, False
+        wf_lines = []   # 工作流檔很小，整份留著做跨行判斷（job 權限、checkout 步驟、run 區塊）
         scanned += 1
 
         for no, line in _lines(path, skipped, root):
             if no <= 5 and "guardrails: ignore-file" in line:
                 skipped.append((rel, "檔案標記 guardrails: ignore-file"))
                 findings[:] = [f for f in findings if f["file"] != rel]
-                sqlite_lines, http_line, tee_lines, share_window = [], None, [], 0
+                sqlite_lines, http_line, tee_lines, share_window, wf_lines = [], None, [], 0, []
                 flags = dict.fromkeys(flags, True)
                 scanned -= 1
                 break
@@ -158,7 +226,7 @@ def audit(root, max_kb=1024):
             # 測試用的假金鑰／故意寫錯的範例，在行尾加 guardrails: ignore 就不回報單行規則。
             ignored = "guardrails: ignore" in line
             for r in LINE_RULES if not ignored else ():
-                if ext in r["exts"] and r["re"].search(line):
+                if ext in r["exts"] and any(not (r["fake"] and r["fake"](m.group(0))) for m in r["re"].finditer(line)):
                     findings.append(_f(r["id"], r["sev"], rel, no, r["msg"], r["fix"], line))
             if "APP_VER" in line:
                 has_app_ver = True
@@ -193,6 +261,7 @@ def audit(root, max_kb=1024):
                 if "noindex" in low:
                     flags["noindex"] = True
             if is_workflow:
+                wf_lines.append((no, line.rstrip("\r\n")))
                 if "runs-on:" in line:
                     flags["runs_on"] = True
                 if "timeout-minutes" in line:
@@ -233,14 +302,159 @@ def audit(root, max_kb=1024):
             findings.append(_f("workflow-tee-no-mkdir", "warn", rel, no,
                                "tee 寫到子資料夾但沒有先 mkdir -p（pipefail 下整步失敗）",
                                "在那一步前面加 mkdir -p <資料夾>。", line))
+        if is_workflow and wf_lines:
+            _workflow_security(findings, rel, wf_lines)
 
     if has_pwa_marker and not has_app_ver:
         findings.append(_f("pwa-no-version", "info", pwa_marker_file, 1,
                            "看起來是 PWA，但找不到 APP_VER 版本號",
                            "前端加 APP_VER，每次改版更新；頁面定期比對伺服器版本，不同就自動重載。", ""))
 
+    if sensitive:
+        git_sets = _git_status_sets(root)
+        for rel, (sev, what) in sensitive:
+            if git_sets is None:
+                state, sev = "（不是 git repo，無法確認有沒有 commit）", "warn"
+            elif rel in git_sets[0]:
+                state = "已被 git 追蹤（已 commit 或已 add）"
+            elif rel in git_sets[1]:
+                state, sev = "還沒 commit，但沒被 .gitignore 擋住，git add -A 就會帶進去", "warn"
+            else:
+                continue  # 已被 .gitignore 忽略：正確做法
+            findings.append(_f("secret-file-committed", sev, rel, 1, f"機密檔：{what}{state}",
+                               "加進 .gitignore 並 git rm --cached；裡面的金鑰視同外洩，到服務商後台撤銷重發，"
+                               "改放 GitHub Secrets／環境變數。範本檔請改名成 .env.example 且只放假值。", ""))
+
     findings.sort(key=lambda x: (SEV_ORDER[x["severity"]], x["file"], x["line"]))
     return {"root": root, "scanned_files": scanned, "skipped": skipped, "findings": findings}
+
+
+# ---- GitHub Actions 安全規則 ----
+# 規則參考 affaan-m/ECC scripts/ci/validate-workflow-security.js（MIT，Copyright (c) 2026 Affaan Mustafa），
+# 改成逐 job 判斷權限（只有一個 job 要寫入時，其他唯讀 job 的 checkout 不必報）。
+_EXPR = re.compile(r"\$\{\{(.*?)\}\}")
+# 使用者可控制的內容：PR 標題／分支名／Issue 內文／手動輸入。直接展開進 shell 指令就能注入命令。
+_UNTRUSTED = re.compile(r"\b(github\.event\.[\w.\[\]'\"-]+|inputs\.[\w-]+|github\.head_ref)")
+# 數字、SHA、ID 不可能夾帶指令，不報，避免雜訊
+_SAFE_FIELD = re.compile(r"(\.number|\.id|sha|\.run_id|\.run_number|\.run_attempt)$")
+_INSTALL = re.compile(r"\b(npm\s+(ci|install|i)|pnpm\s+(install|i)|bun\s+install)\b(?!.*--ignore-scripts)")
+_CHECKOUT = re.compile(r"uses:\s*['\"]?actions/checkout@")
+_PR_HEAD = re.compile(r"github\.event\.pull_request\.head\.(ref|sha|repo\.full_name)|github\.head_ref|refs/(remotes/)?pull/")
+
+
+def _indent(s):
+    return len(s) - len(s.lstrip(" "))
+
+
+def _is_code(s):
+    t = s.strip()
+    return bool(t) and not t.startswith("#")
+
+
+def _perm_write(lines, i):
+    """lines[i] 是 permissions: 那一行；回傳這個權限區塊有沒有任何寫入權限。"""
+    text = lines[i][1]
+    val = text.split(":", 1)[1].split("#")[0].strip().strip("'\"")
+    if val:
+        return val == "write-all"
+    base = _indent(text)
+    for _, t in lines[i + 1:]:
+        if not _is_code(t):
+            continue
+        if _indent(t) <= base:
+            break
+        if re.search(r":\s*['\"]?write\b", t):
+            return True
+    return False
+
+
+def _workflow_security(findings, rel, lines):
+    def add(rid, sev, no, msg, fix, src):
+        if "guardrails: ignore" not in src:
+            findings.append(_f(rid, sev, rel, no, msg, fix, src))
+
+    jobs_i = next((i for i, (_, t) in enumerate(lines) if re.match(r"jobs:\s*(#.*)?$", t)), len(lines))
+    header = lines[:jobs_i]
+    pr_target = any(_is_code(t) and "pull_request_target" in t for _, t in header)
+    top_write = any(re.match(r"permissions:", t) and _perm_write(lines, i) for i, (_, t) in enumerate(header))
+
+    # 切出每個 job：jobs: 底下第一層的 key
+    jobs, job_indent = [], None
+    for i in range(jobs_i + 1, len(lines)):
+        t = lines[i][1]
+        if not _is_code(t):
+            continue
+        if job_indent is None:
+            job_indent = _indent(t)
+        if _indent(t) == job_indent:
+            if jobs:
+                jobs[-1][1] = i
+            jobs.append([i, len(lines)])
+        elif _indent(t) < job_indent:
+            if jobs:
+                jobs[-1][1] = i
+            break
+    for start, end in jobs:
+        body = lines[start + 1:end]
+        body_indent = next((_indent(t) for _, t in body if _is_code(t)), None)
+        write = top_write
+        for j, (_, t) in enumerate(body):
+            if _indent(t) == body_indent and re.match(r"\s*permissions:", t):
+                write = _perm_write(body, j)  # job 自己的權限取代工作流層級的
+        # 步驟：「- 」開頭，到縮排回到同層或更淺為止
+        steps, cur = [], None
+        for no, t in body:
+            if cur and (not t.strip() or _indent(t) > cur["indent"]):
+                cur["lines"].append((no, t))
+                continue
+            m = re.match(r"(\s*)-\s", t)
+            cur = {"indent": len(m.group(1)), "lines": [(no, t)]} if m else None
+            if cur:
+                steps.append(cur)
+        for st in steps:
+            text = "\n".join(t for _, t in st["lines"])
+            if not _CHECKOUT.search(text):
+                continue
+            no0, src0 = st["lines"][0]
+            if pr_target:
+                for no, t in st["lines"]:
+                    if re.match(r"\s*(-\s+)?(ref|repository):", t) and _PR_HEAD.search(t):
+                        add("workflow-pr-target-checkout", "error", no,
+                            "pull_request_target 工作流 checkout 了 PR 的程式（帶著 repo 的金鑰與寫入權限執行陌生人的程式碼）",
+                            "改用 pull_request 事件；真的需要權限時，先在 pull_request 跑完測試，"
+                            "再用 workflow_run 只讀取結果，不要 checkout PR head。", t)
+            if write and not re.search(r"persist-credentials:\s*['\"]?false", text):
+                add("checkout-persist-credentials", "warn", no0,
+                    "有寫入權限的 job 用 actions/checkout 但沒設 persist-credentials: false（token 會留在 .git/config，後面每一步都讀得到）",
+                    "checkout 加 with: persist-credentials: false；這個 job 需要 git push 的話才保留，並在註解寫明。", src0)
+
+    # run: 區塊裡的命令注入與安裝腳本
+    i = 0
+    while i < len(lines):
+        no, t = lines[i]
+        m = re.match(r"(\s*)(-\s+)?run:\s*(.*)$", t)
+        i += 1
+        if not m or not _is_code(t):
+            continue
+        key_indent = len(m.group(1)) + len(m.group(2) or "")
+        block = [(no, m.group(3))]
+        if m.group(3).strip()[:1] in ("|", ">"):
+            block = []
+            while i < len(lines) and (not lines[i][1].strip() or _indent(lines[i][1]) > key_indent):
+                block.append(lines[i])
+                i += 1
+        for bno, bt in block:
+            if not _is_code(bt):
+                continue
+            bad = [u for e in _EXPR.findall(bt) for u in _UNTRUSTED.findall(e) if not _SAFE_FIELD.search(u)]
+            if bad:
+                add("workflow-expr-injection", "warn", bno,
+                    f"run: 裡直接展開 ${{{{ {bad[0]} }}}}（內容可能來自使用者輸入，可夾帶 shell 指令）",
+                    "改用 env 傳入：在步驟加 env: VAL: ${{ ... }}，指令裡寫 \"$VAL\"（加雙引號）。", bt)
+            if _INSTALL.search(bt):
+                add("npm-install-scripts", "info", bno,
+                    "安裝套件時會執行每個套件的 install 腳本（供應鏈攻擊最常見的入口）",
+                    "加 --ignore-scripts（例如 npm ci --ignore-scripts）；真的需要編譯步驟的套件另外跑 npm rebuild <套件>。", bt)
 
 
 def _share_finding(findings, rel, start, has_files, has_title):
@@ -312,7 +526,7 @@ def selftest():
         w("bad/gather.py", "import asyncio\nawait asyncio.gather(*[f(x) for x in xs])\n")
         # 模型名稱用拼接產生，避免這支工具本身被 repo 的「過時模型名稱」檢查誤判。
         w("bad/model.py", "MODEL = '" + "gpt-" + "5-mini" + "'\n")
-        w("bad/secret.py", "K = '" + "sk-ant-" + "A" * 24 + "'\n")
+        w("bad/secret.py", "K = '" + "sk-ant-" + "api03-aB3dE5fG7hJ9kL1mN2pQ4rS6" + "'\n")
         w(".github/workflows/bad.yml", "jobs:\n  a:\n    runs-on: ubuntu-latest\n    steps:\n      - run: make | tee out/log.txt\n")
         w(".github/workflows/good.yml", "jobs:\n  a:\n    runs-on: ubuntu-latest\n    timeout-minutes: 20\n    steps:\n"
                                         "      - run: mkdir -p out && make | tee out/log.txt\n")
@@ -355,6 +569,131 @@ def selftest():
         check(any("bin.js" in k for k in skipped), "二進位檔被略過且有列出")
         check(not any(r == "pwa-no-version" for r, _ in hits), "有 APP_VER 時不報 PWA 版本號")
         check(any(f["severity"] == "error" for f in res["findings"]), "有 error 時結束碼應為 1（由 main 處理）")
+
+    # ---- 金鑰格式（字串拼接產生，避免這支工具本身被別的掃描器當成外洩）----
+    with tempfile.TemporaryDirectory() as d:
+        def w(rel, text):
+            p = os.path.join(d, rel)
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        mix = "aB3dE5fG7hJ9kL1mN2pQ4rS6tU8vW0xY"
+        pk = "-----BEGIN " + "{}PRIVATE KEY-----"
+        cases = {
+            "aws.py": ("K = '" + "AKIA" + "Q7RZ3T5V2X4Y6W8N" + "'\n", True),
+            "aws_doc.md": ("範例：" + "AKIA" + "IOSFODNN7" + "EXAMPLE" + "\n", False),
+            "openai.js": ("const k = '" + "sk-" + "proj-" + mix + "12'\n", True),
+            "gho.json": ('{"t": "' + "gho" + "_" + mix + "1234" + '"}\n', True),
+            "ghs.sh": ("T=" + "ghs" + "_" + mix + "5678\n", True),
+            "fake.py": ("K = '" + "sk-ant-" + "a" * 24 + "'\n", False),
+            "pem.py": ('KEY = """' + pk.format("OPENSSH ") + "\n", True),
+            "sa.json": ('{"private_key": "' + pk.format("") + "\\n" + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC" + '"}\n', True),
+            "rule.py": ("regex=r'" + pk.format("RSA ") + "',\n", False),
+            "table.md": ("| 私鑰 | `" + pk.format("EC ") + "` | high |\n", False),
+        }
+        for name, (text, _) in cases.items():
+            w("k/" + name, text)
+        hit = {f["file"].replace(os.sep, "/") for f in audit(d)["findings"] if f["rule"] == "hardcoded-secret"}
+        for name, (_, want) in cases.items():
+            check((("k/" + name) in hit) == want,
+                  f"金鑰格式 {name}：{'要抓' if want else '不誤報（範例／假值／規則字串）'}")
+
+    # ---- 機密檔被 commit（檔名比對，依 git 狀態分級）----
+    import shutil as _sh
+    if _sh.which("git"):
+        with tempfile.TemporaryDirectory() as d:
+            def w(rel, text):
+                p = os.path.join(d, rel)
+                os.makedirs(os.path.dirname(p), exist_ok=True)
+                with open(p, "w", encoding="utf-8") as fh:
+                    fh.write(text)
+            subprocess.run(["git", "init", "-q", d], check=True, capture_output=True)
+            w(".gitignore", ".env.local\n")
+            files = {".env": "A=1", ".env.example": "A=", ".env.sample": "A=", ".env.local": "A=1",
+                     "id_rsa": "x", "id_rsa.pub": "x", "keys/id_ed25519": "x", "ca/cacert.pem": "BEGIN CERTIFICATE",
+                     "ca/server.pem": "-----BEGIN " + "PRIVATE KEY-----", "app.p12": "x", "win.pfx": "x",
+                     ".npmrc": "registry=x", ".pypirc": "[pypi]", ".git-credentials": "x", ".netrc": "x",
+                     "gcp/service-account-prod.json": "{}", "src/service.json": "{}", "src/env.py": "x = 1\n"}
+            for rel, text in files.items():
+                w(rel, text)
+            tracked = [r for r in files if r not in {"id_rsa", ".env.local"}]
+            subprocess.run(["git", "-C", d, "add", "--", *tracked, ".gitignore"], check=True, capture_output=True)
+            got = {f["file"].replace(os.sep, "/"): f["severity"] for f in audit(d)["findings"]
+                   if f["rule"] == "secret-file-committed"}
+            want = {".env": "error", "keys/id_ed25519": "error", "ca/server.pem": "error", "app.p12": "error",
+                    "win.pfx": "error", ".git-credentials": "error", ".netrc": "error",
+                    "gcp/service-account-prod.json": "error", ".npmrc": "warn", ".pypirc": "warn", "id_rsa": "warn"}
+            check(got == want, "機密檔名：已 commit 的必修、還沒 commit 也沒被忽略的建議修、"
+                               ".env.example／.pub／公開 CA 憑證／被 .gitignore 擋掉的不報"
+                  + ("" if got == want else f"（多：{sorted(set(got.items()) - set(want.items()))}，"
+                                             f"少：{sorted(set(want.items()) - set(got.items()))}）"))
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, ".env"), "w") as fh:
+                fh.write("A=1")
+            got = [f for f in audit(d)["findings"] if f["rule"] == "secret-file-committed"]
+            check(len(got) == 1 and got[0]["severity"] == "warn" and "不是 git repo" in got[0]["message"],
+                  "不是 git repo 時無法確認，降為建議修並說明")
+    else:
+        print("SKIP 機密檔名測試：這台機器沒有 git")
+
+    # ---- GitHub Actions 安全規則 ----
+    with tempfile.TemporaryDirectory() as d:
+        def w(rel, text):
+            p = os.path.join(d, rel)
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        E = "${{ "
+        w(".github/workflows/bad.yml",
+          "on:\n  pull_request_target:\n  workflow_dispatch:\n    inputs:\n      ref: {}\n"
+          "permissions:\n  contents: write\n"
+          "jobs:\n  build:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n"
+          "      - uses: actions/checkout@v5\n"                                   # 13
+          "        with:\n          ref: " + E + "github.event.pull_request.head.sha }}\n"  # 15
+          "      - run: npm ci\n"                                                  # 16
+          "      - name: x\n        run: |\n"
+          "          echo \"" + E + "github.event.inputs.ref }}\"\n"            # 19
+          "          echo \"" + E + "github.event.pull_request.title }}\"\n"    # 20
+          "          echo \"" + E + "github.event.pull_request.number }}\"\n"   # 21
+          "      - run: echo " + E + "inputs.name }}\n")                          # 22
+        w(".github/workflows/good.yml",
+          "on:\n  pull_request:\n  push:\npermissions:\n  contents: read\n"
+          "jobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n"
+          "      - uses: actions/checkout@v5\n"
+          "      - run: npm ci --ignore-scripts --no-audit\n"
+          "      - env:\n          REF: " + E + "github.event.inputs.ref }}\n        run: echo \"$REF\"\n"
+          "  deploy:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n"
+          "    permissions:\n      contents: write\n    steps:\n"
+          "      - uses: actions/checkout@v5\n        with:\n          persist-credentials: false\n"
+          "      # npm " + "install 寫在註解裡不算\n"
+          "      - run: echo \"" + E + "github.event.pull_request.head.sha }} " + E + "github.run_id }}\"\n")
+        w(".github/workflows/mixed.yml",
+          "on: push\njobs:\n  read:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n"
+          "    permissions:\n      contents: read\n    steps:\n      - uses: actions/checkout@v5\n"   # 9
+          "  publish:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n"
+          "    permissions: write-all\n    steps:\n      - name: co\n        uses: actions/checkout@v5\n")  # 15
+        w(".github/workflows/override.yml",
+          "on: push\npermissions:\n  contents: write\njobs:\n  lint:\n    runs-on: ubuntu-latest\n"
+          "    timeout-minutes: 5\n    permissions:\n      contents: read\n    steps:\n"
+          "      - uses: actions/checkout@v5\n")
+        w(".github/workflows/prt-safe.yml",
+          "on:\n  pull_request_target:\npermissions:\n  pull-requests: write\njobs:\n  label:\n"
+          "    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n"
+          "      - uses: actions/checkout@v5\n        with:\n          persist-credentials: false\n")
+        found = {(f["rule"], f["file"].replace(os.sep, "/").split("/")[-1], f["line"]) for f in audit(d)["findings"]}
+        sec_rules = {"workflow-pr-target-checkout", "checkout-persist-credentials", "workflow-expr-injection",
+                     "npm-install-scripts"}
+        by = lambda fn: {(r, ln) for r, f, ln in found if f == fn and r in sec_rules}  # noqa: E731
+        check(("workflow-pr-target-checkout", 15) in by("bad.yml"), "pull_request_target＋checkout PR head → 必修")
+        check(("checkout-persist-credentials", 13) in by("bad.yml"), "工作流有寫入權限、checkout 沒關 persist-credentials → 建議修")
+        check(("npm-install-scripts", 16) in by("bad.yml"), "npm ci 沒加 --ignore-scripts → 提醒")
+        inj = {ln for r, ln in by("bad.yml") if r == "workflow-expr-injection"}
+        check(inj == {19, 20, 22}, f"run: 裡的 github.event.*／inputs.* 要報、PR 編號不報（實際：{sorted(inj)}）")
+        check(not by("good.yml"), "env 傳入、--ignore-scripts、persist-credentials: false、註解、SHA 都不誤報"
+              + (f"（{sorted(by('good.yml'))}）" if by("good.yml") else ""))
+        check(by("mixed.yml") == {("checkout-persist-credentials", 15)}, "逐 job 判斷：只報有寫入權限（write-all）的那個 job")
+        check(not by("override.yml"), "job 自己設唯讀權限時，蓋過工作流層級的寫入權限")
+        check(not by("prt-safe.yml"), "pull_request_target 只 checkout 預設分支（不碰 PR head）不報")
 
     print("\n自我測試" + ("全部通過" if ok else "有失敗"))
     return 0 if ok else 1

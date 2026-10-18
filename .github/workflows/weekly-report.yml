@@ -24,7 +24,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       SKL_READ_TOKEN: ${{ secrets.SKL_READ_TOKEN }}
     steps:
+      # issues: write 只給 gh issue 用（走 GH_TOKEN），不 git push，所以不把 token 留在 .git/config。
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Self-test
         run: python3 ops/weekly_report.py selftest
