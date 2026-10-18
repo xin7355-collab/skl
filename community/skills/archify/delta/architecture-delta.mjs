@@ -770,9 +770,10 @@ export function renderArchitectureDeltaHtml({ receipt, baseSvg, deltaSvg, headSv
   const headView = headHtml
     ? `<iframe class="snapshot-frame" title="After architecture explorer" srcdoc="${esc(headHtml)}"></iframe>`
     : headSvg;
+  // skl：比較頁常被放上公開網站分享，<head> 加 robots noindex 免得被搜尋引擎收錄
   const html = `<!doctype html>
 <html lang="en" data-theme="dark" data-preset="${esc(receipt.view.visualPreset)}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(receipt.head.title)} Architecture Delta</title>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>${esc(receipt.head.title)} Architecture Delta</title>
 <style>
 ${artifactCss}
 :root{color-scheme:dark;--d-add:#34d399;--d-remove:#fb7185;--d-change:#fbbf24;--d-move:#7dd3fc;--d-focus:#7dd3fc;--d-ink:#e6edf5;--d-muted:#8aa0b5;--d-line:#25384a}

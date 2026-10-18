@@ -107,3 +107,10 @@ community/skills/huashu-art-motion/scripts/subzone_gate.py  # 需要 numpy（uv 
 community/skills/markitdown/scripts/batch_convert.py  # 需要 markitdown
 community/skills/markitdown/scripts/convert_literature.py  # 需要 markitdown
 community/skills/statistical-analysis/scripts/assumption_checks.py  # 需要 matplotlib
+
+# skl：社群技能的 pytest 測試檔（用 pytest 跑、需要 community/tests/requirements.txt 的套件），不是指令列工具。
+community/tests/test_markitdown_api.py  # pytest module, run by Community skill tests workflow
+community/tests/test_markitdown_scripts.py  # pytest module, run by Community skill tests workflow
+community/tests/test_polars.py  # pytest module, run by Community skill tests workflow
+community/tests/test_statistical_analysis.py  # pytest module, run by Community skill tests workflow
+community/tests/test_statsmodels.py  # pytest module, run by Community skill tests workflow

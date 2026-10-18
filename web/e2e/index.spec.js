@@ -114,3 +114,65 @@ test.describe('安裝技能的指令：裝完先列執行方案，再直接接�
     expect(v).toMatch(FOLLOW);
   });
 });
+
+// claude.ai 網頁版不能從 GitHub 裝技能，只能上傳 ZIP；部署時 build_zips.py 打包並把路徑寫進 catalog.json
+test.describe('技能卡片的「下載 ZIP」（給 claude.ai 網頁版上傳）', () => {
+  async function openBrowse(page) {
+    await page.goto('/index.html');
+    await page.locator('nav.tabs button[data-tab="browse"]').click();
+    await expect(page.locator('#skillList .skill').first()).toBeVisible();
+  }
+
+  test('每張卡片都有下載連結，href 是 zips/<catalog 路徑>.zip，旁邊寫上傳位置', async ({ page }) => {
+    await openBrowse(page);
+    const cards = page.locator('#skillList .skill');
+    const n = await cards.count();
+    expect(n).toBeGreaterThan(0);
+    for (let i = 0; i < Math.min(n, 10); i++) {
+      const card = cards.nth(i);
+      const link = card.locator('a.zip');
+      await expect(link).toHaveText('下載 ZIP');
+      await expect(link).toHaveAttribute('download', '');
+      const p = await card.locator('.pa').textContent();
+      await expect(link).toHaveAttribute('href', `zips/${p}.zip`);
+      await expect(card.locator('.dl small')).toContainText('Customize → Skills');
+    }
+    await expectNoHorizontalScroll(page);
+  });
+
+  test('連結真的下載得到 ZIP，根目錄是技能名稱的資料夾（claude.ai 的規定）', async ({ page }) => {
+    await openBrowse(page);
+    await page.locator('#q').fill('archify');
+    const card = page.locator('#skillList .skill').filter({ hasText: 'community/skills/archify' }).first();
+    const link = card.locator('a.zip');
+    await expect(link).toHaveAttribute('href', 'zips/community/skills/archify.zip');
+    const res = await page.request.get(await link.getAttribute('href'));
+    expect(res.status()).toBe(200);
+    const buf = await res.body();
+    expect(buf.readUInt32LE(0)).toBe(0x04034b50);   // ZIP 本地檔頭 "PK\x03\x04"
+    const nameLen = buf.readUInt16LE(26);
+    expect(buf.subarray(30, 30 + nameLen).toString('utf8')).toMatch(/^archify\//);
+  });
+
+  test('catalog.json 沒有 zip 欄位的技能不顯示連結（不會點到 404）', async ({ page }) => {
+    await page.route('**/catalog.json', async (route) => {
+      const res = await route.fetch();
+      const cat = await res.json();
+      for (const s of cat.skills) delete s.zip;
+      await route.fulfill({ response: res, json: cat });
+    });
+    await openBrowse(page);
+    await expect(page.locator('#skillList a.zip')).toHaveCount(0);
+  });
+
+  test('說明分頁寫出官方的上傳步驟與出處', async ({ page }) => {
+    await page.goto('/index.html');
+    await page.locator('nav.tabs button[data-tab="help"]').click();
+    const help = page.locator('#zipHelp');
+    await help.locator('summary').click();
+    await expect(help).toContainText('Customize → Skills');
+    await expect(help).toContainText('Upload a skill');
+    await expect(help).toContainText('Settings → Capabilities');
+    await expect(help.locator('a[href^="https://support.claude.com/"]')).toHaveCount(1);
+  });
+});

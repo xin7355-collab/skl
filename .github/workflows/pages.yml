@@ -55,6 +55,7 @@ jobs:
       - name: Self-test builders
         run: |
           python3 web/build_catalog.py selftest
+          python3 web/build_zips.py selftest
           python3 web/ai/check_ai_data.py selftest
           python3 web/build_trending.py selftest
           python3 web/check_advisor_rules.py selftest
@@ -66,6 +67,8 @@ jobs:
         run: |
           mkdir -p _site
           python3 web/build_catalog.py
+          # 每個技能一個 ZIP（給 claude.ai 網頁版上傳），並在 catalog.json 寫入下載路徑，所以要在複製 catalog.json 之前跑
+          python3 web/build_zips.py --out _site/zips --catalog web/catalog.json
           cp web/index.html web/ai.html web/xray.html web/dev-guide.html web/agent.html web/catalog.json web/advisor_rules.json _site/
           # Repo X-Ray「我的 App」清單：apps.json 本來就在公開 repo 裡，不增加曝光
           cp .github/apps.json _site/apps.json

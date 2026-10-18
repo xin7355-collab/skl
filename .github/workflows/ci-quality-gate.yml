@@ -96,6 +96,7 @@ jobs:
           python3 xin-toolkit/skills/app-guardrails-audit/scripts/guardrails_audit.py selftest
           python3 xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py selftest
           python3 web/build_catalog.py selftest
+          python3 web/build_zips.py selftest
           python3 web/build_trending.py selftest
           python3 web/check_advisor_rules.py selftest
           python3 web/check_advisor_rules.py

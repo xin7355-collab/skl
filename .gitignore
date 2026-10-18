@@ -59,6 +59,8 @@ megaprompts/
 
 # Pytest suite (maintainer quality gate; not user-consumable)
 tests/
+# skl：社群技能的測試要進 git（Community skill tests 工作流會跑）
+!community/tests/
 
 # Autoresearch agent workspace
 .autoresearch/

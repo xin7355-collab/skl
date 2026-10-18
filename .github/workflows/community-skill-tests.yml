@@ -1,0 +1,80 @@
+---
+# 社群收錄的 4 個資料分析技能（statistical-analysis、statsmodels、polars、markitdown）的離線測試。
+# 測試來自上游 K-Dense（MIT），放在 community/tests/，不放進技能資料夾，免得 bootstrap 複製到別的 App。
+# 每月跑一次是為了抓「技能寫的用法跟固定版本的套件對不上」；改到這 4 個技能或測試時也會自動跑。
+name: Community skill tests
+
+'on':
+  workflow_dispatch:
+  schedule:
+    # 每月 1 日台灣時間 09:17（UTC 01:17）；避開整點，排程比較不會被延後
+    - cron: '17 1 1 * *'
+  push:
+    branches: [main]
+    paths:
+      - 'community/skills/statistical-analysis/**'
+      - 'community/skills/statsmodels/**'
+      - 'community/skills/polars/**'
+      - 'community/skills/markitdown/**'
+      - 'community/tests/**'
+      - '.github/workflows/community-skill-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-skill-tests
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # 不在技能資料夾留下 __pycache__（bootstrap 複製技能時會被帶走）
+      PYTHONDONTWRITEBYTECODE: '1'
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: community/tests/requirements.txt
+
+      - name: Install pinned packages
+        run: |
+          set -o pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r community/tests/requirements.txt 2>&1 | tee /tmp/pip.log
+          python -m pip check
+
+      # 每個技能的測試各自一個 pytest 行程：上游的技能 scripts/ 會用一樣的模組名稱，
+      # 放在同一個行程裡 import 會拿到別的技能的檔案。一個失敗不停，最後一起回報是哪幾個。
+      - name: Run tests (one process per file)
+        run: |
+          set -o pipefail
+          failed=""
+          for f in community/tests/test_*.py; do
+            echo "::group::$f"
+            if ! python -m pytest "$f" -q 2>&1 | tee -a /tmp/pytest.log; then
+              failed="$failed $f"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::這些測試失敗：$failed。點開上面對應的群組看錯誤；多半是套件改版或技能內容改了，先在本機用 community/tests/requirements.txt 重現。"
+            exit 1
+          fi
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: community-skill-tests-log
+          path: |
+            /tmp/pip.log
+            /tmp/pytest.log
+          retention-days: 14
