@@ -55,6 +55,8 @@ jobs:
           python3 web/build_trending.py selftest
           python3 web/check_advisor_rules.py selftest
           python3 web/check_advisor_rules.py
+          python3 web/check_guides.py selftest
+          python3 web/check_guides.py
 
       - name: Build site
         run: |
@@ -64,6 +66,8 @@ jobs:
           # Repo X-Ray「我的 App」清單：apps.json 本來就在公開 repo 裡，不增加曝光
           cp .github/apps.json _site/apps.json
           mkdir -p _site/ai && cp web/ai/models.json web/ai/features.json _site/ai/
+          # 兩份教學頁（dev-guide、agent）共用的分頁／進度／精靈程式；網址帶 ?v=版本號，手機才不會拿到舊的快取
+          mkdir -p _site/guide && cp web/guide/guide.css web/guide/guide.js _site/guide/
           # 手動重新部署時 commit 不變，版本號加上執行編號，手機才會重載到新版。
           ver="${GITHUB_SHA::7}.${GITHUB_RUN_NUMBER}"
           # APP_VER 換成版本號，前端切回前景時比對 version.json，不同就自動重載。

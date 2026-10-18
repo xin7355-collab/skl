@@ -85,6 +85,8 @@ jobs:
           python3 web/build_trending.py selftest
           python3 web/check_advisor_rules.py selftest
           python3 web/check_advisor_rules.py
+          python3 web/check_guides.py selftest
+          python3 web/check_guides.py
           python3 xin-toolkit/skills/tw-stock/scripts/tw_stock_fetch.py selftest
           python3 xin-toolkit/skills/ai-model-router/scripts/model_router.py selftest
           node xin-toolkit/skills/ai-model-router/assets/model_router.js selftest

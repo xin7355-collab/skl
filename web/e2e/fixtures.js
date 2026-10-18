@@ -147,4 +147,26 @@ async function expectNoHorizontalScroll(page) {
   expect(overflow, '頁面不應該能左右滑').toBeLessThanOrEqual(0);
 }
 
-module.exports = { test, expect, REPOS, SEARCH_ITEMS, expectNoHorizontalScroll };
+// 教學頁（dev-guide、agent）的起手式精靈：從頭一題一題回答到結果頁。
+// answers 是 {欄位 id: 值}：文字就填、單選點那個選項、多選勾那些選項；沒列到的照預設。
+// 每題跑兩輪，因為有些欄位要先選了別的選項才會出現（例如選「已經有的 App」才問 repo）。
+async function runWizard(page, answers = {}) {
+  await page.locator('#wizard [data-wiz="begin"]').click();
+  for (let i = 0; i < 30; i++) {
+    for (let pass = 0; pass < 2; pass++) {
+      for (const [id, v] of Object.entries(answers)) {
+        if (!(await page.locator(`#wizard [data-field="${id}"]`).count())) continue;
+        if (Array.isArray(v)) for (const x of v) await page.locator(`#w-${id}-${x}`).check();
+        else if (await page.locator(`#w-${id}`).count()) await page.locator(`#w-${id}`).fill(v);
+        else await page.locator(`#w-${id}-${v}`).check();
+      }
+    }
+    const next = page.locator('#wizard [data-wiz="next"]');
+    const last = (await next.innerText()).includes('看結果');
+    await next.click();
+    if (last) break;
+  }
+  await expect(page.locator('#wizard h2')).toHaveText('結果：照下面做');
+}
+
+module.exports = { test, expect, REPOS, SEARCH_ITEMS, expectNoHorizontalScroll, runWizard };
