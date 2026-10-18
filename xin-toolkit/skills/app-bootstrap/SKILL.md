@@ -32,6 +32,11 @@ description: 把 skl 技能庫裡挑好的技能組合（core／pwa／actions／
    - 目標已有同名技能且不是本工具裝的 → 預設略過（不覆蓋使用者自己的技能）。
    - **安裝前自動安全掃描**（skill-security-auditor）：FAIL 不安裝、WARN 照裝但列出；
      掃描工具壞掉時一律不裝（確認來源可信才用 `--no-security-scan`）。
+   - **skl 補充掃描**（上游掃描看到抑制標記就整行跳過、不可見字元只看 .md，所以再掃一次所有文字檔）：
+     外來技能有掃描抑制標記（SEC-AUDITOR／ignore-line 那兩種）、雙向控制字元、Tag 字元、跟 Python 標準模組同名的檔案
+     → FAIL；零寬等不可見字元、寫死個人家目錄 → WARN。emoji 組合字、檔頭 BOM 不算。
+     誤判可照舊用 `assets/security-reviewed.json`（內容指紋綁定）人工放行。
+   - 技能裡有**符號連結**一律不裝（可能把技能外的檔案帶進 App；`--no-security-scan` 也不放行）。
    - **開工自動健檢**：加上 SessionStart hook（`.claude/hooks/skl-session-start.sh`），每次開對話先回報
      問題數量，技能超過 14 天沒更新會提醒；合併進既有 `.claude/settings.json`，不覆蓋原設定（`--no-hook` 可關）。
    - 目標沒有 `CLAUDE.md` → 建立工作守則範本；已有 → 不覆蓋，提示合併。
@@ -64,6 +69,8 @@ git clone --depth 1 https://github.com/xin7355-collab/skl /tmp/skl
 python3 /tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py update --target .
 ```
 只更新 `.claude/skills/.skl-vendor.json` 記錄的技能，不動 CLAUDE.md。
+安裝時會把每個技能的內容指紋記進 `.skl-vendor.json` 的 `hashes`；更新時發現 App 裡改過某個技能
+（指紋對不上）就**跳過不覆蓋**並列出，確定要換成 skl 版本才加 `--force`。舊版記錄沒有指紋的照舊覆蓋並補記。
 
 ## 自我測試
 

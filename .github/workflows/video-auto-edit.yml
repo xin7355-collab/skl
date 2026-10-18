@@ -24,7 +24,11 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
       SCRIPTS: xin-toolkit/skills/auto-video-edit/scripts
     steps:
+      # contents: write 是給 Release API 上傳成品用的（走 GITHUB_TOKEN 環境變數），不 git push，
+      # 所以不必把 token 留在 .git/config。
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Ensure ffmpeg
         # 影片工作流沒有 ffmpeg 就什麼都做不了，所以不加 continue-on-error；

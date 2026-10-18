@@ -27,14 +27,20 @@ jobs:
     steps:
       - name: Resolve ref
         id: ref
+        # 手動輸入的 ref 與分支名稱是使用者可控制的字串，直接寫進 run: 會被當成 shell 指令展開
+        # （例如 ref 填 `x"; curl ... #`）。改用 env 傳入，指令裡只當一般變數使用。
+        env:
+          INPUT_REF: ${{ github.event.inputs.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.ref }}" ]]; then
-            echo "target_ref=${{ github.event.inputs.ref }}" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && -n "$INPUT_REF" ]]; then
+            echo "target_ref=$INPUT_REF" >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             # Use commit SHA for PRs — branch names from forks don't exist in the base repo
-            echo "target_ref=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+            echo "target_ref=$PR_HEAD_SHA" >> "$GITHUB_OUTPUT"
           else
-            echo "target_ref=${{ github.head_ref || github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "target_ref=$HEAD_REF" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout
@@ -132,6 +138,15 @@ jobs:
         run: |
           python3 scripts/check_frontmatter.py --all
 
+      # skl 自己補的格式提醒（name 與資料夾不同、description 過長、SKILL.md 過長、孤兒參考檔）。
+      # 上游的 check_frontmatter.py／check_paths.py 照原樣保留；這支只輸出 ::warning，結束碼一律 0。
+      # 自我測試會擋（工具本身壞掉要知道），檢查結果不擋。
+      - name: skl skill lint (advisory)
+        run: |
+          python3 scripts/skl_skill_lint.py selftest
+          python3 scripts/skl_skill_lint.py --all
+          python3 scripts/skl_skill_lint.py --orphans xin-toolkit
+
       - name: Dual-publish drift guard (gate G4 — blocking)
         run: |
           python3 scripts/check_dual_publish.py
@@ -201,8 +216,10 @@ jobs:
           cache-dependency-path: web/e2e/package-lock.json
 
       - name: Install Playwright (version pinned in package-lock.json)
+        # --ignore-scripts：不執行套件自帶的安裝腳本（供應鏈攻擊最常見的入口）。
+        # 瀏覽器本來就由下一行 playwright install 另外下載，lock 檔裡只有 macOS 專用的 fsevents 有安裝腳本。
         run: |
-          npm ci --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
 
       - name: Run E2E tests
