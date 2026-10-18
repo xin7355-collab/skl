@@ -73,14 +73,17 @@
   - `xin-toolkit/skills/file-intake`：使用者上傳檔案要「做出來」時的標準流程。
   - `xin-toolkit/skills/ai-model-router`：App 呼叫 AI 的自動挑模型模組（`scripts/model_router.py`、`assets/model_router.js`，
     兩邊規則要一致；selftest 都在 CI 跑）。組合 `ai`。
-  - `xin-toolkit/skills/web-to-markdown`：網頁轉 Markdown（firecrawl 的免費替代，純內建模組、robots.txt＋限流）；
+  - `xin-toolkit/skills/web-to-markdown`：網頁轉 Markdown（firecrawl 的免費替代，純內建模組、robots.txt＋限流、擋內網位址）；
     真實網路驗證用 `Web to markdown smoke test` 工作流（改到技能時自動跑）。組合 `python`。
   - `xin-toolkit/skills/auto-video-edit`：全自動影片剪輯（ffmpeg）；`Video auto edit` 工作流每 30 分鐘處理
-    以 video 開頭的「草稿 Release」裡的影片，成品傳回同一個草稿（草稿不公開）。
+    以 video 開頭的「草稿 Release」裡的影片，成品＋3×3 縮圖傳回同一個草稿（草稿不公開）。工作流的 `timeout-minutes`
+    和 runner 的 `--minutes` 要一起改（被砍掉也算一次嘗試，靠 `.start` 標記）。
   - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
     使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
   - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（MIT），組合 `visual`、`writing`、`research`。
     來源、版本、修改與「評估過沒收的」都記在 `community/README.md`——評估新專案前先查，避免重複評估。
+  - `web/build_zips.py`：部署時把每個技能打包成 ZIP（給 claude.ai 網頁版上傳）；`scripts/skl_skill_lint.py`：skl 自己的技能格式警告
+    （上游的 check_frontmatter／check_paths 不改）。
   - `xin-toolkit/skills/app-bootstrap/assets/security-reviewed.json`：掃描 FAIL 但人工審查為誤判的技能清單，
     以內容指紋（`bootstrap_app.py hash <路徑>`）綁定；技能一改就失效、要重審。不要為了「裝得上」隨便加。
   - `.claude-plugin/marketplace.json`：外掛市集清單；`docs/upstream/`：上游原始 README／CLAUDE.md。

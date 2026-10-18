@@ -33,3 +33,9 @@ paths:
   部署時複製 `.github/apps.json` 成 `apps.json`。新增 App 就加進 apps.json（可填 `url`：線上網址，X-Ray 優先顯示）。
   `.claude/`、`.agents/` 等隱藏資料夾裡的 SKILL.md 是裝進來的技能，不算技能包。
   Token 可勾「記在這支手機」存 localStorage（使用者要求；只建議唯讀 Token，畫面只顯示末 4 碼，只送 api.github.com）。
+- 2026-10 新增（函式名稱）：複製一律用 `copyText`，失敗會開手動複製面板 `#copyfb`，並回傳有沒有成功（要記「複製過」的地方先判斷）。
+  「只問這段」是 `askBtn`／`askPrompt`（資料來自 `S.mapData`、`S.adv.hits`）。`pickWant` 同一 weight 內規則輪流取、高 weight 組先輪完。
+  敏感檔名 `sensitiveWhy`（只看路徑）；自動產生資料夾 `GEN_DIRS`／`isGenDir`（venv 證據是 skel 的 `venv` 旗標）。
+  首次 commit `firstCommit`（只在詳細頁查、最多 2 次 API、快取 1 小時）；限流 `retryDelayFromHeaders`（20 秒內照等，
+  x-ratelimit-reset 只在剩餘額度為 0 時採用）。熱門清單照 trending.json 通用顯示：每筆有 `first_seen`／`new`（`new === true` 才顯示 🆕），
+  `breakout` 清單另有 `stars_per_day`／`gain`；fixtures 用 `trendingJson`、`apiOverride` 模擬。

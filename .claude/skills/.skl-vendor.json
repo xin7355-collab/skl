@@ -13,8 +13,8 @@
     "verification-before-completion"
   ],
   "source_repo": "https://github.com/xin7355-collab/skl",
-  "source_commit": "c06557e",
-  "updated_at": "2026-10-18T22:48:12Z",
+  "source_commit": "a442218",
+  "updated_at": "2026-10-18T22:49:37Z",
   "packs": [],
   "extra_skills": [
     "community/skills/source-driven-development",
@@ -27,5 +27,18 @@
     "superpowers/skills/verification-before-completion",
     "xin-toolkit/skills/app-bootstrap",
     "xin-toolkit/skills/file-intake"
-  ]
+  ],
+  "hashes": {
+    "app-bootstrap": "d4d0a9e0b4116681d55fc2f1bb7a00ee9ff93876c19e960094864b6234682cb5",
+    "app-guardrails-audit": "b1bef1b2680a1630c889d0579542c22e6451585ef4ef9cada876467428fa973b",
+    "ci-cd-pipeline-builder": "047f0ae5ea0328ba55f743f03fde579772c5cadd35c719328356568777450810",
+    "code-reviewer": "6d24ceee3a88e6fcaa850fae5ed942e2c555ea6fb74d5a286bc9718ced301f41",
+    "e2e-testing": "b1048eeaa3e5a7bb0244cad46831715d2c64f8d92f98ff74d4b12dff897fbe74",
+    "file-intake": "e52a9731844fc44661b653037d4f2bff4dfbc73ddd62b45015e2f06db419b9fd",
+    "skill-security-auditor": "96258058a4e3f8507c40b634b1e6836d8b227745e90d59d069e350ff145c48d6",
+    "source-driven-development": "2d8958f0a7239a1d2127c8178980dfd7f0d505bc292549b1802268af30e8f78a",
+    "systematic-debugging": "13becc0a278e8342fef59bd3256244c3e358b51dcc744164f3623670b5c8ec2f",
+    "test-driven-development": "4ca95bd3f3736de5e5069a7628d2761a5d16afd65c1b7d380e253a978ce6be04",
+    "verification-before-completion": "fc484bd3e36289c1c62a8c54750d035e1b479a981638f87b3015f3ceaccc5160"
+  }
 }
