@@ -21,6 +21,17 @@ PAGES = ["dev-guide.html", "agent.html"]
 MIN_TEMPLATES = 25
 MIN_REFS = 15
 REPO_RE = re.compile(r"^[\w.-]+/[\w.-]+$")
+ROOT = os.path.dirname(HERE)
+
+
+def repo_skill_names(root=ROOT):
+    """skl 裡所有技能的資料夾名稱（範例寫的「用到的技能」必須真的存在，改名或刪掉會被擋下）。"""
+    names = set()
+    for dp, dns, fns in os.walk(root):
+        dns[:] = [d for d in dns if not d.startswith(".") and d not in ("node_modules", "_site")]
+        if "SKILL.md" in fns:
+            names.add(os.path.basename(dp))
+    return names
 
 
 def embedded(html, sid):
@@ -130,7 +141,7 @@ def check_ref(where, r, kinds=None):
     return errs
 
 
-def check_page(html, name="page"):
+def check_page(html, name="page", skills=None):
     errs = []
     try:
         d, tpl, refs = embedded(html, "wiz-def"), embedded(html, "templates"), embedded(html, "refs")
@@ -159,6 +170,13 @@ def check_page(html, name="page"):
         if t.get("level") not in (1, 2, 3):
             errs.append(f"範例 {tid} 的難度要是 1～3")
         errs += check_answers(f"範例 {tid}", t.get("answers"), fields)
+        if "skills" in t:
+            if not isinstance(t["skills"], list) or not t["skills"]:
+                errs.append(f"範例 {tid} 的 skills 要是非空清單")
+            elif skills is not None:
+                for sk in t["skills"]:
+                    if sk not in skills:
+                        errs.append(f"範例 {tid} 用到的技能不存在：{sk}")
         for i, r in enumerate(t.get("refs") or []):
             errs += check_ref(f"範例 {tid} 的參考 {i + 1}", r)
     if len(refs) < MIN_REFS:
@@ -195,7 +213,7 @@ def selftest():
 
     for p in PAGES:
         with open(os.path.join(HERE, p), encoding="utf-8") as f:
-            t(check_page(f.read(), p) == [], f"目前的 {p} 全部有效")
+            t(check_page(f.read(), p, repo_skill_names()) == [], f"目前的 {p} 全部有效")
 
     d = {"questions": [{"id": "q1", "title": "Q", "fields": [
         {"id": "a", "type": "single", "default": "x", "options": [{"v": "x"}, {"v": "y"}]},
@@ -255,6 +273,14 @@ def selftest():
     t(any("st-gone" in e for e in check_page(page(body=body + '<button data-node="st-gone"></button>'))), "路線圖節點指到不存在的步驟會被擋下")
     t(any("data-title" in e for e in check_page(page(body=body + '<details class="step" id="st-b" data-step></details>'))), "步驟缺標題會被擋下")
     t(any("讀不到" in e for e in check_page("<html></html>")), "沒有內嵌資料會被擋下")
+    x = json.loads(json.dumps(tpl))
+    x[0]["skills"] = ["real-skill"]
+    t(check_page(page(tpl=x), skills={"real-skill"}) == [], "範例寫的技能存在就通過")
+    x[0]["skills"] = ["renamed-skill"]
+    t(any("技能不存在" in e for e in check_page(page(tpl=x), skills={"real-skill"})), "範例寫的技能被改名或刪掉會被擋下")
+    x[0]["skills"] = []
+    t(any("非空清單" in e for e in check_page(page(tpl=x), skills=set())), "skills 寫成空清單會被擋下")
+    t("auto-video-edit" in repo_skill_names() and "tw-stock" in repo_skill_names(), "找得到 skl 裡的技能")
     print("\n自我測試" + ("全部通過" if ok else "有失敗"))
     return 0 if ok else 1
 
@@ -266,10 +292,11 @@ def main(argv):
     if a.cmd == "selftest":
         return selftest()
     errs = []
+    names = repo_skill_names()
     for p in PAGES:
         try:
             with open(os.path.join(HERE, p), encoding="utf-8") as f:
-                errs += check_page(f.read(), p)
+                errs += check_page(f.read(), p, names)
         except OSError as e:
             errs.append(f"{p}：讀不到檔案：{e}")
     for e in errs:

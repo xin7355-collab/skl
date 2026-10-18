@@ -278,7 +278,7 @@ test.describe('範例', () => {
   test('三個完整案例都在，每個都有一步一步的做法', async ({ page }) => {
     await page.goto('/dev-guide.html');
     await tab(page, 'examples');
-    for (const id of ['case-stock', 'case-budget', 'case-price']) {
+    for (const id of ['case-stock', 'case-budget', 'case-price', 'case-video']) {
       const c = page.locator('#' + id);
       await c.locator('summary').click();
       expect(await c.locator('.cstep').count(), id).toBeGreaterThanOrEqual(4);
@@ -330,4 +330,20 @@ test('「裝完接著做」規則跟技能庫網頁一字不差（兩邊要一�
   const fromGuide = tail(await page.locator('#outCode').inputValue());
   expect(fromIndex.length).toBeGreaterThan(100);
   expect(fromGuide).toBe(fromIndex);
+});
+
+test('「⭐ 用我的技能」只列用到 skl 技能的範例，卡片標出用了哪些技能，套用後照樣產生指令', async ({ page }) => {
+  await page.goto('/dev-guide.html');
+  await tab(page, 'examples');
+  await page.locator('#tplFilters [data-cat="⭐ 用我的技能"]').click();
+  const cards = page.locator('#tplGallery .tcard');
+  expect(await cards.count()).toBeGreaterThanOrEqual(10);
+  const withSkills = await page.locator('#tplGallery .tcard .tskills').count();
+  expect(withSkills).toBe(await cards.count());
+  const card = page.locator('#tplGallery [data-tpl="video-reels"]');
+  await expect(card.locator('.tskills')).toContainText('auto-video-edit');
+  await card.locator('[data-apply="video-reels"]').click();
+  await expect(page.locator('#tab-start')).toBeVisible();
+  await expect(page.locator('#wizard h2')).toHaveText('結果：照下面做');
+  await expectNoHorizontalScroll(page);
 });

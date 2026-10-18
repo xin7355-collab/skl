@@ -526,6 +526,21 @@
       </div>
     </details>
 
+    <details class="case" id="case-backtest">
+      <summary><b>📊 案例四：每週回測選股規則、寫白話結論（② Routine）</b><small>費用：只用訂閱　約 1 小時設定</small></summary>
+      <div class="body">
+        <p><b>做出來長怎樣</b>：每週五收盤後，Agent 用證交所官方資料回測你的選股規則（例如殖利率前 20 名），算報酬、最大回落，用統計檢定看結果是不是運氣，最後寫三行白話結論更新到你的 App 網頁。</p>
+        <p><b>用到的 skl 技能</b>：<span class="chip">tw-stock</span>（抓官方資料存 SQLite）、<span class="chip">polars</span>（大量資料表運算）、<span class="chip">statsmodels</span>＋<span class="chip">statistical-analysis</span>（選對檢定、報告效果量，避免「顯著但沒意義」）。數字全部由程式算，AI 只寫結論。</p>
+        <div class="cstep"><b>1. 裝技能</b>在股票 App repo 的 Claude Code 說：「用 app-bootstrap 裝技能組合 stock、ai、agent，先 --dry-run」。</div>
+        <div class="cstep"><b>2. 寫說明書</b>起手式套用範例「每週回測選股規則＋白話摘要」，B 段貼給 Claude Code。它會寫 <code>agent/README.md</code>、回測腳本與自我測試（含「資料缺一天」「股票下市」的情況），先手動跑一次給你看。</div>
+        <div class="cstep"><b>3. 建 Routine</b><a href="https://claude.ai/code/routines" target="_blank" rel="noopener">claude.ai/code/routines</a> → New routine，提示詞：
+<pre data-copybox>照 agent/README.md 做本週回測。數字一律來自程式輸出，不要自己算；資料不足就不要更新網站，開一個 Issue（標題和內文只寫缺幾天資料），結束。</pre>
+          觸發選每週五 16:10；連接器全部移除。</div>
+        <div class="cstep"><b>4. 驗收</b>Run now 後看工作階段：回測期間、筆數、檢定方法都有寫；結論沒有買賣建議。<br>✅ 網頁顯示本週結論與資料日期。</div>
+        <div class="cstep"><b>5. 注意</b>回測好看不代表未來會賺；給別人看時不要寫成買賣建議（投顧法，見 <a href="dev-guide.html">App 開發全流程</a>的「注意」）。</div>
+      </div>
+    </details>
+
     <details class="case" id="case-fix">
       <summary><b>🛠️ 案例三：留言 @claude 修 bug（③ GitHub Actions）</b><small>費用：API 依用量，建議上限每月 US$5　約 30 分鐘設定</small></summary>
       <div class="body">
@@ -923,6 +938,7 @@
 <script type="application/json" id="templates">
 [
  {"id": "stock-close", "icon": "📈", "title": "收盤後股票重點", "cat": "理財", "level": 2, "meta": "② Routine", "desc": "交易日收盤後抓官方資料和新聞，每檔 3 行重點附出處，更新網站。",
+  "skills": ["tw-stock"],
   "answers": {"aTask": "每個交易日收盤後，整理我關注的 5 檔台股：收盤資料加上新聞，每檔 3 行重點附出處，更新到我的 App 網頁", "aDone": "5 檔都有資料和摘要、每則新聞附出處連結；沒有新聞就寫「今天沒有新聞」", "aWhen": "daily", "aTime": "週一到週五 15:50", "tools": ["tWeb", "tRepo", "tStock"], "aOut": "app"},
   "refs": [{"repo": "xin7355-collab/StockAI-DB", "why": "你自己的股票 App"}]},
  {"id": "morning-brief", "icon": "☀️", "title": "早安簡報（信件＋行程）", "cat": "生活", "level": 1, "meta": "① Cowork", "desc": "每天早上列出今天行程和要回的信，只列出、不回信。",
@@ -944,6 +960,7 @@
   "answers": {"aTask": "有新的 PR 時，照 CLAUDE.md 的規則檢查（金鑰、noindex、測試、版本號），在 PR 留言列出問題", "aDone": "每個 PR 都有審查留言；不會自己合併", "aWhen": "pr", "tools": ["tRepo"], "aOut": "pr"},
   "refs": [{"repo": "anthropics/claude-code-action", "why": "官方審查範例"}]},
  {"id": "weekly-health", "icon": "🩺", "title": "每週 App 健檢", "cat": "開發維護", "level": 1, "meta": "② Routine", "desc": "每週一跑防禦準則健檢，有問題開 Issue（只寫數量）。",
+  "skills": ["app-guardrails-audit"],
   "answers": {"aTask": "每週一早上對這個 App 跑 app-guardrails-audit 健檢，有問題就開一個 Issue（標題和內文只寫幾項）", "aDone": "健檢跑完；有問題時 Issue 只寫數量、細節在工作階段裡", "aWhen": "weekly", "aTime": "每週一 08:10", "tools": ["tRepo"], "aOut": "issue"},
   "refs": [{"repo": "xin7355-collab/skl", "why": "skl 的每週健檢就是這樣"}]},
  {"id": "release-radar", "icon": "📦", "title": "套件新版本雷達", "cat": "開發維護", "level": 2, "meta": "② Routine", "desc": "每週看你用的套件有沒有新版、安全更新，整理成清單。",
@@ -992,7 +1009,45 @@
   "answers": {"aTask": "客人在 LINE 官方帳號發問時，照我的店家資料（營業時間、價目、地址）回答；資料裡沒有的就說會請老闆回覆，並通知我", "aDone": "答案都來自店家資料；不確定就轉人工", "aWho": "app", "aWhen": "button", "tools": ["tApi"], "aOut": "screen", "aAsk": "never", "aBudget": "20"},
   "refs": [{"repo": "anthropics/claude-quickstarts", "why": "官方客服 Agent 範例"}, {"repo": "line/line-bot-sdk-nodejs", "why": "LINE 官方 SDK"}]},
  {"id": "uptime-plain", "icon": "🌐", "title": "網站掛了就通知（其實不用 AI）", "cat": "開發維護", "level": 1, "meta": "固定流程就夠", "desc": "這是「不需要 Agent」的例子：固定規則用一般排程就好，最省最穩。",
-  "answers": {"aTask": "每小時檢查我的網站能不能打開，連續兩次失敗就開 Issue 通知我（這個用固定流程就好，不用 AI 判斷）", "aDone": "掛了 2 小時內收到通知；恢復後自動關閉 Issue", "aWhen": "daily", "aTime": "每小時第 7 分", "tools": ["tRepo"], "aOut": "issue"}}
+  "answers": {"aTask": "每小時檢查我的網站能不能打開，連續兩次失敗就開 Issue 通知我（這個用固定流程就好，不用 AI 判斷）", "aDone": "掛了 2 小時內收到通知；恢復後自動關閉 Issue", "aWhen": "daily", "aTime": "每小時第 7 分", "tools": ["tRepo"], "aOut": "issue"}},
+ {"id": "video-autocut", "icon": "🎬", "title": "上傳影片就自動剪好（其實不用 AI）", "cat": "影音創作", "level": 1, "meta": "固定流程就夠", "desc": "草稿 Release 放影片，GitHub Actions 每 30 分鐘用 ffmpeg 剪好傳回；規則固定，不用 Agent、不花 AI 費用。",
+  "skills": ["auto-video-edit"],
+  "answers": {"aTask": "我把影片傳到以 video 開頭的草稿 Release，就自動剪成短影音傳回同一個草稿（這個用固定流程就好，不用 AI 判斷）", "aDone": "剪好的影片出現在同一個草稿；失敗會留下說明檔，最多自動重試 3 次", "tools": ["tRepo", "tFiles"], "aOut": "app"},
+  "refs": [{"repo": "xin7355-collab/skl", "why": "skl 已經裝好這個工作流"}]},
+ {"id": "backtest-weekly", "icon": "📊", "title": "每週回測選股規則＋白話摘要", "cat": "理財", "level": 2, "meta": "② Routine", "desc": "週五收盤後用官方資料回測，統計檢定看是不是運氣，寫三行白話結論。",
+  "skills": ["tw-stock", "polars", "statsmodels", "statistical-analysis"],
+  "answers": {"aTask": "每週五收盤後，用官方資料回測我的選股規則，算報酬與最大回落，用統計檢定看是不是運氣，寫三行白話結論更新到網站", "aDone": "數字都來自程式算的結果、附資料日期；不給買賣建議", "aWhen": "weekly", "aTime": "每週五 16:10", "tools": ["tRepo", "tStock"], "aOut": "app"},
+  "refs": [{"repo": "xin7355-collab/StockAI-DB", "why": "你自己的股票 App"}]},
+ {"id": "clip-digest", "icon": "📎", "title": "每天把指定網站的新文章整理好", "cat": "資訊", "level": 2, "meta": "② Routine", "desc": "網頁轉 Markdown 存進 repo，再用便宜等級的 AI 寫兩行摘要。",
+  "skills": ["web-to-markdown", "ai-model-router"],
+  "answers": {"aTask": "每天把 sites.txt 列的網站的新文章轉成 Markdown 存進 repo，每篇用 AI 寫兩行摘要更新到我的網站", "aDone": "每篇都有原文連結；遵守 robots.txt；抓不到的列出來", "aWhen": "daily", "aTime": "每天 07:20", "tools": ["tWeb", "tRepo"], "aOut": "app"}},
+ {"id": "doc-inbox", "icon": "📄", "title": "上傳的 PDF／Word 整理成重點", "cat": "工作", "level": 1, "meta": "① Cowork", "desc": "先轉成 Markdown 讓 AI 讀得準，再整理重點、待辦和要問的問題。",
+  "skills": ["markitdown"],
+  "answers": {"aTask": "把我上傳的 PDF／Word 先轉成文字，整理成一頁重點、待辦（負責人、期限）和要釐清的問題", "aDone": "每個重點附原文頁碼；看不清楚的標出來", "tools": ["tFiles"], "aOut": "claude", "flags": ["aPrivate"]}},
+ {"id": "cite-agent", "icon": "🔎", "title": "報告引用查核 Agent", "cat": "學習", "level": 2, "meta": "① Cowork", "desc": "逐條確認參考文獻真的存在、沒撤稿、真的支持論點。",
+  "skills": ["lit-review", "academic-writing-discipline"],
+  "answers": {"aTask": "查核我上傳的報告裡每一條參考文獻：論文是否存在、書目是否正確、有沒有撤稿、內容是否真的支持那句話", "aDone": "每條都有結論（正確／要修／查不到）和查證連結", "tools": ["tWeb", "tFiles"], "aOut": "claude"}},
+ {"id": "arch-weekly", "icon": "🗺️", "title": "每週更新 App 架構圖", "cat": "開發維護", "level": 2, "meta": "② Routine", "desc": "讀程式碼重畫互動架構圖，有變動才開 PR，文件不會過期。",
+  "skills": ["archify"],
+  "answers": {"aTask": "每週讀這個 repo 的程式碼重畫架構圖（docs/architecture.html），跟上週不同才開 PR，PR 說明列出哪裡變了", "aDone": "圖裡每個方塊都對得到真的檔案；沒變動就不開 PR", "aWhen": "weekly", "aTime": "每週一 06:40", "tools": ["tRepo"], "aOut": "pr"}},
+ {"id": "post-polish", "icon": "✍️", "title": "社群貼文去 AI 味、用我的語氣", "cat": "工作", "level": 1, "meta": "① Cowork", "desc": "照你過去的貼文學語氣、改台灣用語，發出前一定給你看。",
+  "skills": ["zh-tw-humanizer", "voice-profile-extraction"],
+  "answers": {"aTask": "把我寫的貼文草稿改成像我平常的語氣（參考我過去 10 篇貼文）、台灣用語、去掉 AI 味；數字與日期不能動", "aDone": "改寫後附「改了哪些地方」清單；不會自己發文", "tools": ["tFiles"], "aOut": "claude", "aAsk": "every"}},
+ {"id": "skills-update", "icon": "🔄", "title": "每週幫所有 App 更新 skl 技能", "cat": "開發維護", "level": 2, "meta": "② Routine", "desc": "逐一更新各 App 的技能，跑測試，過了才開 PR；手改過的技能不覆蓋。",
+  "skills": ["app-bootstrap"],
+  "answers": {"aTask": "每週對 apps.json 列的每個 App 執行 skl 技能更新，跑該 App 的測試，通過才開 PR；在 App 裡改過的技能不要覆蓋，列出來給我", "aDone": "每個 App 一個 PR 或一句「沒有更新」；失敗的列出原因", "aWhen": "weekly", "aTime": "每週日 21:40", "tools": ["tRepo"], "aOut": "pr"}},
+ {"id": "pr-guard", "icon": "🛡️", "title": "每個 PR 自動防禦健檢", "cat": "開發維護", "level": 1, "meta": "② Routine", "desc": "有新 PR 就掃 OOM、SQLite 鎖、限流、金鑰外洩，把問題留言在 PR。",
+  "skills": ["app-guardrails-audit"],
+  "answers": {"aTask": "有新的 PR 時，跑 app-guardrails-audit 健檢這次改動，把「必修」和「建議修」留言在 PR，附檔案與行號", "aDone": "每個 PR 都有健檢結果；不會自己改程式或合併", "aWhen": "pr", "tools": ["tRepo"], "aOut": "pr"}},
+ {"id": "spec-to-app", "icon": "📦", "title": "我上傳規格，它就做出 App", "cat": "開發維護", "level": 2, "meta": "② Routine", "desc": "上傳規格或 zip，先安全掃描，再照規格做成網頁 App 並驗證。",
+  "skills": ["file-intake", "skill-security-auditor"],
+  "answers": {"aTask": "我上傳規格或 zip 到 repo 的 inbox/，先安全掃描，再照規格做成手機網頁 App，用 Playwright 在手機尺寸驗證後開 PR", "aDone": "PR 附截圖和驗證清單；有危險內容就停下來告訴我", "tools": ["tRepo", "tFiles"], "aOut": "pr"}},
+ {"id": "math-video", "icon": "📐", "title": "每週一支數學解說動畫", "cat": "學習", "level": 3, "meta": "② Routine", "desc": "給它一個觀念，先出分鏡圖檢查，再算圖成 mp4 放 Release。",
+  "skills": ["manimgx"],
+  "answers": {"aTask": "每週從 topics.md 取一個數學觀念，做成 60 秒解說動畫：先出分鏡圖檢查文字有沒有重疊，再輸出 mp4 放到草稿 Release", "aDone": "影片長度 45～75 秒、公式正確、分鏡圖附在 PR", "aWhen": "weekly", "aTime": "每週六 10:10", "tools": ["tRepo", "tFiles"], "aOut": "pr"}},
+ {"id": "faq-html", "icon": "🧾", "title": "客服常見問題自動做成圖解頁", "cat": "店家", "level": 2, "meta": "② Routine", "desc": "每週把新收到的問題整理進一頁圖解網頁，給客人自己看。",
+  "skills": ["answer-me-with-html"],
+  "answers": {"aTask": "每週把 faq/new.md 新增的客人問題，整理進一頁圖解網頁（分類、流程圖、表格），更新到店家網站", "aDone": "每題都有答案或標「待老闆回覆」；不放客人個資", "aWhen": "weekly", "aTime": "每週一 09:40", "tools": ["tRepo"], "aOut": "app", "flags": ["aPrivate"]}}
 ]
 </script>
 
@@ -1295,7 +1350,7 @@ progress = Guide.initProgress({ key: "agent-done-v1", visible: (s) => s.dataset.
   doneText: "全部完成 🎉 前兩週每次都看結果" });
 const wizard = Guide.createWizard({ root: $("wizard"), def: DEF, storeKey: "agent-wiz-v2", build, migrate });
 Guide.renderGallery({ root: $("tplGallery"), filtersRoot: $("tplFilters"), items: TPL,
-  cats: ["理財", "生活", "工作", "學習", "家庭", "店家", "資訊", "開發維護"],
+  cats: ["理財", "生活", "工作", "學習", "家庭", "店家", "資訊", "開發維護", "影音創作"], skillsCat: "⭐ 用我的技能",
   onApply: (t) => wizard.apply(t.answers, `已套用「${t.title}」，可以再改`) });
 Guide.renderMyApps({ root: $("myApps"), actionLabel: "加 Agent",
   failNote: "讀不到 App 清單（apps.json 部署後才有）。可以在起手式最後一題直接填 repo。",

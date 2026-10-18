@@ -455,6 +455,22 @@
       </div>
     </details>
 
+    <details class="case" id="case-video">
+      <summary><b>🎬 案例四：手機拍片，自動剪成短影音</b><small>難度 ★☆☆　費用 0 元（不用 AI、不用付費 API）　約 30 分鐘設定</small></summary>
+      <div class="body">
+        <p><b>做出來長怎樣</b>：用 iPhone 拍完影片，在 GitHub 開一個草稿 Release 把影片傳上去，半小時內就會出現剪好的成品：去掉沒講話的空白、挑精華、轉成直式 9:16、音量標準化，點了就能下載回手機。</p>
+        <p><b>為什麼這樣設計</b>：剪輯規則固定（看聲音和鏡頭切換），用 skl 的 <span class="chip">auto-video-edit</span> 技能在 GitHub Actions 上跑 ffmpeg 就好，不需要 AI，公開 repo 的 Actions 免費。草稿 Release 只有你看得到，公開 repo 也不會讓影片外流；單檔上限 2 GiB、不進 git 歷史。</p>
+        <div class="cstep"><b>1. 裝技能</b>在要放影片的 repo（可以就用 skl，已經裝好）的 Claude Code 貼：
+<pre data-copybox>用 app-bootstrap 安裝技能組合 video，並把 auto-video-edit 技能附的工作流範本放到 .github/workflows/。
+先 --dry-run 再正式安裝；裝完照技能說明跑一次 selftest 給我看。</pre></div>
+        <div class="cstep"><b>2. 傳影片</b>Safari 打開 <code>https://github.com/你的帳號/repo/releases/new</code>：標籤填 <code>video-</code> 開頭（例如 <code>video-1018</code>），把影片拖進附件。</div>
+        <div class="cstep"><b>3. 寫選項（可省略）</b>內文一行一個：<code>模式: short</code>（直式精華，Reels／Shorts）、<code>模式: jumpcut</code>（只去空白，適合講解）、<code>長度: 45</code>、<code>直式</code>。然後按 <b>Save draft</b>（存成草稿，不要按 Publish）。</div>
+        <div class="cstep"><b>4. 等結果</b>每 30 分鐘自動檢查一次；急的話到 repo 的 Actions → Video auto edit → <b>Run workflow</b>。剪好的 <code>原檔名-edited-模式.mp4</code> 會出現在同一個草稿裡。<br>✅ 下載回手機播放，空白被剪掉、聲音大小一致。</div>
+        <div class="cstep"><b>5. 失敗時</b>草稿裡會多一個 <code>.error1.txt</code> 寫原因，下一輪自動重試，最多 3 次；看完原因刪掉 .error 檔就會再試。太長的影片先分段再傳。</div>
+        <div class="cstep"><b>6. 限制（誠實說）</b>「精華」只看聲音與鏡頭切換，不懂畫面內容；不會自動上字幕（語音辨識要另外的模型或付費 API，要加先設預算上限）。</div>
+      </div>
+    </details>
+
     <details class="case" id="case-price">
       <summary><b>🛒 案例三：降價提醒＋LINE 通知</b><small>難度 ★★☆　費用 0 元（LINE 免費方案每月 200 則）　約一天</small></summary>
       <div class="body">
@@ -933,6 +949,7 @@ GitHub Actions 每天 09:10（台灣時間）查價，價格歷史存 data 分�
 <script type="application/json" id="templates">
 [
  {"id": "stock-watch", "icon": "📈", "title": "台股觀察清單", "cat": "理財", "level": 2, "meta": "免費", "desc": "每天收盤後自動抓證交所官方資料，手機看自選股漲跌和本益比。",
+  "skills": ["tw-stock"],
   "answers": {"gDesc": "每天收盤後自動抓證交所官方資料，手機打開看我的自選股收盤價、漲跌、本益比", "gType": "info", "dStore": "backup", "data": ["nSchedule", "nStock"], "feats": ["nChart", "nOffline"], "nNotify": "issue", "look": ["nDark"]},
   "refs": [{"repo": "xin7355-collab/StockAI-DB", "why": "你自己的，同架構進階版"}, {"repo": "ghostfolio/ghostfolio", "why": "投資組合追蹤，AGPL"}]},
  {"id": "price-watch", "icon": "🛒", "title": "降價提醒", "cat": "理財", "level": 2, "meta": "免費", "desc": "每天查想買的商品價格，降到目標價用 LINE 通知。",
@@ -1018,7 +1035,57 @@ GitHub Actions 每天 09:10（台灣時間）查價，價格歷史存 data 分�
  {"id": "news", "icon": "🗞️", "title": "每日新聞重點看板", "cat": "資訊看板", "level": 3, "meta": "AI 依用量計費", "desc": "每天早上 AI 整理你關心主題的新聞，附出處。",
   "answers": {"gDesc": "每天早上自動整理我關心主題的新聞，每則三行重點附出處，放在網頁上", "gType": "info", "data": ["nSchedule", "nScrape"], "ai": "agent", "nNotify": "issue", "gBudget": "small"}},
  {"id": "aqi", "icon": "🌫️", "title": "空氣品質看板", "cat": "資訊看板", "level": 2, "meta": "免費", "desc": "選幾個測站，每小時更新 AQI，不好就提醒。",
-  "answers": {"gDesc": "空氣品質看板：選幾個測站，每小時更新 AQI，空氣不好時推播提醒", "gType": "info", "data": ["nSchedule", "nOpenData"], "feats": ["nChart"], "nNotify": "push"}}
+  "answers": {"gDesc": "空氣品質看板：選幾個測站，每小時更新 AQI，空氣不好時推播提醒", "gType": "info", "data": ["nSchedule", "nOpenData"], "feats": ["nChart"], "nNotify": "push"}},
+ {"id": "video-reels", "icon": "🎬", "title": "手機拍片自動剪成短影音", "cat": "影音創作", "level": 1, "meta": "不用 AI、不花錢", "desc": "影片傳到 GitHub 草稿 Release，半小時內自動去空白、挑精華、轉成直式 9:16 傳回來。",
+  "skills": ["auto-video-edit"],
+  "answers": {"gDesc": "我用 iPhone 拍的影片，傳到 GitHub 草稿 Release 後自動剪成 45 秒直式短影音（去空白、挑精華、音量標準化），剪好傳回同一個草稿", "gType": "tool", "feats": ["nVideo"], "data": ["nUpload"], "qa": ["qTest"]}},
+ {"id": "video-lecture", "icon": "🎓", "title": "上課／會議錄影去空白", "cat": "影音創作", "level": 1, "meta": "不用 AI、不花錢", "desc": "長錄影自動剪掉沒講話的段落，前後留一點不切到字，一小時常常剩一半。",
+  "skills": ["auto-video-edit"],
+  "answers": {"gDesc": "上課或會議錄影傳上去，自動剪掉沒講話的段落（jumpcut 模式），成品附一張縮圖總覽讓我在手機確認", "gType": "tool", "feats": ["nVideo"], "data": ["nUpload"], "qa": ["qTest"]}},
+ {"id": "math-explainer", "icon": "📐", "title": "數學觀念解說動畫", "cat": "學習", "level": 3, "meta": "雲端算圖", "desc": "用 Python 寫場景，做出 3Blue1Brown 那種公式和圖形會動的解說影片。",
+  "skills": ["manimgx"],
+  "answers": {"gDesc": "把國中數學的畢氏定理做成 60 秒解說動畫：圖形會動、公式一步一步出現，在 GitHub Actions 上算圖，成品放 Release", "gType": "learn", "feats": ["nVideo"], "look": ["nAnim"], "qa": ["qTest"]}},
+ {"id": "art-motion", "icon": "🖌️", "title": "藝術風格短片（浮世繪、8-bit…）", "cat": "影音創作", "level": 3, "meta": "程式畫動畫", "desc": "選一種藝術風格和解說語法，從分鏡表做到成片，附品質檢查。",
+  "skills": ["huashu-art-motion"],
+  "answers": {"gDesc": "用浮世繪風格做一支 30 秒的店家介紹動畫：先出分鏡表給我確認，再做成片", "gType": "shop", "feats": ["nVideo"], "look": ["nAnim", "nDesign"]}},
+ {"id": "arch-diagram", "icon": "🗺️", "title": "把我的 App 畫成互動架構圖", "cat": "工具", "level": 1, "meta": "改版", "desc": "讀程式碼畫出真正的架構與資料流，一個 HTML 檔，手機點開就能縮放。",
+  "skills": ["archify"],
+  "answers": {"gDesc": "讀這個 App 的程式碼，畫出真正的架構圖和資料流（哪個工作流產生哪份資料、網頁讀哪裡），做成一個可以在手機縮放的 HTML 檔放進 docs/", "gMode": "existing", "gType": "tool", "qa": ["qTest"]},
+  "refs": [{"repo": "xin7355-collab/StockAI-DB", "why": "可以拿你的股票 App 試"}]},
+ {"id": "answer-page", "icon": "🧾", "title": "常見問題做成一頁圖解網頁", "cat": "學習", "level": 1, "meta": "單一 HTML", "desc": "把複雜的說明做成有流程圖、比較表的一頁網頁，不連外網、手機好讀。",
+  "skills": ["answer-me-with-html"],
+  "answers": {"gDesc": "把「怎麼申請育嬰留停」整理成一頁圖解網頁：流程圖、要準備的文件表、常見錯誤，單一 HTML 放 GitHub Pages", "gType": "info", "look": ["nA11y"]}},
+ {"id": "web-clip", "icon": "📎", "title": "網頁剪藏成 Markdown 筆記", "cat": "學習", "level": 2, "meta": "免費排程", "desc": "把網址丟進清單，每天自動轉成乾淨的 Markdown 存進 repo，遵守 robots.txt。",
+  "skills": ["web-to-markdown"],
+  "answers": {"gDesc": "我把想讀的網址加進 links.txt，每天自動轉成乾淨的 Markdown 存進 notes/，網頁可以搜尋全文", "gType": "learn", "data": ["nScrape", "nSchedule"], "dStore": "backup", "qa": ["qTest"]}},
+ {"id": "doc-to-md", "icon": "📄", "title": "Word／PDF 轉文字再請 AI 整理", "cat": "工作效率", "level": 2, "meta": "要 AI 預算", "desc": "上傳 Word、Excel、PDF，先轉成 Markdown，再請 AI 摘要成重點清單。",
+  "skills": ["markitdown", "ai-model-router"],
+  "answers": {"gDesc": "上傳 Word／PDF 檔，先轉成 Markdown，再用 AI 整理成重點與待辦；原檔不放進公開 repo", "gType": "tool", "data": ["nUpload"], "ai": "ai", "safe": ["nPrivate"], "gBudget": "small"}},
+ {"id": "stock-backtest", "icon": "📊", "title": "台股選股規則回測＋統計檢定", "cat": "理財", "level": 3, "meta": "官方資料", "desc": "每天存官方行情，回測你的選股規則，並檢查結果是不是運氣（統計檢定）。",
+  "skills": ["tw-stock", "polars", "statsmodels", "statistical-analysis"],
+  "answers": {"gDesc": "每天抓台股官方行情存進資料庫，回測「殖利率前 20 名」這類選股規則，畫報酬走勢，並用統計檢定看結果是不是運氣", "gType": "info", "data": ["nStock", "nSchedule"], "feats": ["nChart"], "qa": ["qTest"]},
+  "refs": [{"repo": "xin7355-collab/StockAI-DB", "why": "你自己的，已有回測"}]},
+ {"id": "ai-tool", "icon": "🌐", "title": "AI 翻譯／摘要小工具（不寫死模型）", "cat": "工具", "level": 2, "meta": "要 AI 預算", "desc": "只寫「快／聰明」等級，模型下架自動換，費用有上限。",
+  "skills": ["ai-model-router", "cost-aware-llm-pipeline"],
+  "answers": {"gDesc": "貼一段英文，AI 翻成台灣用語的繁體中文並摘要三行；模型只寫等級、下架自動換；每月費用有上限", "gType": "tool", "ai": "ai", "gBudget": "small", "qa": ["qTest"]}},
+ {"id": "blog-polish", "icon": "✍️", "title": "部落格文章去 AI 味、用我的語氣", "cat": "寫作研究", "level": 1, "meta": "用訂閱就好", "desc": "抓出 AI 寫作痕跡、改成台灣用語，並學你過去文章的語氣。",
+  "skills": ["zh-tw-humanizer", "tw-writing", "voice-profile-extraction"],
+  "answers": {"gDesc": "貼上草稿，改成台灣用語、去掉 AI 味，並照我過去 5 篇文章的語氣改寫；數字與日期不能動", "gType": "tool"}},
+ {"id": "cite-check", "icon": "🔎", "title": "報告引用查核", "cat": "寫作研究", "level": 2, "meta": "免金鑰的學術資料庫", "desc": "確認每篇引用的論文真的存在、書目正確、真的支持你的論點。",
+  "skills": ["lit-review", "academic-writing-discipline"],
+  "answers": {"gDesc": "上傳報告，逐條查核參考文獻：論文是否存在、作者年份是否正確、是否撤稿、內容是否支持論點，列出要修的地方", "gType": "tool", "data": ["nUpload"]}},
+ {"id": "redesign", "icon": "🎨", "title": "舊網頁改造成有質感", "cat": "工具", "level": 2, "meta": "改版", "desc": "先盤點版面問題、畫線框圖確認，再一步步升級，不整個重寫。",
+  "skills": ["redesign-existing-projects", "design-taste-frontend", "ui-ux-pro-max", "wireframe"],
+  "answers": {"gDesc": "把這個 App 的首頁改得更有質感：先列出版面、字體、配色問題並畫手機版線框圖給我選，確認後再改", "gMode": "existing", "gType": "tool", "look": ["nDesign", "nDark"], "qa": ["qTest"]}},
+ {"id": "hairline-hero", "icon": "✏️", "title": "店家首頁加會動的線條插圖", "cat": "店家", "level": 2, "meta": "單一 HTML", "desc": "一張會跟著手指轉動的等角線條插圖，讓首頁一眼有特色。",
+  "skills": ["hairline-create"],
+  "answers": {"gDesc": "幫我的咖啡店首頁做一張會跟著手指轉動的線條插圖（店面＋咖啡機），放在營業時間上方", "gType": "shop", "look": ["nAnim", "nDesign"]}},
+ {"id": "file-to-app", "icon": "📦", "title": "把我做好的規格或檔案做成 App", "cat": "工具", "level": 2, "meta": "上傳就做", "desc": "上傳規格、截圖或 zip，先安全掃描，再做成網頁 App 或整合進既有 App。",
+  "skills": ["file-intake", "skill-security-auditor"],
+  "answers": {"gDesc": "我會上傳一份規格（或別人給的 zip），請先檢查有沒有危險內容，再照規格做成手機網頁 App", "gType": "tool", "safe": ["qSecurity"], "qa": ["qTest"]}},
+ {"id": "weekly-guard", "icon": "🛡️", "title": "每週自動健檢我的 App", "cat": "工具", "level": 1, "meta": "改版", "desc": "每週掃一次會當機、被封鎖、金鑰外洩的寫法，有問題開只寫數量的 Issue。",
+  "skills": ["app-guardrails-audit", "app-bootstrap"],
+  "answers": {"gDesc": "幫這個 App 加上每週自動健檢：記憶體、SQLite、限流、金鑰外洩、noindex，有問題開 Issue（只寫數量）", "gMode": "existing", "gType": "tool", "nNotify": "issue", "qa": ["qTest", "qWeekly"]}}
 ]
 </script>
 
@@ -1321,7 +1388,7 @@ Guide.wireCopyBoxes();
 Guide.initProgress({ key: "guide-done-v1", doneText: "全部完成 🎉 回頭看看「維護」那一步" });
 const wizard = Guide.createWizard({ root: $("wizard"), def: DEF, storeKey: "guide-wiz-v2", build, migrate });
 Guide.renderGallery({ root: $("tplGallery"), filtersRoot: $("tplFilters"), items: TPL,
-  cats: ["理財", "家庭", "生活", "學習", "工作效率", "店家", "遊戲", "工具", "資訊看板"],
+  cats: ["理財", "家庭", "生活", "學習", "工作效率", "店家", "遊戲", "工具", "資訊看板", "影音創作", "寫作研究"], skillsCat: "⭐ 用我的技能",
   onApply: (t) => wizard.apply(t.answers, `已套用「${t.title}」，可以再改`) });
 Guide.renderMyApps({ root: $("myApps"), actionLabel: "加功能",
   failNote: "讀不到 App 清單（apps.json 部署後才有）。可以在起手式第 2 題選「已經有的 App」直接貼 repo 網址。",

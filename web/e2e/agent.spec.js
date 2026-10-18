@@ -262,7 +262,7 @@ test.describe('範例', () => {
   test('三個完整案例都在；範例可以依分類篩選，參考專案用 Repo X-Ray 打開', async ({ page }) => {
     await page.goto('/agent.html');
     await tab(page, 'examples');
-    for (const id of ['case-close', 'case-brief', 'case-fix']) {
+    for (const id of ['case-close', 'case-brief', 'case-fix', 'case-backtest']) {
       const c = page.locator('#' + id);
       await c.locator('summary').click();
       expect(await c.locator('.cstep').count(), id).toBeGreaterThanOrEqual(4);
@@ -326,4 +326,20 @@ test('「裝完接著做」規則跟技能庫網頁一字不差（兩邊要一�
   const fromAgent = tail(await page.locator('#aOutB').inputValue());
   expect(fromIndex.length).toBeGreaterThan(100);
   expect(fromAgent).toBe(fromIndex);
+});
+
+test('「⭐ 用我的技能」只列用到 skl 技能的範例，卡片標出用了哪些技能，套用後照樣產生指令', async ({ page }) => {
+  await page.goto('/agent.html');
+  await tab(page, 'examples');
+  await page.locator('#tplFilters [data-cat="⭐ 用我的技能"]').click();
+  const cards = page.locator('#tplGallery .tcard');
+  expect(await cards.count()).toBeGreaterThanOrEqual(10);
+  const withSkills = await page.locator('#tplGallery .tcard .tskills').count();
+  expect(withSkills).toBe(await cards.count());
+  const card = page.locator('#tplGallery [data-tpl="backtest-weekly"]');
+  await expect(card.locator('.tskills')).toContainText('tw-stock');
+  await card.locator('[data-apply="backtest-weekly"]').click();
+  await expect(page.locator('#tab-start')).toBeVisible();
+  await expect(page.locator('#wizard h2')).toHaveText('結果：照下面做');
+  await expectNoHorizontalScroll(page);
 });

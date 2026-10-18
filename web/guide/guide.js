@@ -277,11 +277,13 @@ const Guide = (() => {
   }
 
   /* ── 範例庫 ── */
-  function renderGallery({ root, filtersRoot, items, cats, onApply, xray = "xray.html" }) {
+  // skillsCat：額外一個篩選鈕，只顯示用到 skl 技能的範例（範例的 skills 欄位）
+  function renderGallery({ root, filtersRoot, items, cats, onApply, skillsCat = "", xray = "xray.html" }) {
     let cur = "全部";
+    const match = (x) => cur === "全部" || (skillsCat && cur === skillsCat ? (x.skills || []).length > 0 : x.cat === cur);
     function paint() {
       root.textContent = "";
-      for (const t of items.filter((x) => cur === "全部" || x.cat === cur)) {
+      for (const t of items.filter(match)) {
         const refs = (t.refs || []).map((r) => r.repo
           ? el("div", {}, "參考：", el("a", { href: `${xray}?repo=${encodeURIComponent(r.repo)}`, text: r.repo }), r.why ? "（" + r.why + "）" : "")
           : el("div", {}, "參考：", el("a", { href: r.url, target: "_blank", rel: "noopener", text: r.name }), r.why ? "（" + r.why + "）" : ""));
@@ -289,12 +291,13 @@ const Guide = (() => {
           el("h3", { text: `${t.icon} ${t.title}` }),
           el("div", { class: "meta", text: `${t.cat}　難度 ${"★".repeat(t.level)}${"☆".repeat(3 - t.level)}${t.meta ? "　" + t.meta : ""}` }),
           el("p", { text: t.desc }),
+          (t.skills || []).length ? el("div", { class: "tskills" }, "用到的技能：", ...t.skills.map((n) => el("span", { class: "chip", text: n }))) : null,
           refs.length ? el("div", { class: "refs" }, refs) : null,
           el("div", { class: "row" }, el("button", { class: "btn small", "data-apply": t.id, onclick: () => onApply(t) }, "套用到起手式"))));
       }
     }
     filtersRoot.textContent = "";
-    for (const c of ["全部", ...cats]) {
+    for (const c of ["全部", ...(skillsCat ? [skillsCat] : []), ...cats]) {
       const b = el("button", { "aria-pressed": String(c === cur), "data-cat": c, onclick: () => { cur = c; for (const x of filtersRoot.children) x.setAttribute("aria-pressed", String(x.dataset.cat === c)); paint(); } }, c);
       filtersRoot.append(b);
     }

@@ -203,6 +203,7 @@ select.in { width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; bor
 .tcard p { margin: 0; font-size: 14px; color: var(--muted); }
 .tcard .meta { font-size: 12px; color: var(--muted); }
 .tcard .refs { font-size: 13px; }
+.tcard .tskills { font-size: 12px; color: var(--muted); }
 .tcard .refs a { word-break: break-all; }
 .tcard .row { margin-top: 4px; }
 
