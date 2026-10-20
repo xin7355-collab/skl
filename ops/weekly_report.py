@@ -29,6 +29,8 @@ AUDIT = os.path.join(ROOT, "xin-toolkit", "skills", "app-guardrails-audit", "scr
 APPS_CFG = os.path.join(ROOT, ".github", "apps.json")
 UPSTREAM_CFG = os.path.join(ROOT, ".github", "upstream-sync.json")
 MIRRORS = (".gemini/", ".codex/", ".vibe/", ".hermes/", "docs/")
+STATUS_LABEL = {"clone_failed": "無法 clone", "audit_failed": "掃描失敗",
+                "deferred": "留到下週", "not_configured": "未設定權限"}
 
 
 def _git(args, cwd=None, token=None, timeout=300):
@@ -146,10 +148,15 @@ def compose(parts):
             lines.append(f"- 時間不夠，{len(deferred)} 個留到下週。")
         if pending:
             lines.append(f"- {len(pending)} 個私人 repo 未設定讀取權限（不算失敗）。")
+        # 每個 App 都列一列（含 0／0 與沒掃到的）：只列有問題的會讓「掃描 N 個」和表格列數對不上，
+        # 乾淨的 App 看起來像被漏掉。
         lines += ["", "| App | 必修 | 建議修 |", "|---|---|---|"]
-        for a in ok:
-            if a["error"] or a["warn"]:
-                lines.append(f"| {a['repo'].split('/')[-1]} | {a['error']} | {a['warn']} |")
+        for a in apps:
+            name = a["repo"].split("/")[-1]
+            if a["status"] == "ok":
+                lines.append(f"| {name} | {a['error']} | {a['warn']} |")
+            else:
+                lines.append(f"| {name} | {STATUS_LABEL.get(a['status'], a['status'])} | — |")
         action += with_err + len(failed)
         lines.append("")
     up = data.get("upstream")
@@ -243,6 +250,10 @@ def selftest():
         check("必修 1 項" in body and "新增 1、更新 1" in body, "報告寫出數量")
         check("sqlite" not in body and "token" not in body.lower(), "報告不含問題內容（公開 Issue 安全）")
         check(action == 3, "需處理項目數 = 有必修的 App 1 + clone 失敗 1 + 上游有變動 1")
+        rows = [ln for ln in body.splitlines() if ln.startswith("| ") and not ln.startswith("| App ")]
+        check(len(rows) == len(res["apps"]) and "| good | 0 | 0 |" in body,
+              "表格列出每個 App（含 0／0 的），列數 = App 總數")
+        check("| gone | 無法 clone |" in body and "| secret | 未設定權限 |" in body, "沒掃到的 App 在表格標示原因")
         _, a0 = compose([{"apps": [{"repo": "me/good", "status": "ok", "error": 0, "warn": 0, "info": 0}]},
                          {"upstream": {"status": "ok", "added": 0, "modified": 0, "deleted": 0}},
                          {"coverage": {"skills": 3, "missing_zh": 0, "uncategorized": 0, "problems": 0}}])
