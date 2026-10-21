@@ -80,7 +80,7 @@
     和 runner 的 `--minutes` 要一起改（被砍掉也算一次嘗試，靠 `.start` 標記）。
   - `superpowers/`（obra/superpowers，MIT，15 個開發方法論技能）、`ecc/`（affaan-m/ECC 精選 25 個、安全掃描 PASS）：
     使用者上傳的外部技能，原樣收錄、不含對方的 hooks／agents／rules；授權與來源見各自 LICENSE、README。
-  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（MIT），組合 `visual`、`writing`、`research`。
+  - `community/skills/`：使用者在 Repo X-Ray 挑中的社群技能（MIT），組合 `visual`、`writing`、`research`、`story`。
     來源、版本、修改與「評估過沒收的」都記在 `community/README.md`——評估新專案前先查，避免重複評估。
   - `web/build_zips.py`：部署時把每個技能打包成 ZIP（給 claude.ai 網頁版上傳）；`scripts/skl_skill_lint.py`：skl 自己的技能格式警告
     （上游的 check_frontmatter／check_paths 不改）。

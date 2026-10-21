@@ -142,6 +142,26 @@
       ],
       "verdict_at_review": "FAIL",
       "note": "skl 自製技能，逐行看過：只讀 GitHub Actions 自動提供的 GITHUB_TOKEN，用 Authorization 標頭（add_unredirected_header，轉址到儲存空間時不帶）送往 GITHUB_API_URL 與 API 回傳的 upload_url，用來列出草稿 Release、下載影片、上傳成品與說明檔；不連其他網站、不印出 Token（2026-10-18）"
+    },
+    "community/skills/short-drama": {
+      "sha256": "9230957bfb311c5e485aec90161cca4c93624fb8b7719f13c5b24a1861c89b2a",
+      "categories": [
+        "CODE-EXEC",
+        "FS-ABUSE",
+        "NET-EXFIL"
+      ],
+      "verdict_at_review": "FAIL",
+      "note": "CODE-EXEC 5 筆都是 assets/dashboard/app.js 的正規表達式 .exec()；NET-EXFIL 是儀表板網頁向自己的本機伺服器 POST /api/session（帶本機 token 標頭）；dashboard_server.py 只准綁 IPv4 迴環位址（預設 127.0.0.1，其他位址直接拒絕）。FS-ABUSE 的 os.unlink／shutil.rmtree 只刪自己建立的暫存檔與交付前的備份資料夾，刪前檢查不是符號連結。沒有外部網址、沒有自動更新（2026-10-21）"
+    },
+    "community/skills/short-drama-produce": {
+      "sha256": "64195f774428094dc82644ed47ce3d489396f6f8a7e0daf3dee34f9ce8f21392",
+      "categories": [
+        "FS-ABUSE",
+        "NET-EXFIL",
+        "OBFUSCATION"
+      ],
+      "verdict_at_review": "FAIL",
+      "note": "NET-EXFIL 是呼叫付費生成 API：api.openai.com（生圖）、ark.cn-beijing.volces.com（火山引擎 Seedance 影片）、api.minimax.io（配音、配樂、影片）；金鑰只從 OPENAI_API_KEY／ARK_API_KEY／MINIMAX_API_KEY 讀、放 Authorization: Bearer 標頭；可用 *_BASE_URL 環境變數換網址，但必須 https 且不能夾帳密；下載成品只接受 https 網址。每個工作要先 prepare、使用者 confirm（確認綁定工作內容指紋，輸入一改就要重新確認）才會 run。OBFUSCATION 是 fixture_adapter.py 內建 1×1 PNG 測試圖的 base64，以及解開 API 回傳的 base64 圖片與 hex 音訊。FS-ABUSE 只刪自己的暫存檔（2026-10-21）"
     }
   }
 }

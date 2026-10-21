@@ -13,8 +13,8 @@
     "verification-before-completion"
   ],
   "source_repo": "https://github.com/xin7355-collab/skl",
-  "source_commit": "a442218",
-  "updated_at": "2026-10-18T22:49:37Z",
+  "source_commit": "b6b173b",
+  "updated_at": "2026-10-21T05:47:16Z",
   "packs": [],
   "extra_skills": [
     "community/skills/source-driven-development",
@@ -29,7 +29,7 @@
     "xin-toolkit/skills/file-intake"
   ],
   "hashes": {
-    "app-bootstrap": "d4d0a9e0b4116681d55fc2f1bb7a00ee9ff93876c19e960094864b6234682cb5",
+    "app-bootstrap": "67d6c656e1bedd00a4da560cac637441cd9b4a987e490a79e9712993a78354be",
     "app-guardrails-audit": "b1bef1b2680a1630c889d0579542c22e6451585ef4ef9cada876467428fa973b",
     "ci-cd-pipeline-builder": "047f0ae5ea0328ba55f743f03fde579772c5cadd35c719328356568777450810",
     "code-reviewer": "6d24ceee3a88e6fcaa850fae5ed942e2c555ea6fb74d5a286bc9718ced301f41",

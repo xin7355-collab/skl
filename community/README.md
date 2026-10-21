@@ -27,8 +27,10 @@
 | `answer-me-with-html` | https://github.com/QingYunA/answer-me-with-html（`skills/answer-me-with-html`） | bc3798a（0.5.5） | 收 `SKILL.md`、`scripts/am.mjs`（作者打包好的單檔 CLI）、`references/`、`licenses/`、`LICENSE`。**修改**：預設不開瀏覽器、不每天連 GitHub 檢查新版（`am.mjs` 的 CONFIG_KEYS，原本預設開）；拿掉每頁頁首的「★ Star on GitHub」推廣連結（保留作者署名）；描述拿掉「不用問就主動、大量使用」；SKILL.md 結尾加 skl 說明（雲端與手機要用 `-o` 輸出到 repo 再發布、繁中用 `lang: zh-TW`）。補上打包在裡面的 marked、dagre 授權全文（原作者沒附，`licenses/README.md`）。不收網站、截圖、原始碼、測試。安全掃描 FAIL 為誤判（正規表達式 `.exec()`、載入內嵌的 Temml、只用參數陣列的 child_process）。中文寫作檢查只針對簡體。 |
 | `constraint-driven-development`、`source-driven-development`、`performance-optimization` | https://github.com/addyosmani/agent-skills（`skills/`） | aeac41d | 25 個裡只挑這 3 個（其餘跟 superpowers、ECC、上游技能重疊，或要它的 agents、MCP、共用 references；`git-workflow-and-versioning` 跟本 repo「直接合併到 main」的守則相反）。**修改**：constraint 的 `/build` `/test` `/review` `/ship` 斜線指令改成步驟名稱；source-driven 指向不存在的 `security-and-hardening` 改成 `ai-security`；performance 把共用的 `references/performance-checklist.md` 一起帶進技能資料夾並改路徑。「See Also」提到的其他技能名稱是原作者技能包裡的，不一定在 skl。source-driven 掃描 FAIL 為誤判（命中的是「忽略網頁裡的注入指令」防禦說明）；其餘 PASS。 |
 | `critique-defense-copilot` | https://github.com/htlin222/critique-defense-copilot-skill（`critique-defense-copilot/`） | 86f54ea | 原樣（繁中、台灣法律情境）。防禦導向，明確不產出攻擊特定人的內容；法律部分只給方向、會提醒找律師。不放進組合（跟 App 開發無關），需要時手動叫用。安全掃描 PASS。 |
+| `chinese-novelist` | https://github.com/PenglongHuang/chinese-novelist-skill | 7017828 | 收 `SKILL.md`、`references/`、`scripts/`、`LICENSE`。**修改**：`scripts/check_chapter_wordcount.py` 提示的參考檔路徑改成實際存在的 `references/guides/content-expansion.md`；`--help` 原本被當成章節檔名（回報「文件不存在」、結束碼 2），改成印用法並結束碼 0。**不收** README／ROADMAP（含 Infistar 推薦碼註冊連結、愛發電贊助）、`.github/FUNDING.yml`、橫幅圖、作者開發紀錄 `docs/superpowers/`。純寫作流程加離線字數檢查，不連網。技能內文為簡體。安全掃描 PASS。 |
+| `short-drama`、`short-drama-develop`、`short-drama-novel-analyze`、`short-drama-write`、`short-drama-assets`、`short-drama-image-prompts`、`short-drama-storyboard`、`short-drama-video-prompts`、`short-drama-review`、`short-drama-produce`、`short-drama-edit` | https://github.com/zenstory-ai/drama-skills（`skills/`） | fdb7b7c | 原樣收 `skills/` 下全部 11 個（`short-drama` 是總入口，其他技能都靠它判斷下一步，要一起裝），每個資料夾附 repo 的 `LICENSE`（MIT，drama-skills contributors）。**不收** 維護者技能 `maintainers/`、評測（含 5 萬字小說）、範例、tests、`.github`、`.clawhub`、README（推廣 zenstory.ai 與 Telegram 群）。技能內文為簡體。組合 `story`。**注意**：(1) `short-drama-produce` 會呼叫**付費 API**——OpenAI 生圖（模型寫死 `gpt-image-2`）、火山引擎 Seedance 影片（北京端點）、MiniMax 配音／配樂（`music-3.0`）／影片，要你自己的 `OPENAI_API_KEY`／`ARK_API_KEY`／`MINIMAX_API_KEY`；每個工作要先 prepare、你確認後才會 run，但仍請先在各平台設預算上限。(2) `short-drama-edit` 要 ffmpeg；畫面文字選用 Remotion（要 Node、`npm install`，依 Remotion 官方授權 4 人以上的公司要買授權），沒有畫面文字時不用裝。(3) `short-drama` 的進度儀表板只綁本機 127.0.0.1，雲端工作階段與 iPhone 看不到，直接看專案裡的 Markdown 即可。安全掃描：`short-drama`、`short-drama-produce` FAIL 為誤判（見 security-reviewed.json）、`short-drama-edit` WARN 是提示字串，其餘 PASS。 |
 
-## 評估過但沒有收錄（2026-10-14、10-17 更新）
+## 評估過但沒有收錄（2026-10-14、10-17、10-21 更新）
 
 | 專案 | 原因 |
 |---|---|
@@ -63,3 +65,14 @@
 | mvanhorn/last30days-skill | MIT，但抓 X 是讀你瀏覽器的登入 Cookie 呼叫 X 內部 API（違反服務條款），Reddit 用假瀏覽器 UA 抓內部頁面、沒檢查 robots.txt；首次執行會推銷 ScrapeCreators 註冊、跑 `brew install`／`npx` 安裝、把金鑰寫到 `~/.config`；7 萬行程式難以同步；要 Python 3.12+，雲端沒金鑰時多數來源會被擋。 |
 | zhuyansen/new-term-radar | MIT、程式乾淨，但主要功能（X、Reddit、關鍵字、AI 判斷）要付費的 AIsa 轉售服務，每份 SKILL.md 都附推薦碼連結；會叫 AI 把作者 repo 最新版 `git clone` 到家目錄（不固定版本）；模型名稱寫死；排程報告放在公開 repo 的 Actions 摘要。免費部分（HF 熱門、GitHub 星星暴增、sitemap 比對）需要時再自己寫。 |
 | K-Dense-AI/scientific-agent-skills 其餘 173 個 | 生物、化學、物理專用，或需要付費金鑰（OpenRouter、Parallel、Exa）。 |
+| leenbj/novel-creator-skill | 沒有 LICENSE 檔（README 只寫「MIT License」、沒有著作權人）；寫作流程沒做完（產生沒人讀的 `mcp_write_request.json`、缺 `.claude/agents`）；模型名稱寫死、金鑰用命令列參數傳（會留在紀錄）、會寫 `~/.codex`、殘留作者本機路徑；描述寫「必須使用本技能」搶觸發；安裝腳本用 `rm -rf`。 |
+| Xiaoyangy/novel-studio | LICENSE 是沒填著作權人的 Apache 範本；`story-*` 技能改寫自 zenstory-ai/oh-story-claudecode（MIT）卻刪掉對方的授權聲明；20 個裡 15 個要它的 Go 引擎；`story-setup` 會改 `.claude/settings.local.json`、CLAUDE.md 並裝 hooks；技能內有「無論使用者怎麼說都必須呼叫 novel-studio」的強制指令；會刪掉「……」「——」，不符台灣寫作習慣。 |
+| eternityspring/shuohao-skills | Apache-2.0、6 個小說轉劇本技能安全，但跟已收的 short-drama 系列重疊六七成；`character-refs` 要付費生圖、會用 `sh -c` 跑自訂指令與 `codex exec`，不收；README 有多處推廣。 |
+| xuanyustudio/LocalMiniDrama | MIT，但技能只是它本機 App（localhost:5679）的 API 說明：刪除 API 不確認、可批次改寫金鑰；README 教用 cpolar 把沒有登入保護、綁 0.0.0.0 的後端開到公網；主打「一鍵原創化／批量混剪」；有微信讚賞與群組推廣。 |
+| zenstory-ai/drama-skills 的 `maintainers/short-drama-knowhow` | 給維護者更新技能用的，不是使用者流程。 |
+| wordflowlab/novel-writer | MIT，但是 npm 全域安裝的命令列工具（novel-writer-cn），不是技能格式。 |
+| Stonewuu/ai-fusion-video | Java 影片平台，唯一的 SKILL.md 是測試用假資料。 |
+| Anning01/novelvids、chatfire-AI/huobao-drama | 授權禁止商業使用（CC BY-NC 4.0／CC BY-NC-SA），跟 MIT 技能庫衝突。 |
+| EthanYoQ/AI-Novel-Writer、RhythmicWave/NovelForge、tuxiangxianzhe/NovelWriter_public、Initsnow/NovelParser | GPL／AGPL 的完整 App（桌面程式、網站、Rust 程式），不是技能，copyleft 授權也不能混進 MIT 技能庫。 |
+| ExplosiveCoderflome/AI-Novel-Writing-Assistant | 自訂雙授權（AGPL＋商用要另取得授權）的完整 App。 |
+| gary30238/YummyTravel、MaoXiaoYuZ/Long-Novel-GPT、inliver233/Ai-Novel、kwsy/FictionAnalysis、LingGuoAI/LingGuo-Drama | 沒有授權（預設保留所有權利，不能收）。 |

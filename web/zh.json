@@ -461,5 +461,17 @@
  "xin-toolkit/skills/auto-video-edit": "全自動剪影片：去掉沒講話的空白、挑精華剪成指定長度、做直式短影音；手機上傳到 GitHub 草稿就會自動剪好傳回",
  "xin-toolkit/skills/file-intake": "把你上傳的檔案（zip、規格、程式）做成新技能、可用的網頁 App，或整合進既有 App，含安全掃描與驗證",
  "xin-toolkit/skills/tw-stock": "用證交所與櫃買中心官方資料，每天收集台股行情、估值、月營收，並做有出處的個股分析（非投資建議）",
- "xin-toolkit/skills/web-to-markdown": "把網頁轉成乾淨的 Markdown 給 AI 讀或存進 App，只用 Python 內建模組、GitHub Actions 免費排程；遵守 robots.txt、限流與重試（firecrawl 的免費替代）。"
+ "xin-toolkit/skills/web-to-markdown": "把網頁轉成乾淨的 Markdown 給 AI 讀或存進 App，只用 Python 內建模組、GitHub Actions 免費排程；遵守 robots.txt、限流與重試（firecrawl 的免費替代）。",
+ "community/skills/chinese-novelist": "中文長篇小說：先用幾輪選擇題定好題材、主角與衝突，自動產生大綱與人物檔案，再逐章寫完整部小說（每章三千字以上），可中斷後續寫；附字數檢查腳本。技能內文為簡體。",
+ "community/skills/short-drama": "AI 短劇／漫劇專案總入口：建立或接續專案資料夾、判斷下一步該交給哪個 short-drama 技能，附只在本機看的進度儀表板（手機看不到）。技能內文為簡體。",
+ "community/skills/short-drama-develop": "把小說、點子或梗概發展成短劇改編方案：戲劇方向、創作簡報、導演闡述、分集大綱。簡體。",
+ "community/skills/short-drama-novel-analyze": "把長篇小說或連載網文拆成可追溯的原著分析：章節索引、改編價值、逐章劇情功能、人物與設定整理，給改編用。簡體。",
+ "community/skills/short-drama-write": "寫或修改可拍攝的短劇／漫劇單集劇本（Markdown），也能把現成劇本整理成統一格式、去模板感。簡體。",
+ "community/skills/short-drama-assets": "從劇本拆出人物造型、場景、道具與跨場連續性，寫成視覺設定文件。簡體。",
+ "community/skills/short-drama-image-prompts": "替短劇人物、場景、道具寫可直接複製的生圖提示詞（設定圖、三視圖、場景板）。只寫提示詞、不出圖。簡體。",
+ "community/skills/short-drama-storyboard": "把劇本與視覺設定拆成分鏡表：鏡頭用途、軸線站位視線等連續性、首幀關鍵畫面提示詞。不出圖。簡體。",
+ "community/skills/short-drama-video-prompts": "把分鏡與關鍵畫面寫成可直接複製的影片生成提示詞（動作、表演、運鏡、時長），也可寫配樂意圖。不出片。簡體。",
+ "community/skills/short-drama-review": "審查短劇專案的原著分析、劇本、視覺設定、提示詞、分鏡與已產生的素材，只寫問題與修改要求、不代改。簡體。",
+ "community/skills/short-drama-produce": "經你明確確認後，呼叫付費 API 產生短劇的圖片（OpenAI）、影片（火山引擎 Seedance）、配音與配樂（MiniMax），結果存回專案。需要你自己的金鑰，會產生費用，請先在各平台設預算上限。簡體。",
+ "community/skills/short-drama-edit": "把產生好的鏡頭剪成成片：入出點、鏡序、聲音、字幕、統一響度與輸出規格。需要 ffmpeg；畫面文字可選用 Remotion（要 Node；依 Remotion 官方授權，4 人以上的公司要買授權）。簡體。"
 }

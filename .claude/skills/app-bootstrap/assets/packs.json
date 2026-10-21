@@ -131,5 +131,22 @@
       "community/skills/academic-writing-discipline",
       "community/skills/markitdown"
     ]
+  },
+  "story": {
+    "desc": "小說與 AI 短劇（社群精選，技能內文為簡體）：中文長篇小說逐章寫作；短劇從原著分析、改編、劇本、視覺設定、分鏡、生圖／影片提示詞到審查；可選付費 API 出片（要確認、會花錢）與 ffmpeg 剪輯",
+    "skills": [
+      "community/skills/chinese-novelist",
+      "community/skills/short-drama",
+      "community/skills/short-drama-develop",
+      "community/skills/short-drama-novel-analyze",
+      "community/skills/short-drama-write",
+      "community/skills/short-drama-assets",
+      "community/skills/short-drama-image-prompts",
+      "community/skills/short-drama-storyboard",
+      "community/skills/short-drama-video-prompts",
+      "community/skills/short-drama-review",
+      "community/skills/short-drama-produce",
+      "community/skills/short-drama-edit"
+    ]
   }
 }
