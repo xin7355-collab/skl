@@ -33,3 +33,9 @@ xin-toolkit/skills/ai-model-router/SKILL.md :: 已被 Google 停用
 
 # skill_eval 的健檢練習題故意寫死一個已退役的模型，考 AI 抓不抓得到「寫死模型名稱」；改掉就測不到了。
 ops/skill_eval.py :: "ai.py": "import os
+
+# 提示詞庫的資料（web/build_prompts.py 從 prompts.chat 原樣收錄的第三方提示詞，CC0）：
+# 內文提到的舊模型名稱是作者寫提示詞時的描述，不是我們的程式會呼叫的模型；改寫等於竄改原文。
+# 每個檔案是一整行 JSON，所以用 JSON 開頭的字串比對。
+web/prompts/p-*.json :: {"
+web/prompts/index.json :: {"source"
