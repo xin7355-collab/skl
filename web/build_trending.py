@@ -50,7 +50,9 @@ LISTS = [
     {"id": "ai", "title": "AI／大模型", "desc": "標記 llm 主題的熱門專案", "q": "topic:llm", "per": 20},
     {"id": "skills", "title": "Claude／Agent 技能", "desc": "名稱或描述含 claude skills", "q": "claude skills in:name,description,topics", "per": 20},
 ]
-KEEP = ("full_name", "description", "stargazers_count", "language", "pushed_at", "created_at", "size", "html_url")
+# homepage、has_pages：X-Ray 的「🌐 有線上成品」篩選用（不另外打 API 查每個專案）
+KEEP = ("full_name", "description", "stargazers_count", "language", "pushed_at", "created_at", "size", "html_url",
+        "homepage", "has_pages")
 TR_URL = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-TW&dt=t&q="
 SEARCH_GAP = 2.5  # 有 Token 時搜尋上限每分鐘 30 次；保守間隔，避免連續請求被擋
 # 爆紅門檻（數值照 new-term-radar 的預設）：門檻太低會被一般新專案灌滿，太高抓不到剛起飛的
@@ -75,6 +77,10 @@ def fill_dates(q, today):
 def slim(item):
     out = {k: item.get(k) for k in KEEP}
     out["description"] = (out["description"] or "")[:200]
+    # 大多數專案沒填 homepage、沒開 Pages：空的就不寫，trending.json 才不會每筆多兩個 null
+    for k in ("homepage", "has_pages"):
+        if not out.get(k):
+            out.pop(k, None)
     out["topics"] = (item.get("topics") or [])[:5]
     # 授權只留代號（MIT、AGPL-3.0…）：X-Ray 批次勾選時要告訴 Claude 能不能複製程式碼
     lic = (item.get("license") or {}).get("spdx_id")
@@ -521,7 +527,8 @@ def selftest():
 
     def good(url):
         calls.append(url)
-        return {"items": [repo("a/one", 500), repo("b/two", 300)]}
+        return {"items": [repo("a/one", 500, homepage="https://one.dev", has_pages=True),
+                          repo("b/two", 300, homepage="", has_pages=False)]}
 
     data, failed = build(good, None, now, nosleep)
     check(data and failed == [] and len(data["lists"]) == len(LISTS), "全部成功：每份清單都有")
@@ -529,6 +536,9 @@ def selftest():
     it = data["lists"][0]["items"][0]
     check("owner" not in it and len(it["description"]) == 200 and len(it["topics"]) == 5, "只留需要的欄位、描述截斷")
     check(it.get("license") == "MIT", "授權只留代號")
+    two = data["lists"][0]["items"][1]
+    check(it.get("homepage") == "https://one.dev" and it.get("has_pages") is True
+          and "homepage" not in two and "has_pages" not in two, "留 homepage／has_pages 給「有線上成品」篩選，空的不寫")
     check(data["snapshot"]["a/one"] == 500 and data["lists"][0]["id"] != "rising", "第一次沒有前一份 → 不出竄升榜")
 
     prev = dict(data, generated_at=(now - dt.timedelta(days=2)).isoformat())

@@ -39,3 +39,6 @@ paths:
   首次 commit `firstCommit`（只在詳細頁查、最多 2 次 API、快取 1 小時）；限流 `retryDelayFromHeaders`（20 秒內照等，
   x-ratelimit-reset 只在剩餘額度為 0 時採用）。熱門清單照 trending.json 通用顯示：每筆有 `first_seen`／`new`（`new === true` 才顯示 🆕），
   `breakout` 清單另有 `stars_per_day`／`gain`；fixtures 用 `trendingJson`、`apiOverride` 模擬。
+- 「🌐 有線上成品」：`quickLive`（只看清單本身的 `homepage`／`has_pages`，指回 github.com 或本機位址的不算；不打 API），
+  開關存 `xray-live`；清單列的「開成品」是 `span[data-live]`（列是 `<button>`，捕捉階段攔下來 `window.open`）。
+  trending.json 要有這兩個欄位（`build_trending.py` 的 `KEEP`，空的不寫）。CSS 已有 `.live`（詳細頁的線上網址），別再用這個 class 名。

@@ -1,5 +1,5 @@
 // Repo X-Ray（web/xray.html）：掃描判讀、專案地圖、打包給 AI、搜尋結果、勾選、說明文件、返回、
-// 複製失敗的手動面板、App 顧問推薦、只問這段、敏感檔名、自動產生資料夾、首次 commit、限流、熱門清單
+// 複製失敗的手動面板、App 顧問推薦、只問這段、敏感檔名、自動產生資料夾、首次 commit、限流、熱門清單、有線上成品篩選
 const { test, expect, expectNoHorizontalScroll, REPOS, RATE, commitsOf } = require('./fixtures');
 const ADV_RULES = require('../advisor_rules.json');
 
@@ -372,5 +372,81 @@ test.describe('熱門清單（trending.json）', () => {
     await expect(page.locator('#rrows button[data-i]')).toHaveCount(1);
     await expect(page.locator('#rrows .newin')).toHaveCount(0);
     await expect(page.locator('#rrows')).not.toContainText('🆕');
+  });
+});
+
+test.describe('🌐 有線上成品（篩選＋開成品）', () => {
+  const item = (full, extra = {}) => Object.assign({
+    id: full.length, name: full.split('/')[1], full_name: full, description: 'Project ' + full, stargazers_count: 100,
+    language: 'JavaScript', pushed_at: new Date().toISOString(), created_at: new Date().toISOString(), size: 100,
+    html_url: 'https://github.com/' + full, topics: [], homepage: null, has_pages: false, private: false,
+  }, extra);
+  // GitHub 搜尋結果本來就帶 homepage、has_pages；篩選只看這兩個欄位，不另外打 API
+  const ITEMS = [
+    item('demo/live-one', { homepage: 'https://live-one.workers.dev' }),
+    item('demo/pages-site', { has_pages: true }),
+    item('demo/demo.github.io', { has_pages: true }),            // 個人網站 repo：Pages 網址沒有路徑
+    item('demo/gh-home', { homepage: 'https://github.com/demo/gh-home' }),  // 指回 GitHub 自己，不算成品
+    item('demo/plain'),
+  ];
+  async function search(page, net) {
+    net.apiOverride = (url) => url.pathname === '/search/repositories'
+      ? { status: 200, headers: RATE, contentType: 'application/json', body: JSON.stringify({ total_count: ITEMS.length, incomplete_results: false, items: ITEMS }) }
+      : undefined;
+    await page.goto('/xray.html');
+    await page.locator('#url').fill('demo site');
+    await page.locator('#go').click();
+    await expect(page.locator('#rrows button[data-i]').first()).toBeVisible();
+  }
+  const rows = (page) => page.locator('#rrows button[data-i]');
+  const live = (page) => page.locator('#rcats [data-liveonly]');
+
+  test('每列有成品網址就顯示「開成品」，篩選只留這些，重新整理後記得', async ({ page, net }) => {
+    await search(page, net);
+    await expect(rows(page)).toHaveCount(5);
+    await expect(live(page)).toContainText('3');
+    // 跟其他分類籤同一列、同高度（曾經撞到既有的 .live 樣式變成直排，整列被撐高）
+    const hLive = (await live(page).boundingBox()).height;
+    const hAll = (await page.locator('#rcats [data-cat="all"]').boundingBox()).height;
+    expect(Math.abs(hLive - hAll)).toBeLessThan(2);
+    const row = (n) => rows(page).filter({ hasText: n });
+    await expect(row('demo/live-one').locator('[data-live]')).toHaveAttribute('data-live', 'https://live-one.workers.dev');
+    await expect(row('demo/pages-site').locator('[data-live]')).toHaveAttribute('data-live', 'https://demo.github.io/pages-site/');
+    await expect(row('demo/demo.github.io').locator('[data-live]')).toHaveAttribute('data-live', 'https://demo.github.io/');
+    await expect(row('demo/gh-home').locator('[data-live]')).toHaveCount(0);
+    await expect(row('demo/plain').locator('[data-live]')).toHaveCount(0);
+
+    await live(page).click();
+    await expect(live(page)).toHaveClass(/\bon\b/);
+    await expect(rows(page)).toHaveCount(3);
+    await expectNoHorizontalScroll(page);
+
+    await page.reload();
+    await search(page, net);
+    await expect(live(page)).toHaveClass(/\bon\b/);
+    await expect(rows(page)).toHaveCount(3);
+    await live(page).click();
+    await expect(rows(page)).toHaveCount(5);
+  });
+
+  test('點「開成品」只開網址、不進專案詳細頁、不多打 API', async ({ page, net }) => {
+    await search(page, net);
+    // 不真的連出去（測試環境擋外部網站）：記下 window.open 被叫的參數
+    await page.evaluate(() => { window.__opened = []; window.open = (...a) => { window.__opened.push(a); return null; }; });
+    const before = net.api.length;
+    await rows(page).filter({ hasText: 'demo/pages-site' }).locator('[data-live]').click();
+    const opened = await page.evaluate(() => window.__opened);
+    expect(opened).toEqual([['https://demo.github.io/pages-site/', '_blank', 'noopener']]);
+    await expect(page.locator('#out')).not.toHaveClass(/\bon\b/);
+    expect(net.api.length).toBe(before);
+  });
+
+  test('篩選後一筆都沒有：說明原因和怎麼辦', async ({ page, net }) => {
+    await search(page, net);
+    await live(page).click();
+    await page.locator('#rfilter').fill('plain');
+    await expect(page.locator('#rrows')).toContainText('又有線上成品');
+    await page.locator('#rfilter').fill('');
+    await expect(rows(page)).toHaveCount(3);
   });
 });

@@ -198,6 +198,11 @@ details.adv-more>summary::-webkit-details-marker{display:none}
 .catrow a{flex:none;font-size:12px;border:1px solid var(--line);border-radius:99px;padding:5px 10px;cursor:pointer;color:var(--text);white-space:nowrap}
 .catrow a.on{background:var(--cyan);border-color:var(--cyan);color:#12151B;font-weight:700}
 .catrow a i{font-style:normal;opacity:.7;margin-left:3px;font-family:var(--mono);font-size:11px}
+.catrow a.liveonly{border-color:rgba(72,211,192,.5);color:var(--cyan)}
+.catrow a.liveonly.on{background:var(--cyan);color:#12151B}
+/* 清單列裡的「開成品」：列本身是 <button>，不能放 <a>，用 span＋data-live 在捕捉階段攔下來開新分頁 */
+.golive{display:inline-flex;align-items:center;gap:4px;min-height:28px;margin-top:4px;padding:2px 10px;border:1px solid rgba(72,211,192,.5);border-radius:99px;color:var(--cyan);font-size:12px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.golive small{color:var(--muted);font-family:var(--mono);font-size:10px;overflow:hidden;text-overflow:ellipsis}
 .results .catrow{padding:8px 12px 0}
 details.sopt{margin-top:6px;font-size:12px;color:var(--muted)}
 details.sopt summary{cursor:pointer;font-family:var(--mono)}
@@ -2574,13 +2579,36 @@ function setCat(id){
   S.cat=id; try{ localStorage.setItem("xray-cat",id); }catch(e){}
   paintCats(); if($("rrows")) paintRows();
 }
+/* 「有線上成品」篩選：只用清單本身帶的 homepage、has_pages，不另外打 API（一頁 100 筆逐一查會把額度用光）。
+   homepage 指回 GitHub 本身（repo 頁、個人頁）或本機位址的不算成品；Pages 網址照 GitHub 的規則推算。
+   詳細頁的 liveCandidates 會再從 README、CNAME 找更多，並實際連一次；這裡只求快、不保證連得上。 */
+S.liveOnly=false;
+try{ S.liveOnly=localStorage.getItem("xray-live")==="1"; }catch(e){}
+function quickLive(it){
+  const h=String(it.homepage||"").trim();
+  if(/^https?:\/\/[^\s]+$/i.test(h)){
+    const host=h.replace(/^https?:\/\//i,"").split(/[\/?#]/)[0].toLowerCase();
+    if(!/(^|\.)github\.com$|^(localhost|127\.|0\.0\.0\.0|example\.(com|org))/.test(host)) return h;
+  }
+  if(it.has_pages && it.full_name){
+    const o=it.full_name.split("/")[0], r=it.full_name.split("/")[1]||"";
+    return r.toLowerCase()===(o+".github.io").toLowerCase() ? "https://"+o+".github.io/" : "https://"+o+".github.io/"+r+"/";
+  }
+  return "";
+}
+function setLiveOnly(on){
+  S.liveOnly=on; try{ localStorage.setItem("xray-live",on?"1":"0"); }catch(e){}
+  paintCats(); if($("rrows")) paintRows();
+}
 /* 上方分類籤（搜尋前選）＋結果裡的分類籤（附數量，只顯示有結果的類別） */
 function paintCats(){
   $("cats").innerHTML=CATS.map(c=>'<a data-cat="'+c[0]+'"'+(S.cat===c[0]?' class="on"':'')+'>'+esc(c[1])+'</a>').join("");
   const el=$("rcats"); if(!el) return;
   const items=S.results||[], n={};
   items.forEach(it=>catsOf(it).forEach(k=>{ n[k]=(n[k]||0)+1; }));
-  el.innerHTML=CATS.filter(c=>c[0]==="all"||n[c[0]]||S.cat===c[0]).map(c=>'<a data-cat="'+c[0]+'"'+(S.cat===c[0]?' class="on"':'')+'>'+esc(c[1])+
+  const nLive=items.filter(quickLive).length;
+  el.innerHTML='<a class="liveonly'+(S.liveOnly?' on':'')+'" data-liveonly role="switch" aria-checked="'+S.liveOnly+'" title="只看有對外網址（作者放上線的網站、示範頁）的專案">🌐 有線上成品<i>'+nLive+'</i></a>'+
+    CATS.filter(c=>c[0]==="all"||n[c[0]]||S.cat===c[0]).map(c=>'<a data-cat="'+c[0]+'"'+(S.cat===c[0]?' class="on"':'')+'>'+esc(c[1])+
     '<i>'+(c[0]==="all"?items.length:(n[c[0]]||0))+'</i></a>').join("");
 }
 /* 進階條件 → GitHub 官方支援的搜尋條件（qualifier）；跟模糊模式的 OR 查詢一起用也只是多加篩選 */
@@ -2739,7 +2767,7 @@ function sortedIdx(){
   const it=S.results||[];
   const fg=S.filter?fzGroups(S.filter):null;
   // 篩選：每個詞都要「對得上」（含同義詞、拼錯、縮寫），在手機上算，不耗額度
-  let idx=it.map((_,i)=>i).filter(i=>(!fg || fg.every(g=>fzScore([g],it[i])>=0.5)) && (S.cat==="all" || catsOf(it[i]).has(S.cat)));
+  let idx=it.map((_,i)=>i).filter(i=>(!fg || fg.every(g=>fzScore([g],it[i])>=0.5)) && (S.cat==="all" || catsOf(it[i]).has(S.cat)) && (!S.liveOnly || quickLive(it[i])));
   const rel=i=>fzScore(S.fzGroups||[],it[i])*10+Math.log10(it[i].stargazers_count+1)*0.5;
   const by={
     stars:(a,b)=>it[b].stargazers_count-it[a].stargazers_count,
@@ -2785,19 +2813,22 @@ function paintRows(){
       const t=it.description_zh||zhOf(d);
       if(t!==undefined) shown=t; else if(n<120) missing.push(d);
     }
-    const hb=histBadges(it.full_name,it.pushed_at);
+    const hb=histBadges(it.full_name,it.pushed_at), live=quickLive(it);
     return '<button data-i="'+i+'"'+(hb?' class="was"':'')+'><div class="rr">'+pickBox(it.full_name)+'<div class="rmain">'+
       // 🆕 只在 trending.json 明確寫 new: true（這次第一次上榜）才加；欄位不存在就跟以前一樣
       '<span class="rn">'+esc(it.full_name)+'</span>'+(it.new===true?' <span class="hb newin" title="'+esc(it.first_seen?"第一次上榜："+it.first_seen:"這次第一次上榜")+'">🆕 新上榜</span>':'')+
       (hb?'<div class="rd">'+hb+'</div>':'')+
       '<div class="rd">'+typeBadge(quickType(it))+esc(shown||"（沒有描述）")+'</div>'+
+      (live?'<span class="golive" data-live="'+esc(live)+'" role="link" aria-label="開啟 '+esc(it.full_name)+' 的線上成品">🌐 開成品 ↗ <small>'+esc(live.replace(/^https?:\/\//i,"").replace(/\/$/,""))+'</small></span>':'')+
       // 星星數放右邊大字（使用者回饋：混在灰色小字裡看不到）；這行只留成長速度
       '<div class="rd" style="font-family:var(--mono);font-size:10px">'+
       [it.gain_per_day?'<span class="gain">▲ +'+fmtPerDay(it.gain_per_day)+'★/天（最近）</span>':'',
        pd?'≈'+fmtPerDay(pd)+'★/天':'', it.language?esc(it.language):'',
        '更新 '+esc(String(it.pushed_at||"").slice(0,10))].filter(Boolean).join(' · ')+'</div></div>'+
       '<div class="rz"><b>★ '+fmtStars(it.stargazers_count)+'</b><span>星星</span><i>'+fmtSize(it.size)+'</i></div></div></button>';
-  }).join("") : '<button disabled style="color:var(--muted)">已載入的結果中沒有符合「'+esc(S.filter)+'」的，清空篩選或換個詞</button>';
+  }).join("") : '<button disabled style="color:var(--muted)">'+(S.liveOnly&&!S.filter
+      ? '已載入的結果中沒有線上成品（homepage 沒填、也沒開 GitHub Pages）。可以「載入更多」，或關掉「🌐 有線上成品」'
+      : '已載入的結果中沒有符合'+(S.filter?'「'+esc(S.filter)+'」':'')+(S.liveOnly?'又有線上成品':'')+'的，清空篩選或換個詞')+'</button>';
   // 還沒翻的描述分批送出、每批翻好就重畫；每段話這次開頁只試一次，失敗就留原文，不會無限重試
   S.trTried=S.trTried||new Set();
   const todo=missing.filter(t=>!S.trTried.has(t));
@@ -3357,6 +3388,13 @@ document.addEventListener("click",e=>{
   e.preventDefault(); e.stopPropagation();
   togglePick(b.dataset.pk);
 },true);
+// 「開成品」也在清單列（<button>）裡：捕捉階段攔下來，只開成品網址、不打開專案詳細頁
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-live]"); if(!g) return;
+  e.preventDefault(); e.stopPropagation();
+  window.open(g.dataset.live,"_blank","noopener");
+},true);
+document.addEventListener("click",e=>{ if(e.target.closest("[data-liveonly]")) setLiveOnly(!S.liveOnly); });
 $("pickbar").addEventListener("click",openPickSheet);
 document.addEventListener("click",e=>{ const c=e.target.closest("[data-cat]"); if(c) setCat(c.dataset.cat); });
 ["so-lang","so-stars","so-pushed","so-lic"].forEach(id=>$(id).addEventListener("change",soptSave));
