@@ -473,5 +473,10 @@
  "community/skills/short-drama-video-prompts": "把分鏡與關鍵畫面寫成可直接複製的影片生成提示詞（動作、表演、運鏡、時長），也可寫配樂意圖。不出片。簡體。",
  "community/skills/short-drama-review": "審查短劇專案的原著分析、劇本、視覺設定、提示詞、分鏡與已產生的素材，只寫問題與修改要求、不代改。簡體。",
  "community/skills/short-drama-produce": "經你明確確認後，呼叫付費 API 產生短劇的圖片（OpenAI）、影片（火山引擎 Seedance）、配音與配樂（MiniMax），結果存回專案。需要你自己的金鑰，會產生費用，請先在各平台設預算上限。簡體。",
- "community/skills/short-drama-edit": "把產生好的鏡頭剪成成片：入出點、鏡序、聲音、字幕、統一響度與輸出規格。需要 ffmpeg；畫面文字可選用 Remotion（要 Node；依 Remotion 官方授權，4 人以上的公司要買授權）。簡體。"
+ "community/skills/short-drama-edit": "把產生好的鏡頭剪成成片：入出點、鏡序、聲音、字幕、統一響度與輸出規格。需要 ffmpeg；畫面文字可選用 Remotion（要 Node；依 Remotion 官方授權，4 人以上的公司要買授權）。簡體。",
+ "community/skills/dramake": "AI 短劇／短片的導演與驗收流程：生成前先鎖定角色、道具、聲線與空間，逐段檢查實際產出（肢體接觸、誰在說話、連戲），付費前預覽請求並分開確認授權與預算上限，任務逾時先找回、不重送。只有說明與範本、不含程式。技能內文為簡體。",
+ "community/skills/clone-website": "把網頁重建成可編輯的程式碼（內容、素材、響應式版面與互動），適合搬遷自己的網站或研究別人的版面做法；別人的商標、文字、圖片、字型不放進公開 repo，頁面加 noindex。",
+ "community/skills/sanitize-metadata": "在本機移除照片與影片裡的 GPS、拍攝裝置、作者、時間等隱藏資料，只回報各類數量、AI 不看內容；公開到 Pages 或 Release 前用（需要 exiftool、ffmpeg）。",
+ "community/skills/compress-video": "用 ffmpeg 在本機壓縮或轉檔影片（H.264／H.265），同時拿掉隱藏資料；AI 只看檔案大小和長度，不看內容。",
+ "community/skills/slice-video": "用 ffmpeg 把影片照固定秒數（例如每 10 秒）切段；只依時間切，不看畫面與聲音內容。"
 }

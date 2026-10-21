@@ -1,7 +1,8 @@
 ---
-# 社群收錄的 4 個資料分析技能（statistical-analysis、statsmodels、polars、markitdown）的離線測試。
-# 測試來自上游 K-Dense（MIT），放在 community/tests/，不放進技能資料夾，免得 bootstrap 複製到別的 App。
-# 每月跑一次是為了抓「技能寫的用法跟固定版本的套件對不上」；改到這 4 個技能或測試時也會自動跑。
+# 社群收錄技能的離線測試：4 個資料分析技能（statistical-analysis、statsmodels、polars、markitdown，測試來自上游 K-Dense，MIT）
+# 與 3 個隱私影音技能（sanitize-metadata、compress-video、slice-video，skl 自寫，要 ffmpeg 與 exiftool）。
+# 放在 community/tests/，不放進技能資料夾，免得 bootstrap 複製到別的 App。
+# 每月跑一次是為了抓「技能寫的用法跟固定版本的套件對不上」；改到這些技能或測試時也會自動跑。
 name: Community skill tests
 
 'on':
@@ -16,6 +17,9 @@ name: Community skill tests
       - 'community/skills/statsmodels/**'
       - 'community/skills/polars/**'
       - 'community/skills/markitdown/**'
+      - 'community/skills/sanitize-metadata/**'
+      - 'community/skills/compress-video/**'
+      - 'community/skills/slice-video/**'
       - 'community/tests/**'
       - '.github/workflows/community-skill-tests.yml'
 
@@ -43,6 +47,20 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: community/tests/requirements.txt
+
+      # 隱私影音技能的測試要真的轉檔並用 exiftool 從外面檢查 GPS 有沒有清掉；runner 沒有就裝。
+      - name: Install ffmpeg and exiftool
+        run: |
+          missing=""
+          command -v ffmpeg >/dev/null || missing="$missing ffmpeg"
+          command -v exiftool >/dev/null || missing="$missing libimage-exiftool-perl"
+          if [ -n "$missing" ]; then
+            sudo apt-get update -qq
+            # shellcheck disable=SC2086
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends $missing
+          fi
+          ffmpeg -version | head -1
+          exiftool -ver
 
       - name: Install pinned packages
         run: |
