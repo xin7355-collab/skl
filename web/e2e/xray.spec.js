@@ -450,3 +450,28 @@ test.describe('🌐 有線上成品（篩選＋開成品）', () => {
     await expect(rows(page)).toHaveCount(3);
   });
 });
+
+test('連續搜尋兩次：先送出但比較慢回來的舊結果，不能混進新的清單', async ({ page, net }) => {
+  const item = (full) => ({ id: full.length, name: full.split('/')[1], full_name: full, description: 'x', stargazers_count: 10,
+    language: 'Go', pushed_at: new Date().toISOString(), created_at: new Date().toISOString(), size: 10,
+    html_url: 'https://github.com/' + full, topics: [], homepage: null, has_pages: false, private: false });
+  const reply = (items) => ({ status: 200, headers: RATE, contentType: 'application/json',
+    body: JSON.stringify({ total_count: items.length, incomplete_results: false, items }) });
+  net.apiOverride = async (url) => {
+    if (url.pathname !== '/search/repositories') return undefined;
+    const q = url.searchParams.get('q') || '';
+    if (q.includes('slowword')) { await new Promise((r) => setTimeout(r, 1500)); return reply([item('old/a'), item('old/b')]); }
+    return reply([item('new/c')]);
+  };
+  await page.goto('/xray.html');
+  await page.locator('#url').fill('slowword');
+  await page.locator('#go').click();
+  await page.locator('#url').fill('fastword');
+  await page.locator('#go').click();
+  await expect(page.locator('#rrows button[data-i]')).toHaveCount(1);
+  await page.waitForTimeout(2000);   // 等舊的那個慢慢回來
+  await expect(page.locator('#rrows button[data-i]')).toHaveCount(1);
+  await expect(page.locator('#rrows')).toContainText('new/c');
+  await expect(page.locator('#rrows')).not.toContainText('old/a');
+  await expect(page.locator('#results .rhead')).toContainText('fastword');
+});

@@ -2728,6 +2728,9 @@ async function search(more,qArg,fromHistory){
     S.fzGroups=fzGroups(q); S.sort=fuzzy?"rel":"best"; markTrend("");
   }else S.page=(S.page||1)+1;
 
+  // 每次搜尋（含載入更多）都拿一個新編號：回來時已經不是最新的就丟掉。
+  // 不然快速連搜兩次，先送出但比較慢回來的舊結果會被接到新清單後面（實測重現過）。
+  const tok=S.searchTok=(S.searchTok||0)+1;
   const btn=$("more-btn");
   if(btn){ btn.textContent="載入中…"; btn.disabled=true; }
   const apiQ=(fuzzy?fuzzyQuery(q):q)+(extra.kw?" "+extra.kw:"")+(extra.qs?" "+extra.qs:"");
@@ -2736,12 +2739,14 @@ async function search(more,qArg,fromHistory){
     // 模糊模式交給 GitHub 依相關度排；一般模式照星數
     const r=await getJSON("https://api.github.com/search/repositories?q="+encodeURIComponent(apiQ)+
       (fuzzy?"":"&sort=stars&order=desc")+"&per_page="+PER+"&page="+S.page);
+    if(tok!==S.searchTok) return;
     S.results=(S.results||[]).concat(r.items||[]);
     S.total=Math.min(r.total_count||0,1000);   // GitHub 搜尋最多只讓翻到第 1000 筆
     if(!more){ addRecent("q",q); if(!fromHistory) pushView({v:"search",q:q}); }
     say("找到 "+Number(S.total).toLocaleString()+" 個專案"+(apiQ!==q?"（實際查詢："+apiQ+"）":"")+"，點一個開始掃描、點方框勾選","✓");
     showResults();
   }catch(e){
+    if(tok!==S.searchTok) return;
     if(!S.results||!S.results.length){
       $("results").innerHTML='<button disabled style="color:var(--red)">'+esc(e.message)+'</button>';
       $("results").classList.add("on");
@@ -2904,6 +2909,7 @@ function showTrend(id,fromHistory){
   S.outTab="explore"; if(S.tab!=="explore") setTab("explore"); else showOut();
   S.view="trend"; S.results=l.items.slice(); S.total=l.items.length; S.trendTitle=l.title+(l.stale?"（舊資料）":"");
   S.trendId=id; S.sort="best"; S.filter=""; S.fzGroups=[]; S.qKey="";
+  S.searchTok=(S.searchTok||0)+1;   // 還在跑的關鍵字搜尋作廢，回來時不會蓋掉這份清單
   markTrend(id);
   say("⭐ "+l.title+(l.desc?"："+l.desc:""),"✓");
   showResults();

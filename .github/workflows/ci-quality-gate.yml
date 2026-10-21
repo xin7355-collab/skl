@@ -98,6 +98,7 @@ jobs:
           python3 web/build_catalog.py selftest
           python3 web/build_zips.py selftest
           python3 web/build_trending.py selftest
+          python3 web/build_prompts.py selftest
           python3 web/check_advisor_rules.py selftest
           python3 web/check_advisor_rules.py
           python3 web/check_guides.py selftest

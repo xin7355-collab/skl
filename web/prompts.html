@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="提示詞庫">
+<title>提示詞庫</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1a1d21; --muted: #5d6670; --line: #e3e6ea;
+  --accent: #0f766e; --accent-soft: #e6f4f2; --accent-text: #ffffff; --warn: #b45309;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04); --skel: #e9ecef;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --card: #181c20; --text: #e8eaed; --muted: #9aa3ad; --line: #2a3036;
+    --accent: #2dd4bf; --accent-soft: #123330; --accent-text: #06201d; --warn: #f59e0b; --shadow: none; --skel: #252a30;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
+  padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));
+  max-width: 1100px; margin: 0 auto; -webkit-text-size-adjust: 100%;
+}
+header { padding: 18px 0 2px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+h1 { font-size: 22px; margin: 0; }
+header a { color: var(--accent); text-decoration: none; font-size: 14px; white-space: nowrap; }
+.sub { color: var(--muted); font-size: 13px; margin: 2px 0 8px; }
+.top { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 6px 0 2px; }
+#q { width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex: none; font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 99px; padding: 6px 11px; cursor: pointer; white-space: nowrap; }
+.chips button i { font-style: normal; opacity: .65; margin-left: 4px; font-size: 12px; }
+.chips button[aria-pressed="true"] { background: var(--c, var(--accent)); border-color: var(--c, var(--accent)); color: #fff; font-weight: 600; }
+.chips.subs button { font-size: 12px; padding: 4px 10px; }
+.row2 { display: flex; gap: 8px; align-items: center; }
+.row2 .chips { flex: 1; min-width: 0; }
+select { flex: none; font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+.count { color: var(--muted); font-size: 12px; margin: 6px 0 2px; }
+/* 卡片：寬螢幕兩到三欄（CSS columns 做瀑布流，不用另外的排版套件），手機一欄 */
+#list { columns: 1; column-gap: 12px; margin-top: 6px; }
+@media (min-width: 680px) { #list { columns: 2; } }
+@media (min-width: 1000px) { #list { columns: 3; } }
+.pc { break-inside: avoid; margin: 0 0 12px; border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: 14px; padding: 12px 12px 10px; box-shadow: var(--shadow);
+  background: var(--card); background: color-mix(in srgb, var(--c) 8%, var(--card)); cursor: pointer; }
+.pc .tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 11px; }
+.pill { display: inline-block; border-radius: 99px; padding: 1px 8px; background: var(--c); color: #fff; font-weight: 600; }
+.mini { display: inline-block; border-radius: 99px; padding: 0 7px; border: 1px solid var(--line); color: var(--muted); }
+.pc .use { margin-left: auto; color: var(--warn); font-weight: 600; }
+.pc h3 { font-size: 16px; margin: 6px 0 0; line-height: 1.35; }
+.pc .en { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.pc .pv { font-size: 13px; color: var(--muted); margin: 6px 0 8px; overflow-wrap: anywhere; }
+.acts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.acts button { font: inherit; font-size: 13px; min-height: 38px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); cursor: pointer; padding: 4px 2px; }
+.acts button.on { color: var(--warn); border-color: var(--warn); }
+.skel { pointer-events: none; --c: var(--skel); }
+.skel .b { background: var(--skel); border-radius: 6px; height: 12px; margin: 8px 0; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+#more { display: block; width: 100%; font: inherit; font-size: 14px; padding: 12px; border-radius: 12px; border: 1px dashed var(--line); background: transparent; color: var(--accent); cursor: pointer; margin: 4px 0 12px; }
+.empty, .err { color: var(--muted); font-size: 14px; padding: 18px 4px; }
+.err { color: var(--warn); }
+footer { color: var(--muted); font-size: 12px; margin-top: 18px; line-height: 1.7; }
+footer a { color: var(--accent); }
+/* 詳細頁：手機從下面滑上來的面板 */
+.sheet { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
+.panel { background: var(--card); width: 100%; max-width: 760px; max-height: 92vh; overflow-y: auto; border-radius: 18px 18px 0 0;
+  padding: 14px 16px calc(18px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+.panel .hd { display: flex; gap: 8px; align-items: flex-start; }
+.panel h2 { font-size: 18px; margin: 4px 0 0; flex: 1; line-height: 1.35; }
+.x { font: inherit; font-size: 22px; line-height: 1; border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 4px 6px; }
+.meta { color: var(--muted); font-size: 12px; margin: 2px 0 8px; overflow-wrap: anywhere; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 4px 0 8px; }
+.seg button { font: inherit; font-size: 13px; border: 0; background: var(--card); color: var(--text); padding: 6px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.vars { display: grid; gap: 6px; margin: 4px 0 10px; }
+.vars label { font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+.vars input { font: inherit; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+pre.txt { white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 0 0 10px; max-height: 42vh; overflow-y: auto; }
+.ai { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin: 6px 0 4px; }
+.ai a { display: flex; flex-direction: column; justify-content: center; min-height: 48px; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg);
+  color: var(--text); text-decoration: none; font-size: 14px; font-weight: 600; }
+.ai a small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.note { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+.warn { color: var(--warn); }
+h4 { font-size: 14px; margin: 12px 0 2px; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 99px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 50; max-width: 90vw; text-align: center; }
+.toast.show { opacity: .95; }
+#manual textarea { width: 100%; min-height: 180px; font: 14px/1.5 ui-monospace, Menlo, monospace; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); padding: 8px; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header><h1>提示詞庫</h1><a href="./">← 技能庫</a></header>
+<p class="sub" id="sub">現成的 AI 提示詞，點「送到 AI」直接帶進 ChatGPT、Claude 等（免費、用你自己的帳號）</p>
+<div class="top">
+  <input id="q" type="search" autocomplete="off" enterkeyhint="search" placeholder="🔍 找提示詞（中英文、打錯字也找得到）" aria-label="搜尋提示詞">
+  <div class="chips" id="cats" role="toolbar" aria-label="分類"></div>
+  <div class="chips subs" id="subs" role="toolbar" aria-label="子分類" hidden></div>
+  <div class="row2">
+    <div class="chips" id="flt" role="toolbar" aria-label="篩選"></div>
+    <select id="sort" aria-label="排序">
+      <option value="">預設排序</option><option value="use">我常用的優先</option><option value="short">短的優先</option><option value="long">長的優先</option>
+    </select>
+  </div>
+</div>
+<div class="count" id="count"></div>
+<div id="list" aria-live="polite"></div>
+<button id="more" hidden>再顯示 60 則</button>
+<footer id="foot"></footer>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="d-title">
+    <div class="hd"><h2 id="d-title"></h2><button class="x" id="d-close" aria-label="關閉">✕</button></div>
+    <div class="meta" id="d-meta"></div>
+    <div class="seg" id="d-lang" role="group" aria-label="語言">
+      <button data-lang="en" aria-pressed="true">原文</button><button data-lang="zh" aria-pressed="false">中文（機器翻譯）</button>
+    </div>
+    <div class="vars" id="d-vars"></div>
+    <pre class="txt" id="d-text">載入中…</pre>
+    <div class="acts" id="d-acts">
+      <button data-act="copy">📋 複製</button><button data-act="fav">☆ 收藏</button><button data-act="share">🔗 分享連結</button>
+    </div>
+    <h4>🚀 送到 AI</h4>
+    <div class="ai" id="d-ai"></div>
+    <p class="note" id="d-note"></p>
+  </div>
+</div>
+<div class="sheet" id="manual" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-label="手動複製">
+    <div class="hd"><h2>自動複製被擋了，長按下面的文字 →「拷貝」</h2><button class="x" id="m-close" aria-label="關閉">✕</button></div>
+    <textarea id="m-text" readonly></textarea>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const APP_VER = "__APP_VER__";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const V = APP_VER.startsWith("__") ? "" : "?v=" + APP_VER;
+const PAGE = 60;
+let trUntil = 0;   // Google 翻譯被限流時，這個時間之前不再送（標題、內文共用）
+// localStorage 讀寫都包 try：無痕模式、空間滿了也不能讓整頁壞掉
+const store = {
+  get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 空間滿了就不記 */ } },
+};
+const S = { idx: null, items: [], cats: {}, shardP: {}, shardD: {}, shown: PAGE, cur: null, lang: "en",
+  fav: new Set(store.get("prompts-fav-v1", [])), use: store.get("prompts-use-v1", {}), ui: store.get("prompts-ui-v1", {}) };
+S.ui = Object.assign({ cat: "all", sub: "", flt: [], sort: "" }, S.ui);
+
+/* ── 送到 AI：網址格式取自 prompts.chat 的 run-prompt-button.tsx（MIT，Copyright (c) 2022-present Fatih Kadir Akin and contributors）。
+   q＝可以用網址把提示詞帶進去；沒有 q 的網站不接受網址帶入：先複製、再打開，使用者貼上就好。
+   這些是各網站自己的行為，不是公開 API，隨時可能改；改了就只剩「先複製再開」那條路。 */
+const AI = [
+  { n: "ChatGPT", u: "https://chatgpt.com/", q: (t) => "https://chatgpt.com/?q=" + t },
+  { n: "Claude", u: "https://claude.ai/new", q: (t) => "https://claude.ai/new?q=" + t },
+  { n: "Gemini", u: "https://gemini.google.com/app" },
+  { n: "Perplexity", u: "https://www.perplexity.ai/", q: (t) => "https://www.perplexity.ai/search?q=" + t },
+  { n: "Grok", u: "https://grok.com/", q: (t) => "https://grok.com/chat?reasoningMode=none&q=" + t },
+  { n: "DeepSeek", u: "https://chat.deepseek.com/" },
+  { n: "Copilot", u: "https://copilot.microsoft.com/" },
+  { n: "Le Chat", u: "https://chat.mistral.ai/chat", q: (t) => "https://chat.mistral.ai/chat?q=" + t },
+];
+// 網址太長時各網站會截斷或直接報錯（確切上限各家沒公布）；保守一點，超過就改成先複製再開
+const URL_MAX = 6000;
+
+/* ── 模糊搜尋：跟 Repo X-Ray（web/xray.html）同一套：同義詞＋拼錯一兩個字＋縮寫 ── */
+const SYN = {
+  "翻譯": ["translat"], "寫作": ["writ"], "文章": ["article", "blog", "essay"], "小說": ["novel", "story", "fiction"], "故事": ["story"],
+  "詩": ["poem", "poet"], "歌詞": ["lyric", "song"], "程式": ["code", "program", "developer"], "寫程式": ["code"], "除錯": ["debug"],
+  "資料庫": ["sql", "database"], "終端機": ["terminal", "linux"], "資安": ["security"], "面試": ["interview"], "履歷": ["resume", "cv"],
+  "求職": ["job", "career", "resume"], "行銷": ["marketing"], "廣告": ["ad", "advertis"], "社群": ["social"], "創業": ["startup"],
+  "老師": ["teacher", "tutor"], "學習": ["learn", "tutor"], "英文": ["english"], "日文": ["japanese"], "考試": ["exam", "quiz"],
+  "研究": ["research"], "論文": ["paper", "academic", "thesis"], "數學": ["math"], "歷史": ["history"], "健身": ["fitness", "workout"],
+  "醫生": ["doctor", "medical"], "健康": ["health"], "食譜": ["recipe", "chef"], "旅遊": ["travel"], "旅行": ["travel"], "心理": ["psycholog", "therap"],
+  "遊戲": ["game"], "角色": ["character", "role"], "電影": ["movie", "film"], "音樂": ["music"], "笑話": ["joke"], "圖片": ["image", "photo"],
+  "照片": ["photo"], "影片": ["video"], "設計": ["design"], "提示詞": ["prompt"], "摘要": ["summar"], "改寫": ["rewrite", "paraphras"],
+  "校稿": ["proofread"], "股票": ["stock", "invest"], "投資": ["invest"], "法律": ["legal", "lawyer"], "email": ["email"], "信": ["email", "letter"],
+};
+const nz = (s) => String(s || "").normalize("NFKC").toLowerCase();
+const compact = (s) => nz(s).replace(/[\s\-_.\/]+/g, "");
+function fzGroups(q) {
+  return nz(q).split(/\s+/).filter(Boolean).map((t) => {
+    const g = [t];
+    Object.keys(SYN).forEach((k) => { if (t.indexOf(k) > -1) SYN[k].forEach((w) => { if (g.indexOf(w) < 0) g.push(w); }); });
+    if (/^[a-z0-9]+s$/.test(t) && t.length > 3) g.push(t.slice(0, -1));
+    return g;
+  });
+}
+function editWithin(a, b, k) {
+  if (Math.abs(a.length - b.length) > k) return false;
+  let prev = [...Array(b.length + 1).keys()];
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i]; let low = i;
+    for (let j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); low = Math.min(low, cur[j]); }
+    if (low > k) return false; prev = cur;
+  }
+  return prev[b.length] <= k;
+}
+function termScore(term, it) {
+  const t = nz(term), tc = compact(term);
+  if (!tc) return 0;
+  if (it._hay.indexOf(t) > -1 || it._hayC.indexOf(tc) > -1) return 1;
+  if (/^[a-z0-9]+$/.test(tc) && tc.length >= 4 && it._words.some((w) => editWithin(tc, w, tc.length >= 8 ? 2 : 1))) return 0.8;
+  return 0;
+}
+function fzScore(groups, it) {
+  if (!groups.length) return 1;
+  let sum = 0;
+  for (const g of groups) { let best = 0; for (const t of g) { best = Math.max(best, termScore(t, it)); if (best === 1) break; } if (!best) return 0; sum += best; }
+  return sum / groups.length;
+}
+
+/* ── 小工具 ── */
+let toastT = 0;
+function toast(msg) { const el = $("toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2600); }
+// 複製：一定要在點擊當下同步呼叫（iPhone 的 Safari 在 await 之後就不准寫剪貼簿）。失敗就開手動複製面板
+function copyText(text) {
+  let ok = false;
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    ok = document.execCommand("copy"); ta.remove();
+  } catch { ok = false; }
+  if (!ok && navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => toast("已複製"), () => openManual(text));
+    return true;
+  }
+  if (ok) toast("已複製"); else openManual(text);
+  return ok;
+}
+function openManual(text) { $("m-text").value = text; $("manual").hidden = false; setTimeout(() => { $("m-text").focus(); $("m-text").select(); }, 50); }
+function bump(i) { S.use[i] = (S.use[i] || 0) + 1; store.set("prompts-use-v1", S.use); }
+function toggleFav(i) {
+  if (S.fav.has(i)) S.fav.delete(i); else S.fav.add(i);
+  store.set("prompts-fav-v1", [...S.fav]);
+  return S.fav.has(i);
+}
+function saveUI() { store.set("prompts-ui-v1", S.ui); }
+
+/* ── 填空：prompts.chat 的 ${名稱:預設值} 寫法 ── */
+const VAR_RE = /\$\{([^}:\n]{1,40})(?::([^}\n]{0,200}))?\}/g;
+function varsOf(text) {
+  const seen = new Map();
+  for (const m of text.matchAll(VAR_RE)) { const k = m[1].trim(); if (!seen.has(k)) seen.set(k, (m[2] || "").trim()); }
+  return [...seen].map(([name, def]) => ({ name, def }));
+}
+function fill(text, vals) {
+  return text.replace(VAR_RE, (all, name, def) => { const v = vals[name.trim()]; return v != null && v !== "" ? v : (def || "").trim() || all; });
+}
+
+/* ── 資料 ── */
+async function getJSON(url) {
+  const ac = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = ac ? setTimeout(() => ac.abort(), 20000) : 0;
+  try {
+    const r = await fetch(url + V, ac ? { signal: ac.signal } : {});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return await r.json();
+  } finally { clearTimeout(timer); }
+}
+const shardOf = (i) => parseInt(i.slice(0, 2), 16) % 32;
+// 全文切成 32 片，點開哪則才載那一片；同一片同時被要兩次只送一個請求，失敗就清掉讓下次重試
+async function fullText(i) {
+  const n = shardOf(i);
+  if (!S.shardP[n]) S.shardP[n] = getJSON("prompts/p-" + String(n).padStart(2, "0") + ".json")
+    .then((d) => { S.shardD[n] = d; return d; }, (e) => { delete S.shardP[n]; throw e; });
+  const sh = await S.shardP[n];
+  if (!(i in sh)) throw new Error("找不到這則的全文");
+  return sh[i];
+}
+// 已經載過那一片：同步拿得到全文（給「複製」按鈕用，才能在點擊當下複製）
+function fullTextNow(i) { const d = S.shardD[shardOf(i)]; return d ? d[i] : undefined; }
+
+/* ── 畫面 ── */
+function skeleton() {
+  $("list").innerHTML = Array.from({ length: 6 }, (_, k) =>
+    '<div class="pc skel" aria-hidden="true"><div class="b" style="width:38%"></div><div class="b" style="width:' + (60 + k * 5) + '%;height:16px"></div>' +
+    '<div class="b"></div><div class="b" style="width:82%"></div></div>').join("");
+}
+function paintChips() {
+  const all = S.items, n = {};
+  all.forEach((it) => { n[it.c] = (n[it.c] || 0) + 1; });
+  $("cats").innerHTML = '<button data-cat="all" aria-pressed="' + (S.ui.cat === "all") + '">全部<i>' + all.length + "</i></button>" +
+    S.idx.cats.filter((c) => n[c.id]).map((c) => '<button data-cat="' + c.id + '" style="--c:' + c.color + '" aria-pressed="' + (S.ui.cat === c.id) + '">' +
+      esc(c.name) + "<i>" + n[c.id] + "</i></button>").join("");
+  const cat = S.cats[S.ui.cat];
+  if (cat && cat.subs.length) {
+    const sn = {};
+    all.forEach((it) => { if (it.c === cat.id) sn[it.s || ""] = (sn[it.s || ""] || 0) + 1; });
+    const subs = cat.subs.filter((s) => sn[s.id]).concat(sn[""] ? [{ id: "_", name: "其他" }] : []);
+    $("subs").innerHTML = '<button data-sub="" style="--c:' + cat.color + '" aria-pressed="' + (!S.ui.sub) + '">全部' + esc(cat.name) + "</button>" +
+      subs.map((s) => '<button data-sub="' + s.id + '" style="--c:' + cat.color + '" aria-pressed="' + (S.ui.sub === s.id) + '">' + esc(s.name) +
+        "<i>" + (sn[s.id === "_" ? "" : s.id] || 0) + "</i></button>").join("");
+    $("subs").hidden = false;
+  } else $("subs").hidden = true;
+  const F = [["fav", "⭐ 收藏", S.fav.size], ["used", "🕘 用過的", Object.keys(S.use).length], ["vars", "🧩 可填空"], ["dev", "💻 開發者"], ["img", "🖼️ 生圖用"]];
+  $("flt").innerHTML = F.map((f) => '<button data-flt="' + f[0] + '" aria-pressed="' + S.ui.flt.includes(f[0]) + '">' + f[1] + (f[2] != null ? "<i>" + f[2] + "</i>" : "") + "</button>").join("");
+  $("sort").value = S.ui.sort;
+}
+function filtered() {
+  const q = $("q").value.trim(), gs = q ? fzGroups(q) : null, f = S.ui.flt;
+  let list = S.items.filter((it) =>
+    (S.ui.cat === "all" || it.c === S.ui.cat) &&
+    (!S.ui.sub || (S.ui.sub === "_" ? !it.s : it.s === S.ui.sub)) &&
+    (!f.includes("fav") || S.fav.has(it.i)) && (!f.includes("used") || S.use[it.i]) &&
+    (!f.includes("vars") || it.v > 0) && (!f.includes("dev") || it.d) && (!f.includes("img") || it.k === "I" || it.c === "image"));
+  if (gs) { list = list.map((it) => [it, fzScore(gs, it)]).filter((x) => x[1] >= 0.5).sort((a, b) => b[1] - a[1]).map((x) => x[0]); }
+  const by = { use: (a, b) => (S.use[b.i] || 0) - (S.use[a.i] || 0), short: (a, b) => a.n - b.n, long: (a, b) => b.n - a.n }[S.ui.sort];
+  if (by) list = list.slice().sort(by);
+  return list;
+}
+function card(it) {
+  const c = S.cats[it.c] || { name: "其他", color: "#64748b", subs: [] }, sub = (c.subs.find((s) => s.id === it.s) || {}).name;
+  return '<article class="pc" data-i="' + it.i + '" style="--c:' + c.color + '">' +
+    '<div class="tags"><span class="pill">' + esc(c.name + (sub ? "・" + sub : "")) + "</span>" +
+    (it.v ? '<span class="mini">🧩 ' + it.v + " 個空格</span>" : "") + (it.d ? '<span class="mini">💻</span>' : "") +
+    '<span class="mini">' + (it.n >= 1000 ? (it.n / 1000).toFixed(1) + "k" : it.n) + " 字</span>" +
+    (S.use[it.i] ? '<span class="use" title="你用過的次數">🔥 ' + S.use[it.i] + "</span>" : "") + "</div>" +
+    "<h3>" + esc(it.z || it.t) + "</h3>" + (it.z && it.z !== it.t ? '<div class="en">' + esc(it.t) + "</div>" : "") +
+    '<p class="pv">' + esc(it.p) + "</p>" +
+    '<div class="acts"><button data-act="copy">📋 複製</button><button data-act="fav" class="' + (S.fav.has(it.i) ? "on" : "") + '">' +
+    (S.fav.has(it.i) ? "★ 已收藏" : "☆ 收藏") + '</button><button data-act="send">🚀 送到 AI</button></div></article>';
+}
+function paintList(reset) {
+  if (reset) S.shown = PAGE;
+  const list = filtered();
+  S.list = list;
+  $("count").textContent = list.length === S.items.length ? "共 " + list.length + " 則" : "符合 " + list.length + " 則（共 " + S.items.length + "）";
+  if (!list.length) {
+    const why = S.ui.flt.includes("fav") ? "還沒有收藏：按卡片上的「☆ 收藏」。" : S.ui.flt.includes("used") ? "還沒用過：複製或送到 AI 過的會記在這支手機。" : "換個關鍵字，或清掉上面的篩選。";
+    $("list").innerHTML = '<div class="empty">沒有符合的提示詞。' + why + "</div>";
+    $("more").hidden = true; return;
+  }
+  $("list").innerHTML = list.slice(0, S.shown).map(card).join("");
+  fillTitles(list.slice(0, S.shown));
+  $("more").hidden = list.length <= S.shown;
+  $("more").textContent = "再顯示 " + Math.min(PAGE, list.length - S.shown) + " 則（還有 " + (list.length - S.shown) + "）";
+}
+function refresh() { paintChips(); paintList(true); }
+
+/* 標題還沒有中文（雲端那邊翻譯被 Google 限流時會這樣）：只翻畫面上這一頁的，翻好存在手機、不重翻。
+   一批約 450 字、一次一批；被限流就停 3 分鐘（跟內文翻譯共用），不會一直打。 */
+const ZT = store.get("prompts-ztr-v1", {});
+let ztBusy = false;
+function setZh(it, z) {
+  it.z = z; it._hay = nz([it._hay, z].join(" ")); it._hayC = compact(it._hay);
+}
+async function fillTitles(list) {
+  if (ztBusy || Date.now() < trUntil) return;
+  const todo = list.filter((it) => !it.z && !it._ztTried).slice(0, 60);
+  if (!todo.length) return;
+  todo.forEach((it) => { it._ztTried = true; });
+  ztBusy = true;
+  let done = 0;
+  try {
+    let batch = [];
+    const flush = async () => {
+      if (!batch.length) return;
+      const r = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-TW&dt=t&q=" + encodeURIComponent(batch.map((it) => it.t.replace(/\n/g, " ")).join("\n")));
+      if (r.status === 429) { trUntil = Date.now() + 180000; throw new Error("限流"); }
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const out = (await r.json())[0].map((x) => x[0] || "").join("").split("\n");
+      if (out.length === batch.length) batch.forEach((it, k) => { const z = out[k].trim(); if (z) { ZT[it.t] = z; setZh(it, z); done++; } });
+      batch = [];
+    };
+    let size = 0;
+    for (const it of todo) {
+      if (size + it.t.length > 450) { await flush(); size = 0; }
+      batch.push(it); size += it.t.length + 1;
+    }
+    await flush();
+  } catch { /* 翻不到就顯示英文標題，下次打開再試 */ }
+  ztBusy = false;
+  if (done) { store.set("prompts-ztr-v1", ZT); if ($("sheet").hidden) paintList(false); }
+}
+
+/* ── 詳細面板 ── */
+function aiLinks(text) {
+  const enc = encodeURIComponent(text), long = enc.length > URL_MAX;
+  $("d-ai").innerHTML = AI.map((a, k) => {
+    const viaUrl = a.q && !long;
+    return '<a data-ai="' + k + '" href="' + esc(viaUrl ? a.q(enc) : a.u) + '" target="_blank" rel="noopener">' + esc(a.n) +
+      "<small>" + (viaUrl ? "帶入提示詞直接開" : "先幫你複製，開啟後貼上") + "</small></a>";
+  }).join("");
+  $("d-note").innerHTML = (long ? '<span class="warn">這則太長，網址放不下：每個都改成「先複製再開」。</span><br>' : "") +
+    "用的是你自己的帳號、免費；送出前看一下內容。各網站「網址帶入」的做法隨時可能改，失效時改用複製貼上。";
+}
+function currentText() {
+  const d = S.cur; if (!d || d.full == null) return "";
+  const base = S.lang === "zh" && d.zh ? d.zh : d.full;
+  return fill(base, d.vals);
+}
+function paintDetail() {
+  const d = S.cur, t = currentText();
+  $("d-text").textContent = d.full == null ? (d.err ? "⚠️ " + d.err : "載入中…") : t;
+  if (d.full != null) aiLinks(t); else $("d-ai").innerHTML = "";
+  $("d-lang").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === S.lang)));
+  const fav = $("d-acts").querySelector('[data-act="fav"]');
+  fav.textContent = S.fav.has(d.it.i) ? "★ 已收藏" : "☆ 收藏"; fav.classList.toggle("on", S.fav.has(d.it.i));
+}
+async function openDetail(i, focus) {
+  const it = S.items.find((x) => x.i === i); if (!it) { toast("找不到這則提示詞（可能已經更新移除）"); return; }
+  const c = S.cats[it.c] || { name: "其他" };
+  S.cur = { it, full: fullTextNow(i), zh: null, vals: {}, err: "" };
+  S.lang = "en";
+  $("d-title").textContent = it.z || it.t;
+  $("d-meta").innerHTML = esc(c.name) + "・" + esc(it.t) + (it.a ? "・作者 " + esc(it.a) : "") + "・" + it.n + " 字";
+  $("d-vars").innerHTML = "";
+  if ($("sheet").hidden) history.pushState({ prompt: i }, "");   // 手機的「返回」手勢先關面板，不是離開這頁
+  $("sheet").hidden = false; document.body.style.overflow = "hidden";
+  paintDetail();
+  if (S.cur.full == null) {
+    try { S.cur.full = await fullText(i); }
+    catch (e) { if (S.cur && S.cur.it.i === i) { S.cur.err = "全文載入失敗（" + e.message + "）：檢查網路後關掉再開一次"; paintDetail(); } return; }
+    if (!S.cur || S.cur.it.i !== i) return;
+  }
+  const vs = varsOf(S.cur.full);
+  $("d-vars").innerHTML = vs.length ? "<div class=\"note\">🧩 先填空格（留白就用預設值）</div>" + vs.map((v, k) =>
+    '<label>' + esc(v.name) + '<input data-var="' + esc(v.name) + '" placeholder="' + esc(v.def || "（必填）") + '" autocomplete="off"' + (k === 0 && focus === "vars" ? " autofocus" : "") + "></label>").join("") : "";
+  paintDetail();
+  if (focus === "vars" && vs.length) { const inp = $("d-vars").querySelector("input"); if (inp) inp.focus(); }
+  if (focus === "send") $("d-ai").scrollIntoView({ block: "nearest" });
+}
+function hideDetail() { if ($("sheet").hidden) return; $("sheet").hidden = true; document.body.style.overflow = ""; S.cur = null; paintList(false); }
+function closeDetail() { if (history.state && history.state.prompt) history.back(); else hideDetail(); }
+window.addEventListener("popstate", hideDetail);
+
+/* ── 內文翻譯：點「中文」才翻（全部 2 千多則先翻會被 Google 限流）。空格 ${...} 先換成記號保護，翻完換回來 ── */
+async function translateNow() {
+  const d = S.cur; if (!d || d.full == null) return;
+  const cache = store.get("prompts-tr-v1", {});
+  if (cache[d.it.i]) { d.zh = cache[d.it.i]; paintDetail(); return; }
+  if (Date.now() < trUntil) { toast("翻譯服務暫時限流，過幾分鐘再試；先看原文"); S.lang = "en"; paintDetail(); return; }
+  const keep = []; const masked = d.full.replace(VAR_RE, (m) => { keep.push(m); return "⟦" + (keep.length - 1) + "⟧"; });
+  const parts = []; let buf = "";
+  for (const para of masked.split(/(\n)/)) { if ((buf + para).length > 900 && buf) { parts.push(buf); buf = ""; } buf += para; }
+  if (buf) parts.push(buf);
+  $("d-text").textContent = "翻譯中…（" + parts.length + " 段）";
+  try {
+    const out = [];
+    for (const p of parts) {
+      const r = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-TW&dt=t&q=" + encodeURIComponent(p));
+      if (r.status === 429) { trUntil = Date.now() + 180000; throw new Error("翻譯服務限流"); }
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json(); out.push(j[0].map((s) => s[0] || "").join(""));
+      await new Promise((res) => setTimeout(res, 400));
+    }
+    let zh = out.join(""); let lost = 0;
+    zh = zh.replace(/⟦\s*(\d+)\s*⟧/g, (m, n) => keep[+n] || m);
+    keep.forEach((k) => { if (zh.indexOf(k) < 0) lost++; });
+    if (S.cur !== d) return;
+    d.zh = zh;
+    if (!lost) { cache[d.it.i] = zh; const ks = Object.keys(cache); if (ks.length > 40) delete cache[ks[0]]; store.set("prompts-tr-v1", cache); }
+    else toast("翻譯時有 " + lost + " 個空格跑掉了：要填空請用原文");
+  } catch (e) {
+    toast("翻譯失敗（" + e.message + "），先顯示原文"); S.lang = "en";
+  }
+  if (S.cur === d) paintDetail();
+}
+
+/* ── 事件 ── */
+$("cats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; S.ui.cat = b.dataset.cat; S.ui.sub = ""; saveUI(); refresh(); });
+$("subs").addEventListener("click", (e) => { const b = e.target.closest("[data-sub]"); if (!b) return; S.ui.sub = b.dataset.sub; saveUI(); refresh(); });
+$("flt").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-flt]"); if (!b) return; const k = b.dataset.flt;
+  S.ui.flt = S.ui.flt.includes(k) ? S.ui.flt.filter((x) => x !== k) : S.ui.flt.concat(k); saveUI(); refresh();
+});
+$("sort").addEventListener("change", () => { S.ui.sort = $("sort").value; saveUI(); paintList(true); });
+let qT = 0;
+$("q").addEventListener("input", () => { clearTimeout(qT); qT = setTimeout(() => paintList(true), 150); });
+$("more").addEventListener("click", () => { S.shown += PAGE; paintList(false); });
+$("list").addEventListener("click", (e) => {
+  const cardEl = e.target.closest(".pc[data-i]"); if (!cardEl) return;
+  const i = cardEl.dataset.i, act = e.target.closest("[data-act]");
+  if (!act) { openDetail(i); return; }
+  const a = act.dataset.act, it = S.items.find((x) => x.i === i);
+  if (a === "fav") { const on = toggleFav(i); act.classList.toggle("on", on); act.textContent = on ? "★ 已收藏" : "☆ 收藏"; toast(on ? "已收藏（存在這支手機）" : "已取消收藏"); paintChips(); return; }
+  if (a === "copy") {
+    const t = fullTextNow(i);
+    // 全文已在手上、又沒有空格要填：當場複製；不然先打開面板（iPhone 不准在等資料之後才寫剪貼簿）
+    if (t != null && !it.v) { copyText(t); bump(i); return; }
+    openDetail(i, it.v ? "vars" : null); if (!it.v) toast("載入全文後按「📋 複製」"); return;
+  }
+  if (a === "send") openDetail(i, it.v ? "vars" : "send");
+});
+$("d-close").addEventListener("click", closeDetail);
+$("sheet").addEventListener("click", (e) => { if (e.target === $("sheet")) closeDetail(); });
+$("m-close").addEventListener("click", () => { $("manual").hidden = true; });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (!$("manual").hidden) $("manual").hidden = true; else if (!$("sheet").hidden) closeDetail(); } });
+$("d-vars").addEventListener("input", (e) => { const inp = e.target.closest("[data-var]"); if (!inp || !S.cur) return; S.cur.vals[inp.dataset.var] = inp.value; paintDetail(); });
+$("d-lang").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-lang]"); if (!b || !S.cur || S.cur.full == null) return;
+  S.lang = b.dataset.lang; paintDetail(); if (S.lang === "zh" && !S.cur.zh) translateNow();
+});
+$("d-acts").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]"); if (!b || !S.cur) return; const d = S.cur;
+  if (b.dataset.act === "fav") { toggleFav(d.it.i); paintDetail(); paintChips(); return; }
+  if (b.dataset.act === "share") {
+    const u = location.href.split("#")[0].split("?")[0] + "?id=" + d.it.i;
+    if (navigator.share) navigator.share({ title: d.it.z || d.it.t, url: u }).catch(() => {}); else copyText(u);
+    return;
+  }
+  if (d.full == null) { toast("全文還在載入"); return; }
+  copyText(currentText()); bump(d.it.i);
+});
+// 「先複製再開」的網站：在點下去的當下複製（之後才換頁），iPhone 才寫得進剪貼簿
+$("d-ai").addEventListener("click", (e) => {
+  const a = e.target.closest("[data-ai]"); if (!a || !S.cur || S.cur.full == null) return;
+  const p = AI[+a.dataset.ai], t = currentText();
+  if (!p.q || encodeURIComponent(t).length > URL_MAX) copyText(t);
+  bump(S.cur.it.i);
+});
+
+async function checkVersion() {
+  if (APP_VER.startsWith("__")) return;
+  try { const r = await fetch("version.json", { cache: "no-store" }); if (!r.ok) return;
+    const v = await r.json(); if (v.ver && v.ver !== APP_VER) location.reload(); } catch { /* 離線略過 */ }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkVersion(); });
+
+async function load() {
+  skeleton();
+  try { S.idx = await getJSON("prompts/index.json"); }
+  catch (e) {
+    $("list").innerHTML = '<div class="err">提示詞資料載入失敗（' + esc(e.message) + "）。檢查網路後重新整理；一直失敗代表網站部署出錯，請跟 Claude 說「提示詞庫打不開」。</div>";
+    return;
+  }
+  S.idx.cats.forEach((c) => { S.cats[c.id] = c; });
+  S.items = S.idx.items;
+  S.items.forEach((it) => {
+    const c = S.cats[it.c] || { name: "", subs: [] }, sub = (c.subs.find((s) => s.id === it.s) || {}).name || "";
+    it._hay = nz([it.t, it.z, it.p, c.name, sub].join(" ")); it._hayC = compact(it._hay);
+    it._words = it._hay.split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
+    if (!it.z && ZT[it.t]) setZh(it, ZT[it.t]);
+  });
+  if (S.ui.cat !== "all" && !S.cats[S.ui.cat]) S.ui.cat = "all";
+  const src = S.idx.source || {};
+  $("sub").textContent = S.items.length.toLocaleString() + " 則現成提示詞，點「🚀 送到 AI」直接帶進 ChatGPT、Claude 等（免費、用你自己的帳號）";
+  $("foot").innerHTML = '提示詞來自 <a href="' + esc(src.repo) + '" target="_blank" rel="noopener">prompts.chat</a>（CC0 公有領域，版本 ' + esc(src.commit) + "、整理日 " + esc(src.built) + "）。" +
+    "中文標題是機器翻譯；越獄與成人內容、超過 1.2 萬字的不收。收藏與使用次數只存在這支手機。" + (APP_VER.startsWith("__") ? "" : "版本 " + esc(APP_VER));
+  refresh();
+  const id = new URLSearchParams(location.search).get("id");
+  if (id) openDetail(id);
+}
+load();
+</script>
+</body>
+</html>

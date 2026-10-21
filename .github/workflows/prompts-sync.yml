@@ -1,0 +1,68 @@
+---
+# 提示詞庫（web/prompts.html）的資料：從 prompts.chat 抓最新的提示詞（CC0）、把新標題翻成中文，
+# 有變動就 commit 回 main，再觸發 Deploy web page（GITHUB_TOKEN 推的 commit 不會自動觸發其他工作流）。
+# 標題翻譯用 Google 免費端點，雲端 IP 很容易被限流：每次翻到被擋就停，已翻的存在 index.json，
+# 下次接著翻、不重翻；沒翻到的網頁會在手機上即時翻。所以翻譯沒做完只是黃燈提醒，不是失敗。
+name: Prompts sync
+
+'on':
+  workflow_dispatch:
+  schedule:
+    # 每月 3 日台灣時間 10:23（UTC 02:23）；避開整點，排程比較不會被延後
+    - cron: '23 2 3 * *'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: prompts-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Self-test
+        run: python3 web/build_prompts.py selftest
+
+      - name: Build prompts data
+        run: |
+          set -o pipefail
+          python3 web/build_prompts.py build 2>&1 | tee /tmp/build.log
+          if grep -q '標題翻譯失敗 [1-9]' /tmp/build.log; then
+            echo "::warning::有標題這次沒翻成中文（多半是 Google 限流）。已翻的都存好了；手動再跑一次這個工作流會接著翻，手機上也會即時翻。"
+          fi
+
+      - name: Commit and push if changed
+        id: commit
+        run: |
+          if git diff --quiet -- web/prompts && [ -z "$(git ls-files --others --exclude-standard web/prompts)" ]; then
+            echo "資料沒有變動，不用 commit"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/prompts
+          git commit -q -m "提示詞庫資料更新（自動）" -m "$(grep '^✓' /tmp/build.log | head -1)"
+          # 推的時候 main 可能剛好有人推新 commit：拉下來接在後面再推，最多 4 次（間隔 2/4/8/16 秒）
+          pushed=0
+          for i in 1 2 3 4; do
+            if git pull -q --rebase origin main && git push -q origin HEAD:main; then pushed=1; break; fi
+            sleep $((2 ** i))
+          done
+          if [ "$pushed" != 1 ]; then
+            echo "::error::提示詞資料推不上 main（重試 4 次都失敗）。到 Actions 手動重跑這個工作流；一直失敗請把這段紀錄給 Claude 看。"
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Redeploy site
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main

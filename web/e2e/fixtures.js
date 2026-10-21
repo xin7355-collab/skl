@@ -223,7 +223,8 @@ async function mockNetwork(context, opts) {
     }
     if (url.hostname === 'api.github.com') {
       stats.api.push(url.pathname);
-      const o = stats.apiOverride && stats.apiOverride(url);
+      // 可以回傳 Promise：用來模擬「這個請求比較慢回來」
+      const o = stats.apiOverride && await stats.apiOverride(url);
       return route.fulfill(o || apiResponse(url));
     }
     if (url.hostname === 'raw.githubusercontent.com') { stats.raw++; return route.fulfill(rawResponse(url)); }
