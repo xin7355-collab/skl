@@ -85,9 +85,26 @@ def scan_apps(cfg_path=APPS_CFG, base_url="https://github.com/", budget_sec=480,
     return {"apps": out}
 
 
+def _skill_dirs(work, commit):
+    r = _git(["ls-tree", "-r", "--name-only", commit], cwd=work)
+    return {os.path.dirname(p) for p in r.stdout.splitlines()
+            if p.endswith("/SKILL.md") and not p.startswith(MIRRORS)}
+
+
+def _owner(path, dirs):
+    # 歸給最深的技能資料夾：巢狀技能（外掛裡的子技能）不會被外層重複算一次。
+    d = os.path.dirname(path)
+    while d:
+        if d in dirs:
+            return d
+        d = os.path.dirname(d)
+    return None
+
+
 def scan_upstream(cfg_path=UPSTREAM_CFG):
     with open(cfg_path, encoding="utf-8") as f:
         cfg = json.load(f)
+    side = cfg.get("side_branch", "dev")
     work = tempfile.mkdtemp(prefix="skl-up-")
     try:
         # 只要樹狀結構算差異，不下載檔案內容（blob:none），快又省空間。
@@ -95,24 +112,31 @@ def scan_upstream(cfg_path=UPSTREAM_CFG):
         if r.returncode != 0:
             return {"upstream": {"status": "clone_failed"}}
         head = _git(["rev-parse", "HEAD"], cwd=work).stdout.strip()
+        # 上游作者先把修正累積在 dev 再合進 main；只看 main 會好幾週以為「沒變動」。
+        # 沒有這個分支就是 None（不算失敗）。
+        side_ahead = None
+        if _git(["rev-parse", "--verify", "-q", f"origin/{side}"], cwd=work).returncode == 0:
+            c = _git(["rev-list", "--count", f"HEAD..origin/{side}"], cwd=work).stdout.strip()
+            side_ahead = int(c) if c.isdigit() else None
+        res = {"status": "ok", "added": 0, "modified": 0, "deleted": 0, "head": head,
+               "side_branch": side, "side_ahead": side_ahead}
         if head == cfg["commit"]:
-            return {"upstream": {"status": "ok", "added": 0, "modified": 0, "deleted": 0, "head": head}}
-        d = _git(["diff", "--name-status", cfg["commit"], head], cwd=work)
+            return {"upstream": res}
+        d = _git(["diff", "--name-only", "--no-renames", cfg["commit"], head], cwd=work)
         if d.returncode != 0:
             return {"upstream": {"status": "baseline_missing"}}
-        counts = {"A": 0, "M": 0, "D": 0}
-        for line in d.stdout.splitlines():
-            parts = line.split("\t")
-            path = parts[-1]
-            if not path.endswith("/SKILL.md") or path.startswith(MIRRORS):
-                continue
-            k = parts[0][0]
-            if k == "R":
-                k = "M"
-            if k in counts:
-                counts[k] += 1
-        return {"upstream": {"status": "ok", "added": counts["A"], "modified": counts["M"],
-                             "deleted": counts["D"], "head": head}}
+        old, new = _skill_dirs(work, cfg["commit"]), _skill_dirs(work, head)
+        # 以技能資料夾為單位：只改 scripts／references 的更新也要算到（舊版只看 SKILL.md 會漏）。
+        both = old | new
+        touched = {_owner(p, both) for p in d.stdout.splitlines()} - {None}
+        # 技能改名（資料夾搬家）算一次更新，不算「新增＋移除」，免得新技能數被灌水。
+        ren = _git(["diff", "--name-status", "-M", "--diff-filter=R", cfg["commit"], head, "--", "*SKILL.md"], cwd=work)
+        moved = {(os.path.dirname(l.split("\t")[1]), os.path.dirname(l.split("\t")[2]))
+                 for l in ren.stdout.splitlines() if l.count("\t") == 2}
+        moved = {(a, b) for a, b in moved if a in old - new and b in new - old}
+        res.update(added=len(new - old) - len(moved), deleted=len(old - new) - len(moved),
+                   modified=len({t for t in touched if t in old and t in new}) + len(moved))
+        return {"upstream": res}
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
@@ -167,6 +191,9 @@ def compose(parts):
             lines.append(f"- 新增 {up['added']}、更新 {up['modified']}、移除 {up['deleted']} 個技能。" if n
                          else "- 沒有新變動。")
             action += 1 if n else 0
+            if up.get("side_ahead"):
+                lines.append(f"- 上游 {up.get('side_branch', 'dev')} 分支另有 {up['side_ahead']} 個 commit 還沒合進 main"
+                             "（作者合併後才會算進上面的數字）。")
         else:
             lines.append("- 無法檢查上游（網路或基準 commit 問題）。")
             action += 1
@@ -224,30 +251,46 @@ def selftest():
         res2 = scan_apps(cfg, base_url="file://" + base, token="", budget_sec=-1)
         check(all(a["status"] in ("deferred", "not_configured") for a in res2["apps"]), "超過時間預算的留到下週")
 
-        # 上游：基準 → 新增一個技能、改一個、鏡像資料夾的變動不算
+        # 上游：基準 → 新增 z、改 x 的 SKILL.md、只改 w 的腳本、v 改名 v2、刪掉 y；鏡像資料夾的變動不算
         up = os.path.join(d, "up")
-        mkrepo(up, {"a/skills/x/SKILL.md": "1", "a/skills/y/SKILL.md": "1"})
+        mkrepo(up, {"a/skills/x/SKILL.md": "1", "a/skills/y/SKILL.md": "1",
+                    "a/skills/w/SKILL.md": "1", "a/skills/w/scripts/run.py": "1",
+                    "a/skills/v/SKILL.md": "name: v\nlong enough body for rename detection\n"})
         basec = env_git("rev-parse", "HEAD", cwd=up).stdout.strip()
-        for rel, t in {"a/skills/x/SKILL.md": "2", "a/skills/z/SKILL.md": "1", ".gemini/skills/z/SKILL.md": "1"}.items():
+        ucfg = os.path.join(d, "up.json")
+        with open(ucfg, "w") as f:
+            json.dump({"repo": "file://" + up, "commit": basec}, f)
+        u0 = scan_upstream(ucfg)["upstream"]
+        check(u0["status"] == "ok" and u0["added"] + u0["modified"] + u0["deleted"] == 0
+              and u0["side_ahead"] is None, "上游沒變動、也沒有 dev 分支時為 0，不算失敗")
+        for rel, t in {"a/skills/x/SKILL.md": "2", "a/skills/z/SKILL.md": "1", ".gemini/skills/z/SKILL.md": "1",
+                       "a/skills/w/scripts/run.py": "2"}.items():
             p = os.path.join(up, rel)
             os.makedirs(os.path.dirname(p), exist_ok=True)
             with open(p, "w") as f:
                 f.write(t)
+        os.remove(os.path.join(up, "a/skills/y/SKILL.md"))
+        env_git("mv", "a/skills/v", "a/skills/v2", cwd=up)
         env_git("add", "-A", cwd=up)
         env_git("commit", "-q", "-m", "y", cwd=up)
-        ucfg = os.path.join(d, "up.json")
-        with open(ucfg, "w") as f:
-            json.dump({"repo": "file://" + up, "commit": basec}, f)
+        # dev 比 main 多 2 個 commit（模擬上游作者還沒合併的修正）
+        main_br = env_git("rev-parse", "--abbrev-ref", "HEAD", cwd=up).stdout.strip()
+        env_git("checkout", "-q", "-b", "dev", cwd=up)
+        for i in range(2):
+            env_git("commit", "-q", "--allow-empty", "-m", f"dev{i}", cwd=up)
+        env_git("checkout", "-q", main_br, cwd=up)
         u = scan_upstream(ucfg)["upstream"]
-        check(u["status"] == "ok" and (u["added"], u["modified"], u["deleted"]) == (1, 1, 0),
-              "上游新增／更新技能數正確，鏡像資料夾不重複計算")
+        check(u["status"] == "ok" and (u["added"], u["modified"], u["deleted"]) == (1, 3, 1),
+              "上游新增／更新／移除數正確：只改腳本、改名都算更新，鏡像資料夾不重複計算")
+        check(u["side_ahead"] == 2, "算出 dev 比 main 多幾個 commit")
         with open(ucfg, "w") as f:
             json.dump({"repo": "file://" + up, "commit": "0" * 40}, f)
         check(scan_upstream(ucfg)["upstream"]["status"] == "baseline_missing", "基準 commit 不存在時明確標示")
 
         body, action = compose([res, {"upstream": u}, {"coverage": {"skills": 3, "missing_zh": 0,
                                                                     "uncategorized": 0, "problems": 0}}])
-        check("必修 1 項" in body and "新增 1、更新 1" in body, "報告寫出數量")
+        check("必修 1 項" in body and "新增 1、更新 3、移除 1" in body, "報告寫出數量")
+        check("dev 分支另有 2 個 commit" in body, "報告寫出 dev 領先的 commit 數")
         check("sqlite" not in body and "token" not in body.lower(), "報告不含問題內容（公開 Issue 安全）")
         check(action == 3, "需處理項目數 = 有必修的 App 1 + clone 失敗 1 + 上游有變動 1")
         rows = [ln for ln in body.splitlines() if ln.startswith("| ") and not ln.startswith("| App ")]
