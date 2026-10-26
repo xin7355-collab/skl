@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-19",
+ "checked_at": "2026-10-26",
  "products": [
   {
    "product": "Claude Code",
@@ -560,6 +560,17 @@
      "mobile": true,
      "new": true,
      "url": "https://learn.chatgpt.com/codex/changelog"
+    },
+    {
+     "name": "/presets（常用提示詞欄位）",
+     "icon": "🔢",
+     "zh": "Codex CLI 0.164.0（2026-10-22）新增：把常用的提示詞或斜線指令存進 10 個編號欄位，用鍵盤選單快速叫出；/model、/permissions 也能直接帶參數設定模型、思考強度與權限。",
+     "how": "這是電腦終端機（Codex CLI）的功能，手機上的 chatgpt.com/codex 沒有。有電腦時更新 Codex CLI 後輸入 /presets 設定。",
+     "when": "同一段提示詞每天都要貼好幾次時",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://github.com/openai/codex/releases/tag/rust-v0.164.0"
     }
    ]
   },
@@ -691,6 +702,17 @@
      "mobile": true,
      "new": true,
      "url": "https://claude.com/docs/cowork/changelog"
+    },
+    {
+     "name": "Claude Duet（研究預覽）",
+     "icon": "🤝",
+     "zh": "Anthropic 2026-10-21 推出的新 App（Pro、Max 方案的研究預覽）：官方說法是「Claude 主動幫你做事的代理人」。跟 Cowork 的差別、支援哪些裝置，官方說明還沒查證清楚。",
+     "how": "先看官方介紹頁了解申請方式與可用方案；確認能在手機用之前，交辦工作照舊用 Cowork。",
+     "when": "想試試 Claude 主動提出並代辦事情時",
+     "level": "入門",
+     "mobile": false,
+     "new": true,
+     "url": "https://claude.com/resources/articles/claude-duet"
     }
    ],
    "examples": [

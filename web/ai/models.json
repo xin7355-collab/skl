@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-19",
+ "checked_at": "2026-10-26",
  "vendors": [
   {
    "vendor": "Anthropic",
@@ -788,6 +788,7 @@
   "2026-10-05 週檢：新增 Claude Sonnet 5.5（2026-09-28，官方文件與公告），Sonnet 5 改列舊款；Haiku 4.5 官方退役承諾日期為不早於 2026-10-15。OpenAI DevDay 2026 據搜尋摘要推出 GPT-6 Astra Ultrafast（Pro 500／Enterprise），openai.com 被 egress 擋住、未讀原文，未列為獨立模型。Sonnet 5.5 公告中 Sonnet 5 的 Terminal-Bench 4.0 為 10.3%（官方原文數字）。",
   "2026-10-10：新增 Claude Haiku 5.5（2026-10-07，官方模型總覽與公告，跑分取自公告表格），Haiku 4.5 改列舊款。公告中 Sonnet 5.5 的 FrontierCode 1.1 為 52.1%（Xhigh），與 Sonnet 5.5 公告的 46.2%（max）設定不同，未合併。Haiku 5.5 的價格是「起價」，長提示較貴；同樣文字的 token 數比 Haiku 4.5 多約 30%。",
   "2026-10-12 週檢：OpenAI 於 2026-09-29（DevDay）推出 GPT-6.1 Sol（$2/$10，cached $0.10），Codex CLI 0.161.0 起預設使用（第三方整理 changelog），GPT-6 Sol 改列舊款；上週漏列，本週補上。GPT-6.1 Sol 的跑分只有第三方轉述且彼此不一致（例如 OSWorld 2.0 有 71.4% 與 69.56% 兩種），原文網站被 egress 擋住無法核對，暫不收錄。Anthropic：Sonnet 5.5 cache read 2026-10-07 起降為 $0.10（官方定價頁與 release notes）；Haiku 5.5 長提示（>10 萬 tokens）價格 $0.50/$2.50。兩家本週都沒有退役公告；Haiku 4.5 官方退役日期仍為不早於 2026-10-15。",
-  "2026-10-19 檢查：Anthropic 沒有新模型或退役（官方模型總覽與退役頁），Claude Haiku 4.5 仍為 Active；OpenAI 沒有新模型（Codex 開源模型目錄未變），GPT-5.5 於 2026-10-14 自 ChatGPT 登入的 Codex 退役（第三方報導，OpenAI 網站在本環境連不到，未讀到原文）。"
+  "2026-10-19 檢查：Anthropic 沒有新模型或退役（官方模型總覽與退役頁），Claude Haiku 4.5 仍為 Active；OpenAI 沒有新模型（Codex 開源模型目錄未變），GPT-5.5 於 2026-10-14 自 ChatGPT 登入的 Codex 退役（第三方報導，OpenAI 網站在本環境連不到，未讀到原文）。",
+  "2026-10-26 週檢：兩家都沒有新模型、退役或價格變動（platform.claude.com 模型總覽、退役頁；openai/codex 的 models.json 自 10-18 起未變）。Anthropic 10-21 推出 API 版本 2026-10-21：temperature、top_p、top_k 改為回 400 錯誤，新版 SDK 改用 Apache 2.0 授權；10-22 推出 Claude Models on Google Cloud（Anthropic 代管，含 Opus 5.5 快速模式）。Claude Sonnet 4.5 退役日 2026-11-30（9-30 公告，本表未列）。"
  ]
 }
