@@ -478,5 +478,8 @@
  "community/skills/clone-website": "把網頁重建成可編輯的程式碼（內容、素材、響應式版面與互動），適合搬遷自己的網站或研究別人的版面做法；別人的商標、文字、圖片、字型不放進公開 repo，頁面加 noindex。",
  "community/skills/sanitize-metadata": "在本機移除照片與影片裡的 GPS、拍攝裝置、作者、時間等隱藏資料，只回報各類數量、AI 不看內容；公開到 Pages 或 Release 前用（需要 exiftool、ffmpeg）。",
  "community/skills/compress-video": "用 ffmpeg 在本機壓縮或轉檔影片（H.264／H.265），同時拿掉隱藏資料；AI 只看檔案大小和長度，不看內容。",
- "community/skills/slice-video": "用 ffmpeg 把影片照固定秒數（例如每 10 秒）切段；只依時間切，不看畫面與聲音內容。"
+ "community/skills/slice-video": "用 ffmpeg 把影片照固定秒數（例如每 10 秒）切段；只依時間切，不看畫面與聲音內容。",
+ "community/skills/codebase-design": "設計「深模組」的共用詞彙與原則：用小介面包住大量行為、決定接縫放哪裡，讓程式好測試、AI 好讀懂；可平行產生幾種介面方案來比較。",
+ "community/skills/prototype": "做一次性原型回答一個設計問題：邏輯或狀態用單一 HTML 檔按按鈕試，畫面用同一頁的多個版本、以網址參數切換比較；原型不進 main。",
+ "community/skills/teach": "把一個資料夾當成長期學習空間，依你的目的分多次教一個主題：HTML 小課程、測驗、速查表與學習紀錄（只能手動叫用；公開 repo 裡的紀錄也會公開）。"
 }
