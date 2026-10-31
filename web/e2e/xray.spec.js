@@ -692,3 +692,56 @@ test.describe('追蹤搜尋', () => {
     await expect(page.locator('#watches a[data-w]')).toHaveCount(0);
   });
 });
+
+// ── 2026-10-31：⛏️ 網址挖礦（只讀 repo 自己的檔案，⛔ 不探測網站；金鑰先遮）──
+test.describe('網址挖礦', () => {
+  test('挖出線上成品、API、下載、文件、社群並分類；雜訊收起來；金鑰遮住；不讀 node_modules／敏感檔／lock 檔', async ({ page, net }) => {
+    await scan(page, 'demo/url-app');
+    const rawBefore = net.raw;
+    await page.locator('#mine-go').click();
+    const box = page.locator('#mine');
+    await expect(box.locator('details[data-mcat="live"]')).toContainText('https://url-app.vercel.app');
+    await expect(box.locator('details[data-mcat="live"]')).toContainText('https://app.urlapp.dev');        // 從 CNAME 來的
+    const api = box.locator('details[data-mcat="api"]');
+    await expect(api).toContainText('https://api.urlapp.dev/v1/items');
+    await expect(api).toContainText('wss://rt.urlapp.dev/socket');
+    await expect(api.locator('li', { hasText: 'api.urlapp.dev/v1/items' })).toContainText('共 2 處');      // 同一個網址合併
+    await expect(box.locator('details[data-mcat="data"]')).toContainText('huggingface.co/datasets/demo/set');
+    await expect(box.locator('details[data-mcat="data"]')).toContainText('releases/download/v1/app.apk');
+    await expect(box.locator('details[data-mcat="docs"]')).toContainText('docs.urlapp.dev/guide');
+    await expect(box.locator('details[data-mcat="social"]')).toContainText('discord.gg/abc123');
+    // 雜訊：徽章、授權、自己 repo 的 issues —— 收在預設摺起來的那一組
+    const noise = box.locator('details[data-mcat="noise"]');
+    await expect(noise).not.toHaveAttribute('open', '');
+    await expect(noise).toContainText('img.shields.io');
+    await expect(noise).toContainText('github.com/demo/url-app/issues');
+    // 金鑰：webhook 與 key= 都遮住、不給連結；整頁看不到原本的金鑰
+    const html = await box.innerHTML();
+    expect(html).not.toContain('XXXXSECRETXXXX');
+    expect(html).not.toContain('AIzaSyFAKEFAKE123456');
+    await expect(box).toContainText('hooks.slack.com/services/•••');
+    await expect(box).toContainText('key=•••');
+    await expect(box).toContainText('像金鑰的東西，已經遮住');
+    // 不該讀的：node_modules、被判為敏感的 .env.production、lock 檔；樣板變數網址不算
+    for (const bad of ['should-not-read', 'secret-internal', 'lockfile-only', 'cdn.urlapp.dev/$']) expect(html).not.toContain(bad);
+    // 出處：檔案:行號，連到 GitHub
+    await expect(api.locator('a.msrc').first()).toHaveAttribute('href', /\/blob\/main\/src\/api\.js#L1$/);
+    expect(net.raw - rawBefore).toBeGreaterThan(0);
+    // 複製：金鑰已遮、不含雜訊
+    await box.locator('#mine-copy').click();
+    const clip = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clip).toContain('https://url-app.vercel.app');
+    expect(clip).not.toContain('AIzaSyFAKEFAKE123456');
+    expect(clip).not.toContain('img.shields.io');
+    await expectNoHorizontalScroll(page);
+  });
+
+  test('換一個專案，上一個的挖礦結果不會留著', async ({ page }) => {
+    await scan(page, 'demo/url-app');
+    await page.locator('#mine-go').click();
+    await expect(page.locator('#mine details').first()).toBeVisible();
+    await scan(page, 'demo/pypkg');
+    await expect(page.locator('#mine')).toBeEmpty();
+    await expect(page.locator('#mine-go')).toBeEnabled();
+  });
+});

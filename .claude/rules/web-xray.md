@@ -58,3 +58,8 @@ paths:
   空 repo（409）→ empty。失敗不擋部署，`fleet-check` 亮紅燈。X-Ray `#autofleet`／`paintAutoFleet`，超過 3 天沒更新要說。
 - 🔔 追蹤搜尋：`xray-watch-v1`（存手機，⛔ 不放公開 repo）。`checkWatches` 打開時查、間隔 `WATCH_EVERY`，查詢加 `created:>=`（上次前一天），
   新的記 `fresh`；`openWatch` 只列新的並標 🆕、看過歸零。搜尋與追蹤共用 `planFor`。
+- ⛏️ 網址挖礦（詳細頁 `#sec-urls`，按「開始挖」才跑）：`runMine` 讀 repo 檔案樹 1 次 API，再用 raw 讀最多 `MINE_MAX_FILES` 個文字檔
+  （`MINE_EXT`／`MINE_NAMES`，`MINE_SKIP` 跳過 node_modules、build、lock 檔，`sensitiveWhy` 的敏感檔不讀）。⛔ 只讀 repo 自己的檔案，
+  不猜路徑、不掃別人的網站。`maskUrl` 先遮金鑰（帳密、Slack／Discord webhook、Telegram bot、`key=` 等參數），遮過的不給連結、複製也是遮過的。
+  分類 `classifyUrl`（`MINE_CATS`）：Release 下載要在 API 規則之前判（`/download/v1/` 的版本號會被當成 API）；CNAME 網域固定算線上成品。
+  換專案時清掉（`S.mineTok` 擋舊結果）。E2E 假專案 `demo/url-app`；詳細頁原本就會連一次線上網址（`probeLive`），假網址列在 fixtures 的 `FAKE_LIVE`。

@@ -379,6 +379,17 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .recent{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .recent a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .recent a i{font-style:normal;color:var(--muted)}
+#mine .mcat{border:1px solid var(--line);border-radius:4px;margin-top:8px;padding:6px 10px;background:var(--panel)}
+#mine .mcat summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center;gap:6px}
+#mine .mcat summary i{font-style:normal;color:var(--muted);font-family:var(--mono);font-size:12px}
+#mine ul{list-style:none;margin:6px 0 0;padding:0}
+#mine li{padding:6px 0;border-top:1px solid var(--panel-2);word-break:break-all;font-size:13px}
+#mine .murl{color:var(--cyan);font-family:var(--mono);font-size:12px}
+#mine .mmask{color:var(--amber);font-size:11px}
+#mine .mfrom{font-size:11px;color:var(--muted);margin-top:2px}
+#mine .mfrom a{color:var(--muted)}
+#mine .mfrom i{font-style:normal}
+#mine-go{min-height:44px;margin-top:6px}
 .recent .wnew{color:var(--amber);font-weight:700;margin-left:2px}
 #watchbtn{font-size:13px;min-height:40px;padding:6px 12px}
 .results .rr{display:flex;gap:10px;align-items:flex-start}
@@ -537,6 +548,14 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
     </div>
     <div id="doc-hits"></div>
     <div id="doc-list"></div>
+  </section>
+
+  <section id="sec-urls">
+    <div class="h"><u>⛏️</u> 網址挖礦：把藏在程式裡的網址挖出來</div>
+    <div class="hint">只讀這個 repo 自己的檔案（設定檔、README、文件、程式），把裡面寫到的網址分類列出來：線上成品、API、下載與資料、文件、社群。
+      ⛔ 不會去探測任何網站；網址裡像金鑰的部分會先遮住。走 raw 讀檔，不耗 API 額度。</div>
+    <button id="mine-go" class="ghost" type="button">⛏️ 開始挖</button>
+    <div id="mine"></div>
   </section>
 
   <details class="adv-more" id="sec-more">
@@ -1845,6 +1864,7 @@ async function run(target,fromHistory){
     const repo=await getJSON("https://api.github.com/repos/"+loc.owner+"/"+loc.repo);
     const ref=loc.ref||repo.default_branch;
     S.ctx={owner:loc.owner,repo:loc.repo,ref:ref};
+    S.mine=null; S.mineTok=(S.mineTok||0)+1; paintMine(); $("mine-go").disabled=false;   // 換專案：上一個的挖礦結果不能留著
 
     say("抓取完整檔案樹（單一請求）…","[2/4]");
     const treeUrl="https://api.github.com/repos/"+loc.owner+"/"+loc.repo+"/git/trees/"+encodeURIComponent(ref)+"?recursive=1";
@@ -2074,6 +2094,137 @@ const EXT_TOOLS=[
   ["📈 星數歷史","Star History：星星多久漲起來的",f=>"https://star-history.com/#"+f+"&Date"],
   ["📊 OSSInsight","活躍度：commit、PR、貢獻者趨勢",f=>"https://ossinsight.io/analyze/"+f]
 ];
+
+async function runMine(){
+  const c=S.ctx, box=$("mine"), btn=$("mine-go");
+  if(!c||!S.last) return;
+  const full=c.owner+"/"+c.repo, tok=S.mineTok=(S.mineTok||0)+1;
+  btn.disabled=true; box.innerHTML='<div class="hint">讀檔案樹…</div>';
+  try{
+    const tree=await getJSON("https://api.github.com/repos/"+c.owner+"/"+c.repo+"/git/trees/"+encodeURIComponent(c.ref)+"?recursive=1");
+    const cand=mineCandidates(tree.tree||[]), pick=[];
+    let bytes=0;
+    for(const n of cand){ if(pick.length>=MINE_MAX_FILES || bytes+(n.size||0)>MINE_MAX_BYTES) break; pick.push(n); bytes+=n.size||0; }
+    const base="https://raw.githubusercontent.com/"+c.owner+"/"+c.repo+"/"+c.ref+"/", hits=[];
+    let done=0, failed=0;
+    await Promise.all(pick.map(async n=>{
+      const t=await getText(base+n.path.split("/").map(encodeURIComponent).join("/"));
+      if(tok!==S.mineTok) return;
+      done++; if(done%10===0) box.innerHTML='<div class="hint">讀檔中… '+done+'/'+pick.length+'</div>';
+      if(t==null){ failed++; return; }
+      if(n.path.split("/").pop()==="CNAME"){ const d=t.trim().split(/\s+/)[0]; if(/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d)) hits.push({url:"https://"+d,line:1,path:n.path,cat:"live"}); }
+      extractUrls(t).forEach(h=>hits.push({url:h.url,line:h.line,path:n.path}));
+    }));
+    if(tok!==S.mineTok) return;
+    S.mine={items:mineCollect(hits,full),files:pick.length,cand:cand.length,failed:failed,full:full,ref:c.ref,truncated:!!tree.truncated};
+    paintMine();
+  }catch(e){
+    if(tok===S.mineTok) box.innerHTML='<div class="hint" style="color:var(--red)">挖不成：'+esc(e.message)+'（額度用完的話，等一下再按「⛏️ 開始挖」）</div>';
+  }finally{ if(tok===S.mineTok) btn.disabled=false; }
+}
+function paintMine(){
+  const m=S.mine, box=$("mine"); if(!m){ box.innerHTML=""; return; }
+  const by={}; m.items.forEach(it=>(by[it.cat]=by[it.cat]||[]).push(it));
+  const nReal=m.items.filter(i=>i.cat!=="noise").length, nMask=m.items.filter(i=>i.masked).length;
+  const src=it=>'<a class="msrc" href="https://github.com/'+esc(m.full)+'/blob/'+encodeURIComponent(m.ref)+'/'+esc(it.path)+'#L'+it.line+'" target="_blank" rel="noopener">'+esc(it.path)+':'+it.line+'</a>'+(it.n>1?' <i>共 '+it.n+' 處</i>':'');
+  const row=it=>'<li>'+(it.masked?'<span class="murl">'+esc(it.url)+'</span> <b class="mmask">🔒 已遮</b>'
+      :'<a class="murl" href="'+esc(it.url.replace(/^ws/i,"http"))+'" target="_blank" rel="noopener noreferrer">'+esc(it.url)+'</a>')+'<div class="mfrom">'+src(it)+'</div></li>';
+  let html='<div class="hint">讀了 '+m.files+' 個檔案'+(m.cand>m.files?'（符合的有 '+m.cand+' 個，先讀最可能寫網址的前 '+m.files+' 個）':'')+
+    (m.failed?'・'+m.failed+' 個讀不到':'')+(m.truncated?'・檔案樹太大被 GitHub 截斷，可能有漏':'')+'・挖到 '+nReal+' 個網址'+'</div>';
+  if(nMask) html+='<div class="hint" style="color:var(--amber)">🔒 有 '+nMask+' 個網址帶著像金鑰的東西，已經遮住'+(isMine(m.full)?'：這是你的 App —— 金鑰進了公開 repo 就要換掉，並改放 Secrets':'')+'</div>';
+  if(!nReal) html+='<div class="hint">程式裡沒有寫到實際的網址（只有授權、徽章這類雜訊）。</div>';
+  MINE_CATS.forEach(([k,t])=>{
+    const a=by[k]; if(!a||!a.length) return;
+    html+='<details class="mcat"'+(k==="noise"?'':' open')+' data-mcat="'+k+'"><summary>'+t+' <i>'+a.length+'</i></summary><ul>'+a.slice(0,200).map(row).join("")+'</ul>'+
+      (a.length>200?'<div class="hint">太多了，只列前 200 個</div>':'')+'</details>';
+  });
+  if(nReal) html+='<div class="navrow"><button class="ghost" id="mine-copy" type="button">📋 複製挖到的網址（已遮金鑰、不含雜訊）</button></div>';
+  box.innerHTML=html;
+}
+
+/* ══ ⛏️ 網址挖礦 ══
+   使用者 2026-10-31：「把藏起來的網址都給挖出來」。範圍：只讀這個 repo 自己的檔案（公開內容），
+   ⛔ 不去探測別人的網站（猜路徑、掃目錄那種是未經授權的掃描，不做）。
+   網址裡像金鑰的參數、webhook、帳密一律先遮住才顯示／複製（公開 repo 裡常有不小心 commit 的金鑰網址）。 */
+const MINE_MAX_FILES=80, MINE_MAX_BYTES=4e6, MINE_FILE_MAX=300e3;
+const MINE_EXT=/\.(md|mdx|markdown|txt|rst|html?|jsx?|mjs|cjs|tsx?|vue|svelte|astro|py|go|rs|java|kt|swift|dart|rb|php|cs|json|ya?ml|toml|ini|cfg|conf|sh|example|sample)$/i;
+const MINE_NAMES=/^(CNAME|Dockerfile|Procfile|Makefile|wrangler\.toml|vercel\.json|netlify\.toml|firebase\.json|app\.json|manifest\.json|package\.json|\.env\.example|\.env\.sample)$/i;
+const MINE_SKIP=/(^|\/)(node_modules|dist|build|vendor|\.next|coverage|__snapshots__|\.git)\/|\.min\.(js|css)$|(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|poetry\.lock|Cargo\.lock|composer\.lock)$/i;
+/* 先讀最可能寫網址的：部署設定 → README／文件 → 網頁 → 程式 */
+function minePriority(p){
+  const n=p.split("/").pop();
+  if(MINE_NAMES.test(n)) return 0;
+  if(/^readme/i.test(n)) return 1;
+  if(/\.(md|mdx|rst|txt)$/i.test(n)) return 2;
+  if(/\.(html?|ya?ml|toml|json)$/i.test(n)) return 3;
+  return 4;
+}
+function mineCandidates(nodes){
+  return nodes.filter(n=>n.type==="blob" && !MINE_SKIP.test(n.path) && !(typeof sensitiveWhy==="function" && sensitiveWhy(n.path))
+      && (MINE_EXT.test(n.path)||MINE_NAMES.test(n.path.split("/").pop())) && (n.size==null || n.size<=MINE_FILE_MAX))
+    .sort((a,b)=>minePriority(a.path)-minePriority(b.path) || a.path.split("/").length-b.path.split("/").length || a.path.localeCompare(b.path));
+}
+/* 從一段文字挖出網址（含行號）；樣板變數（${x}、{{x}}）還沒填好的不算 */
+function extractUrls(text){
+  const out=[], lines=String(text||"").split("\n");
+  const re=/\b(?:https?|wss?):\/\/[^\s"'`<>()\[\]{}\\|^]+/gi;
+  lines.forEach((ln,i)=>{
+    let m; re.lastIndex=0;
+    while((m=re.exec(ln))){
+      let u=m[0].replace(/[.,;:!?*_~]+$/,"");
+      if(/\$\{|\{\{|%s|<[a-z]/i.test(ln.slice(m.index,m.index+m[0].length+2)) && /\$$|\{$/.test(u)) continue;
+      if(u.length<12) continue;
+      out.push({url:u,line:i+1});
+    }
+  });
+  return out;
+}
+/* 遮住像金鑰的部分：查詢參數、帳密、Slack／Discord webhook、Telegram bot token */
+const SECRET_QS=/^(key|api[-_]?key|apikey|token|access[-_]?token|auth|secret|client[-_]?secret|sig|signature|password|passwd|pwd|private[-_]?key|code)$/i;
+function maskUrl(u){
+  let masked=false, s=String(u);
+  s=s.replace(/^([a-z]+:\/\/)[^\/@\s]+:[^\/@\s]+@/i,(m,p)=>{ masked=true; return p+"•••@"; });
+  s=s.replace(/(hooks\.slack\.com\/services\/)[^\s?#]+/i,(m,p)=>{ masked=true; return p+"•••"; });
+  s=s.replace(/(discord(?:app)?\.com\/api\/webhooks\/)[^\s?#]+/i,(m,p)=>{ masked=true; return p+"•••"; });
+  s=s.replace(/(api\.telegram\.org\/bot)[^\/\s]+/i,(m,p)=>{ masked=true; return p+"•••"; });
+  s=s.replace(/([?&])([^=&#\s]+)=([^&#\s]+)/g,(m,a,k,v)=>{ if(SECRET_QS.test(k) && v.length>=6 && !/^\$|^\{|^<|^YOUR|^xxx/i.test(v)){ masked=true; return a+k+"=•••"; } return m; });
+  return {url:s,masked:masked};
+}
+const MINE_NOISE_HOST=/^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|example\.(com|org|net)|[^\/]*\.example(\.com)?|www\.w3\.org|w3\.org|schema\.org|json-schema\.org|opensource\.org|www\.apache\.org|apache\.org|creativecommons\.org|www\.gnu\.org|gnu\.org|img\.shields\.io|shields\.io|badge\.fury\.io|badgen\.net|semver\.org|keepachangelog\.com|www\.contributor-covenant\.org|contributor-covenant\.org|unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com|www\.googletagmanager\.com|www\.google-analytics\.com|registry\.npmjs\.org|www\.npmjs\.com|npmjs\.com|pypi\.org|codecov\.io|app\.codecov\.io|travis-ci\.(org|com)|coveralls\.io|spdx\.org|tools\.ietf\.org|datatracker\.ietf\.org)$/i;
+const MINE_LIVE_HOST=/\.(github\.io|vercel\.app|netlify\.app|pages\.dev|workers\.dev|fly\.dev|onrender\.com|herokuapp\.com|streamlit\.app|web\.app|firebaseapp\.com|surge\.sh|glitch\.me|replit\.app|railway\.app|deno\.dev|azurewebsites\.net|appspot\.com|vercel\.sh|gradio\.live)$/i;
+const MINE_CATS=[["live","🌐 線上成品／示範網站"],["api","🔌 API 與後端端點"],["data","📦 下載與資料"],["docs","📚 文件與文章"],["social","💬 社群與影片"],["other","🔗 其他網址"],["noise","🧹 雜訊（授權、徽章、CDN、範例網址）"]];
+function classifyUrl(u,own){
+  let x; try{ x=new URL(u.replace(/^ws/i,"http")); }catch(e){ return "other"; }
+  const h=x.hostname.toLowerCase(), p=x.pathname.toLowerCase();
+  const ownPath=own?("/"+own.toLowerCase()):"";
+  if(MINE_NOISE_HOST.test(h)) return "noise";
+  // 自己這個 repo 在 GitHub 上的頁面（issues、blob…）不算挖到東西；但 Release 下載檔是成品，要留著
+  if((h==="github.com"||h==="www.github.com") && ownPath && (p===ownPath||p.indexOf(ownPath+"/")===0)
+     && !/\/releases\/(download|latest)/.test(p)) return "noise";
+  if(h==="raw.githubusercontent.com" && ownPath && p.indexOf(ownPath+"/")===0) return "noise";
+  // Release 下載檔要先判：網址裡的版本號（/download/v1/）會被下一行當成 API 的 /v1/
+  if(/\/releases\/(download|latest)/.test(p)) return "data";
+  if(/^wss?:/i.test(u) || /(^|\.)api\./.test(h) || /\/(api|graphql|rest)(\/|$)|\/v\d+(\/|$)/.test(p)) return "api";
+  if(MINE_LIVE_HOST.test(h) || (h==="huggingface.co" && p.indexOf("/spaces/")===0)) return "live";
+  if(/\.(zip|tar|gz|tgz|7z|rar|apk|ipa|dmg|exe|msi|deb|rpm|appimage|csv|tsv|xlsx?|parquet|pdf|mp4|mp3|wav|onnx|gguf|bin|safetensors|pt|ckpt)$/.test(p)
+     || /\/releases\/(download|latest)/.test(p) || /^(drive\.google\.com|docs\.google\.com|www\.dropbox\.com|dropbox\.com|s3\.amazonaws\.com|storage\.googleapis\.com|zenodo\.org|figshare\.com)$/.test(h)
+     || /\.s3\.amazonaws\.com$/.test(h) || (h==="huggingface.co" && p.indexOf("/datasets/")===0) || (h==="www.kaggle.com" && p.indexOf("/datasets")===0) || h==="raw.githubusercontent.com") return "data";
+  if(/^docs?\./.test(h) || /readthedocs|gitbook|notion\.site|wiki|medium\.com$|dev\.to$|arxiv\.org$|substack\.com$|hackmd\.io$/.test(h) || /\/(docs?|wiki|blog|guide)(\/|$)/.test(p)) return "docs";
+  if(/^(discord\.gg|discord\.com|t\.me|telegram\.me|twitter\.com|x\.com|www\.youtube\.com|youtube\.com|youtu\.be|www\.facebook\.com|facebook\.com|www\.instagram\.com|instagram\.com|www\.linkedin\.com|linkedin\.com|www\.reddit\.com|reddit\.com|weibo\.com|www\.bilibili\.com|bilibili\.com|line\.me|www\.threads\.net|space\.bilibili\.com)$/.test(h)) return "social";
+  return "other";
+}
+/* 整理：同一個網址合併（記第一次出現的檔案與行號、出現幾次） */
+function mineCollect(hits,own){
+  const by=new Map();
+  hits.forEach(h=>{
+    const m=maskUrl(h.url), key=m.url.replace(/\/$/,"").toLowerCase();
+    const e=by.get(key);
+    // CNAME 指定的網域一定是線上成品；不管先在哪個檔案看到，都以它為準（自訂網域光看網址猜不出來）
+    if(e){ e.n++; if(h.cat) e.cat=h.cat; return; }
+    by.set(key,{url:m.url,masked:m.masked,cat:h.cat||classifyUrl(h.url,own),path:h.path,line:h.line,n:1});
+  });
+  return [...by.values()];
+}
 
 /* ── 白話重點 ── */
 // 只認得出名字的服務才列（徽章、文件、社群網址是雜訊）；AI／金流特別標出來，因為要金鑰、可能收費
@@ -3623,6 +3774,14 @@ $("recent").addEventListener("click",e=>{
   if(x.t==="q") search(false,x.v); else run(x.v);
 });
 $("v-tr").addEventListener("click",translateDoc);
+$("mine-go").addEventListener("click",runMine);
+$("mine").addEventListener("click",e=>{
+  if(!e.target.closest("#mine-copy")||!S.mine) return;
+  const txt=MINE_CATS.filter(c=>c[0]!=="noise").map(([k,t])=>{
+    const a=S.mine.items.filter(i=>i.cat===k); return a.length?t+"\n"+a.map(i=>i.url).join("\n"):"";
+  }).filter(Boolean).join("\n\n");
+  copyText("「"+S.mine.full+"」程式裡挖到的網址（金鑰已遮）：\n\n"+txt,"已複製挖到的網址 ✓");
+});
 // 勾選框在清單列（<button>）裡面：用捕捉階段先攔下來，點方框只勾選、不會打開專案
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-pk]"); if(!b) return;

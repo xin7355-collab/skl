@@ -116,6 +116,20 @@ const meta = (full, extra = {}) => Object.assign({
 
 // commits：總筆數與第一個 commit 是幾天前（「首次 commit」要用）。
 // pwa-app 是從別處搬來的（第一個 commit 比 GitHub 建立日早很多），skillpack 只有 1 個 commit（Link 沒有 last）
+// 網址挖礦用：線上成品、API、webhook／金鑰、下載、文件、社群、雜訊都有；還有不該讀的資料夾、敏感檔、lock 檔
+const URL_FILES = {
+  'README.md': '# URL app\n\nDemo: https://url-app.vercel.app.\nDocs: https://docs.urlapp.dev/guide\nChat: https://discord.gg/abc123\n' +
+    '![build](https://img.shields.io/badge/build-ok-green) License: https://opensource.org/licenses/MIT\nIssues: https://github.com/demo/url-app/issues\n',
+  'CNAME': 'app.urlapp.dev\n',
+  'src/api.js': "const API = 'https://api.urlapp.dev/v1/items';\nconst WS = 'wss://rt.urlapp.dev/socket';\n" +
+    "fetch('https://hooks.slack.com/services/T000/B000/XXXXSECRETXXXX');\nconst MAP = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyFAKEFAKE123456&v=3';\n" +
+    "const tpl = `https://cdn.urlapp.dev/${name}`;\nconst again = 'https://api.urlapp.dev/v1/items';\n",
+  'data/links.md': 'Dataset https://huggingface.co/datasets/demo/set and https://github.com/demo/url-app/releases/download/v1/app.apk\n',
+  'node_modules/x/index.js': "module.exports = 'https://should-not-read.urlapp.dev';\n",
+  '.env.production': 'API=https://secret-internal.urlapp.dev?token=abcdefghijk\n',
+  'package-lock.json': '{"resolved": "https://lockfile-only.urlapp.dev/x.tgz"}\n',
+};
+
 const REPOS = {
   'demo/pwa-app': { meta: meta('demo/pwa-app'), files: PWA_FILES, commits: { n: 57, firstDays: 1500 } },
   'demo/private-app': { meta: meta('demo/private-app', { private: true }), files: PWA_FILES },
@@ -124,6 +138,7 @@ const REPOS = {
   'demo/secrets-app': { meta: meta('demo/secrets-app'), files: SECRET_FILES },
   'demo/gen-app': { meta: meta('demo/gen-app'), files: GEN_FILES },
   'xin7355-collab/busy-app': { meta: meta('xin7355-collab/busy-app'), files: BUSY_FILES },
+  'demo/url-app': { meta: meta('demo/url-app'), files: URL_FILES },
 };
 
 // 照 GitHub 的格式：最新的在前面；作者日期從 firstDays 天前平均排到 2 天前
@@ -207,6 +222,7 @@ function rawResponse(url) {
 // 假翻譯：每一行前面加「中：」，看得出哪些字有送去翻、哪些沒送
 const zhLines = (q) => q.split('\n').map((l) => '中：' + l).join('\n');
 // 翻成英文（X-Ray 模糊搜尋把字典沒有的中文詞換成英文）：像真的 Google 一樣，認得的回英文、不認得的原樣回來
+const FAKE_LIVE = ['url-app.vercel.app', 'app.urlapp.dev'];
 const EN_DICT = { '選舉': 'election', '週報': 'weekly report', '漫畫': 'comics' };
 
 async function mockNetwork(context, opts) {
@@ -243,6 +259,8 @@ async function mockNetwork(context, opts) {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([[[out, q]]]) });
     }
     if (url.hostname.endsWith('.workers.dev')) return route.fulfill({ status: 200, body: 'ok' });
+    // 假專案的線上網址：詳細頁會實際連一次看活著沒（probeLive），回 ok 就好
+    if (FAKE_LIVE.includes(url.hostname)) return route.fulfill({ status: 200, body: 'ok' });
     stats.blocked.push(url.href);
     return route.abort();
   });
