@@ -72,6 +72,7 @@ select { width: 100%; font: inherit; font-size: 16px; padding: 9px 10px; border-
 .feat .ic { font-size: 26px; grid-row: 1 / span 6; text-align: center; }
 .feat > :not(.ic), .pick > :not(.ic) { grid-column: 2; }
 .feat .nm { font-weight: 600; }
+.feat.hit { background: var(--accent-soft); border-radius: 10px; padding-left: 8px; padding-right: 8px; }
 .feat .tags { font-size: 12px; color: var(--muted); }
 .feat p { margin: 4px 0 0; font-size: 14px; }
 .feat p span { color: var(--muted); }
@@ -370,7 +371,13 @@ async function load() {
     sel.addEventListener("change", () => renderFeatures(sel.dataset.for));
     renderFeatures(sel.dataset.for);
   }
-  showTab(store.get("ai-tab", "pick"));
+  // 超強搜尋（search.html）連過來：?tab=分頁&f=功能名稱
+  const u = new URLSearchParams(location.search), ut = u.get("tab"), uf = u.get("f");
+  showTab(["pick", "bench", "claude", "codex", "cowork"].includes(ut) ? ut : store.get("ai-tab", "pick"));
+  if (uf && ut) {
+    const f = [...$(ut + "List").querySelectorAll(".feat")].find((d) => d.querySelector(".nm").textContent === uf);
+    if (f) { f.classList.add("hit"); requestAnimationFrame(() => f.scrollIntoView({ block: "center" })); }
+  }
 }
 
 async function checkVersion() {

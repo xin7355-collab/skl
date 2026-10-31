@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="超強搜尋">
+<title>超強搜尋</title>
+<link rel="stylesheet" href="guide/guide.css?v=__APP_VER__">
+<style>
+/* 搜尋頁自己的樣式：其餘沿用教學頁的 guide.css（顏色、卡片、按鈕、深色模式） */
+.bar { display: flex; gap: 8px; position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0; }
+/* iPhone 輸入框字小於 16px 會自動放大整頁 */
+.bar input { flex: 1; min-width: 0; font-size: 16px; min-height: 46px; padding: 8px 12px; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--card); color: var(--text); }
+.bar button { flex: none; min-height: 46px; min-width: 76px; font-size: 16px; }   /* guide.css 的 .btn 會撐滿半行，輸入框就太窄 */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 8px; }
+.chips button { min-height: 40px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font-size: 15px; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.chips button i { font-style: normal; opacity: .75; margin-left: 4px; font-size: 13px; }
+.exp { font-size: 13px; color: var(--muted); margin: 0 0 6px; line-height: 1.5; }
+.exp b { color: var(--text); font-weight: 600; }
+.grp { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 4px 14px 10px; margin: 0 0 12px; }
+.grp h2 { font-size: 17px; margin: 10px 0 2px; display: flex; align-items: baseline; gap: 6px; }
+.grp h2 small { color: var(--muted); font-weight: 400; font-size: 13px; }
+.grp .gh { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+a.r { display: block; padding: 10px 0; border-top: 1px solid var(--line); text-decoration: none; color: var(--text); min-height: 44px; }
+a.r:first-of-type { border-top: 0; }
+a.r b { display: block; font-size: 15px; line-height: 1.4; }
+a.r .s { display: block; font-size: 13px; color: var(--muted); line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
+a.r .t { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--accent-soft); color: var(--text); margin: 4px 4px 0 0; }
+a.r .t.part { background: var(--warn-soft); color: var(--warn); }
+mark { background: #fde68a; color: #1a1d21; border-radius: 3px; padding: 0 1px; }
+.more { width: 100%; margin-top: 6px; min-height: 44px; }
+.miss { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.err { color: var(--warn); font-size: 14px; margin: 6px 0; }
+.ghcard { display: block; text-decoration: none; color: var(--text); }
+.ghcard b { font-size: 16px; }
+.ghcard span { display: block; font-size: 13px; color: var(--muted); }
+.recent { display: flex; align-items: center; gap: 8px; }
+.recent .linkbtn { font-size: 13px; min-height: 44px; padding: 0 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔎 超強搜尋</h1>
+  <p class="sub">打一個詞，技能、提示詞、App 點子、教學、AI 功能一次找；中文英文同義詞自動帶（打「股票」也會找 stock、trading、投資）。</p>
+  <p class="sub"><a href="index.html">← 回技能庫</a></p>
+</header>
+
+<main>
+<form class="bar" id="f" role="search" autocomplete="off">
+  <input id="q" type="search" enterkeyhint="search" placeholder="例如：股票、爬蟲" aria-label="搜尋">
+  <button class="btn" type="submit">搜尋</button>
+</form>
+<div id="start">
+  <div class="chips" id="examples" aria-label="範例"></div>
+  <div id="recentBox" hidden>
+    <div class="recent"><span class="hint">最近搜過（只存在這支手機）</span><button class="linkbtn" id="clearRecent" type="button">清除</button></div>
+    <div class="chips" id="recent"></div>
+  </div>
+  <p class="hint" id="what">載入資料中…</p>
+</div>
+<p class="exp" id="exp" hidden></p>
+<div class="chips" id="gtabs" hidden></div>
+<div id="res"></div>
+<p class="err" id="loadErr" hidden></p>
+</main>
+
+<script>
+"use strict";
+const APP_VER = "__APP_VER__";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const nz = (s) => String(s || "").normalize("NFKC").toLowerCase();
+const CJK = /[㐀-鿿豈-﫿]/;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 無痕模式：只是記不住 */ } },
+};
+
+/* ── 同義詞：每組「核心詞｜相關詞」，空格分開，底線代表空格（machine_learning）。
+   查詢詞等於組裡任何一個字（中文查詢「包含」它也算）就整組一起搜：原字 1 分、核心詞 0.8、相關詞 0.4，
+   所以「股票」先排真的在講股票的，一般投資理財排後面。
+   資料大多是英文（技能說明、提示詞內文），只靠中文字面比對的話「股票」只找得到 9 則提示詞。
+   簡體常用字也放進來（使用者複製簡體標題來搜時才找得到）。 ── */
+const SYN_SRC = [
+  "股票 股市 台股 美股 港股 個股 選股 證券 股價 股利 殖利率 股东 stock ticker equity equities twse securities|投資 理財 基金 etf 交易 回測 量化 金融 財經 財報 投资 trading trader trade invest investment investor portfolio quant backtest backtesting finance financial fund broker dividend",
+  "投資 理財 投资 理财 invest investing investment investor portfolio wealth|股票 基金 etf 財經 金融 stock fund finance financial",
+  "交易 量化 回測 交易策略 trading trader quant backtest backtesting algorithmic_trading|股票 加密貨幣 stock crypto",
+  "加密貨幣 虛擬貨幣 比特幣 區塊鏈 幣圈 以太坊 crypto cryptocurrency bitcoin blockchain ethereum web3 defi nft|智能合約 smart_contract solidity token",
+  "記帳 帳本 開銷 預算 記账 expense expenses budget budgeting bookkeeping|理財 會計 財務 accounting personal_finance spending",
+  "會計 財務 稅 報稅 發票 审计 accounting accountant tax taxes invoice cfo|財報 審計 audit bookkeeping",
+  "爬蟲 爬取 抓取 爬虫 scrape scraper scraping crawler crawl crawling web_scraping|網頁 擷取 自動化 extract extraction html automation",
+  "影片 視頻 短影音 视频 video videos youtube youtuber reels shorts tiktok 抖音|字幕 動畫 影音 剪輯 subtitle subtitles animation ffmpeg",
+  "剪輯 剪片 剪辑 editing video_editing ffmpeg trim|影片 字幕 video subtitle editor",
+  "圖片 照片 圖像 繪圖 插畫 修圖 图片 image images photo photos photography illustration midjourney stable_diffusion|設計 海報 logo poster design",
+  "音樂 歌曲 作曲 歌詞 音乐 music song songs lyrics composer|音訊 播客 podcast audio",
+  "寫作 文章 部落格 文案 小說 故事 写作 writing writer article articles blog copywriting copywriter story novel essay|編輯 校稿 改寫 editor proofread rewrite",
+  "行銷 廣告 社群 貼文 小編 营销 marketing advertising ads social_media instagram facebook campaign|品牌 文案 成長 電商 brand branding growth copywriting seo",
+  "seo 搜尋引擎 關鍵字|keyword keywords google_search ranking",
+  "電商 網店 購物 蝦皮 商品 电商 ecommerce e-commerce shop shopify store|產品 product listing",
+  "履歷 求職 面試 職涯 找工作 简历 resume cv interview career recruiter hiring job_search|招募 人資 linkedin hr job",
+  "學習 教學 讀書 考試 家教 老師 学习 learn learning tutor teacher study exam education|課程 學生 course student quiz",
+  "英文 英語 翻譯 外語 文法 日文 翻译 english translate translator translation grammar japanese|語言 language",
+  "健康 健身 運動 飲食 醫療 醫生 減肥 營養 心理 健康 health fitness workout diet nutrition doctor medical therapist|mental psychology",
+  "旅遊 旅行 行程 景點 旅游 travel trip itinerary tour|地圖 map",
+  "食譜 料理 烹飪 餐廳 美食 recipe recipes cooking chef food restaurant|飲食 diet",
+  "法律 法規 合約 律師 條款 隱私權 legal law lawyer contract gdpr|合規 compliance privacy",
+  "資安 駭客 漏洞 滲透 弱點 网络安全 security cybersecurity vulnerability pentest penetration hacker owasp xss|金鑰 密碼 隱私 secret secrets password privacy",
+  "程式 寫程式 程式碼 编程 代码 coding code programming developer programmer software|重構 除錯 refactor debug",
+  "網頁 網站 前端 网页 web website frontend html css javascript react vue|pwa ui ux 介面",
+  "app 手機app 應用程式 pwa ios android mobile iphone|上架 app_store google_play",
+  "後端 資料庫 伺服器 后端 数据库 backend server database sql sqlite postgres supabase firebase|api",
+  "資料分析 數據 統計 報表 圖表 数据 data analytics analysis analyst statistics dashboard chart charts excel spreadsheet pandas|視覺化 分析 visualization",
+  "ai 人工智慧 人工智能 llm gpt chatgpt claude 模型 機器學習 深度學習 machine_learning deep_learning|提示工程 prompt_engineering model",
+  "agent agents 代理 代理人 mcp|自動化 workflow tool_use",
+  "自動化 排程 定時 每天自動 自动化 automation automate cron schedule scheduler|github_actions workflow bot 機器人",
+  "通知 推播 提醒 通知 notification notifications push|line telegram discord slack email",
+  "聊天 聊天機器人 客服 對話 chatbot chat customer_service|assistant support",
+  "遊戲 游戏 game games gaming rpg|遊戲設計 game_design",
+  "部署 雲端 維運 部署 deploy deployment devops docker kubernetes cloud aws gcp azure|ci cd ci/cd github_actions",
+  "測試 除錯 测试 test testing debug debugging qa playwright e2e|bug",
+  "簡報 投影片 简报 slides presentation powerpoint pptx keynote|deck",
+  "pdf 掃描 ocr 辨識|文件 document documents",
+  "產品 專案管理 product product_manager roadmap project_management agile scrum|需求 規格 pm spec",
+  "創業 新創 商業模式 募資 创业 startup founder business_plan pitch|商業 business",
+  "筆記 記事 知識庫 笔记 note notes notion obsidian knowledge_base|wiki",
+  "行事曆 日曆 排班 預約 calendar scheduling booking appointment|schedule",
+  "天氣 氣象 天气 weather|forecast",
+  "設計 介面 配色 设计 design designer ui ux figma|logo color",
+  "email 信件 郵件 電子報 邮件 newsletter gmail|mail",
+];
+const SYN = SYN_SRC.map((line) => {
+  const [a, b] = line.split("|");
+  const words = (s) => (s || "").split(/\s+/).filter(Boolean).map((w) => nz(w.replace(/_/g, " ")));
+  return { s: words(a), r: words(b) };
+});
+const CJK_DICT = [...new Set(SYN.flatMap((g) => g.s.concat(g.r)).filter((w) => CJK.test(w)))].sort((x, y) => y.length - x.length);
+// 「股票 提示詞」「股票提示詞」：後面的字只是說要看哪一類，不拿去比對內容
+const META = [["提示詞", "prompts"], ["提示语", "prompts"], ["prompts", "prompts"], ["技能", "skills"], ["skills", "skills"],
+  ["點子", "ideas"], ["ideas", "ideas"], ["教學", "guides"], ["教程", "guides"]];
+const STOP = new Set(["的", "了", "和", "與", "跟", "要", "找", "我", "想", "做", "用", "嗎", "呢", "幫我", "怎麼", "如何", "什麼", "可以", "一個", "相關", "有關"]);
+
+/* 把查詢拆成「概念」：每個概念至少要對到一個字（好幾個概念＝全部都要，太少再補「部分符合」） */
+function parse(raw) {
+  let q = nz(raw).trim(), focus = "";
+  const toks0 = q.split(/[\s,，、;；|+]+/).filter(Boolean);
+  if (toks0.length) {
+    for (const [w, g] of META) {
+      const rest = toks0.map((t) => (CJK.test(w) ? t.split(w).join(" ") : (t === w ? "" : t))).join(" ").trim();
+      if (rest && rest !== toks0.join(" ")) { focus = g; q = rest; break; }
+    }
+  }
+  const concepts = [], nots = [];
+  for (const tok of q.split(/[\s,，、;；|+]+/).filter(Boolean)) {
+    if (tok.length > 1 && tok[0] === "-") { nots.push(tok.slice(1)); continue; }
+    for (const part of CJK.test(tok) ? splitCjk(tok) : [tok]) {
+      if (STOP.has(part)) continue;
+      concepts.push(expand(part));
+    }
+  }
+  return { concepts, nots, focus };
+}
+// 中文沒有空格：「股票分析」先切出字典裡有的詞（長的先），剩下兩個字以上的片段照原字搜
+function splitCjk(tok) {
+  const out = []; let rest = tok;
+  for (const w of CJK_DICT) {
+    if (w.length < 2 || rest.indexOf(w) < 0) continue;
+    out.push(w); rest = rest.split(w).join(" ");
+  }
+  for (const p of rest.split(" ")) { const s = [...p].filter((c) => !STOP.has(c)).join(""); if (s.length >= 2 || (!out.length && s)) out.push(s); }
+  return out.length ? out : [tok];
+}
+function expand(t) {
+  const terms = new Map([[t, 1]]);
+  const add = (w, v) => { if ((terms.get(w) || 0) < v) terms.set(w, v); };
+  const typo = guessTypo(t), key = typo || t;
+  if (typo) add(typo, 1);
+  for (const g of SYN) {
+    // 打的是核心詞：整組核心詞都算數；只是相關詞（例如「投資」「api」）：整組都只當相關，免得「投資」把股票專用的字排到最前面
+    if (g.s.includes(key)) { g.s.forEach((w) => add(w, 0.8)); g.r.forEach((w) => add(w, 0.4)); }
+    else if (g.r.includes(key)) g.s.concat(g.r).forEach((w) => add(w, 0.4));
+  }
+  return { raw: t, typo, terms: [...terms].map(([w, v]) => ({ w, v, m: matcher(w) })) };
+}
+/* 英文字要整個字對到（加常見字尾），不然 invest 會對到 investigation、ai 會對到 said；中文直接找子字串 */
+const SUFFIX = "(?:s|es|ed|ing|er|ers|or|ors|ment|ments|al|ally)?";
+function matcher(w) {
+  if (CJK.test(w) || /[^\x00-\x7f]/.test(w)) return (h) => h.indexOf(w) > -1;
+  const re = new RegExp("(?:^|[^a-z0-9])" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + (w.length <= 2 ? "" : SUFFIX) + "(?![a-z0-9])");
+  return (h) => re.test(h);
+}
+// 英文拼錯一兩個字（「stokc」「scrapper」）：只對使用者打的原字、5 個字母以上才算，免得短字亂配
+// 相鄰兩個字母打反（stokc）也只算錯 1 個（OSA 距離），手機鍵盤最常這樣打錯
+function editWithin(a, b, k) {
+  if (Math.abs(a.length - b.length) > k) return false;
+  let pp = null, prev = [...Array(b.length + 1).keys()];
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i]; let low = i;
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (pp && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) cur[j] = Math.min(cur[j], pp[j - 2] + 1);
+      low = Math.min(low, cur[j]);
+    }
+    if (low > k) return false; pp = prev; prev = cur;
+  }
+  return prev[b.length] <= k;
+}
+const EN_DICT = [...new Set(SYN.flatMap((g) => g.s.concat(g.r)).filter((w) => /^[a-z]{4,}$/.test(w)))];
+// 字典裡沒有的英文字，看是不是字典裡某個字打錯（stokc → stock），是的話照那個字展開同義詞
+function guessTypo(t) {
+  if (!/^[a-z]{4,}$/.test(t) || EN_DICT.includes(t) || SYN.some((g) => g.s.includes(t) || g.r.includes(t))) return "";
+  return EN_DICT.find((w) => editWithin(t, w, t.length >= 8 ? 2 : 1)) || "";
+}
+
+/* ── 資料來源：全部是本站的檔案（不連外、不花任何額度） ── */
+const GROUPS = [
+  { k: "prompts", icon: "💬", name: "提示詞", hint: "貼給 ChatGPT、Claude 的現成指令；點了在提示詞庫打開，可以一鍵送到 AI" },
+  { k: "skills", icon: "🧩", name: "技能", hint: "裝進 Claude Code 的技能；點了在技能庫裡找到它，可以複製安裝" },
+  { k: "ideas", icon: "💡", name: "App 點子", hint: "可以做的 App、第一版做什麼、會不會花錢" },
+  { k: "guides", icon: "📘", name: "教學", hint: "App 開發流程與 Agent 製作的步驟、範例、注意事項" },
+  { k: "ai", icon: "🤖", name: "AI 功能", hint: "Claude Code、Codex、Cowork 的功能與用法" },
+];
+const S = { items: { prompts: [], skills: [], ideas: [], guides: [], ai: [] }, err: {}, loaded: 0, view: "", shown: {}, last: null };
+
+async function fetchRetry(url, kind) {
+  let last;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await fetch(url + (url.includes("?") ? "&" : "?") + "v=" + encodeURIComponent(APP_VER));
+      if (r.ok) return kind === "text" ? await r.text() : await r.json();
+      last = new Error("HTTP " + r.status);
+      if (r.status < 500 && r.status !== 429) break;      // 404 這種不會自己好
+    } catch (e) { last = e; }
+    if (i < 2) await new Promise((ok) => setTimeout(ok, 800 * 2 ** i));
+  }
+  throw last;
+}
+// 每個欄位：[文字, 權重]；標題 10、短說明 6、分類 5、內文 1～3
+function mk(g, title, sub, tags, fields, href) {
+  const h = fields.filter((f) => f[0]).map(([t, w]) => [nz(t), w]);
+  return { g, title, sub, tags, href, h, all: h.map((x) => x[0]).join("\n"), raw: fields.map((f) => f[0] || "") };
+}
+const LOADERS = {
+  async prompts() {
+    const d = await fetchRetry("prompts/index.json");
+    const cats = {}; (d.cats || []).forEach((c) => { cats[c.id] = c; });
+    return d.items.map((it) => {
+      const c = cats[it.c] || { name: "", subs: [] }, sub = ((c.subs || []).find((s) => s.id === it.s) || {}).name || "";
+      return mk("prompts", it.z || it.t, it.z ? it.t : "", [c.name, sub].filter(Boolean),
+        [[it.z, 10], [it.t, 10], [c.name + " " + sub, 5], [it.p, 2]], "prompts.html?id=" + encodeURIComponent(it.i));
+    });
+  },
+  async skills() {
+    const d = await fetchRetry("catalog.json");
+    const cat = {}; (d.categories || []).forEach((c) => { cat[c.id] = c.zh; });
+    return d.skills.map((s) => mk("skills", s.name, s.zh || "", [cat[s.cat] || "", s.domain].filter(Boolean),
+      [[s.name, 10], [s.zh, 6], [cat[s.cat], 4], [s.desc, 3], [s.path, 1]], "index.html?q=" + encodeURIComponent(s.name)));
+  },
+  async ideas() {
+    const d = await fetchRetry("ideas.json");
+    return d.ideas.map((it) => mk("ideas", it.emoji + " " + it.title, it.one, [it.cat, "難度 " + it.level],
+      [[it.title, 10], [it.one, 6], [it.cat, 5], [it.xq, 3], [[it.why, it.stack].concat(it.mvp, it.next, it.notes).join(" "), 2]],
+      "ideas.html#" + encodeURIComponent(it.id)));
+  },
+  async ai() {
+    const d = await fetchRetry("ai/features.json");
+    const TAB = { "Claude Code": "claude", "Codex": "codex", "Cowork": "cowork" };
+    const out = [];
+    for (const p of d.products || []) {
+      const tab = TAB[p.product] || "claude";
+      for (const x of p.features || []) out.push(mk("ai", (x.icon || "🛠️") + " " + x.name, x.zh, [p.product, x.level].filter(Boolean),
+        [[x.name, 10], [x.zh, 5], [p.product, 4], [x.how + " " + x.when, 2]], "ai.html?tab=" + tab + "&f=" + encodeURIComponent(x.name)));
+      for (const x of p.examples || []) out.push(mk("ai", (x.icon || "✨") + " " + x.title, x.prompt, [p.product, "範例指令"],
+        [[x.title, 10], [x.prompt, 3], [p.product, 4]], "ai.html?tab=" + tab));
+    }
+    return out;
+  },
+  async guides() {
+    const pages = [["dev-guide.html", "App 開發流程"], ["agent.html", "Agent 製作"]];
+    const res = await Promise.allSettled(pages.map(([p]) => fetchRetry(p, "text")));
+    const out = [], bad = [];
+    res.forEach((r, i) => {
+      const [page, label] = pages[i];
+      if (r.status !== "fulfilled") { bad.push(label + "（" + r.reason.message + "）"); return; }
+      const doc = new DOMParser().parseFromString(r.value, "text/html");
+      const tabName = {};
+      doc.querySelectorAll("nav.tabs button[data-tab]").forEach((b) => { tabName[b.dataset.tab] = b.textContent.trim(); });
+      const txt = (n) => n.textContent.replace(/\s+/g, " ").trim().slice(0, 3000);
+      doc.querySelectorAll("section[id^='tab-'] details[id]").forEach((d) => {
+        const sec = d.closest("section[id^='tab-']"), sum = d.querySelector("summary");
+        const sb = sum && sum.querySelector("b"), sm = sum && sum.querySelector("small");
+        const title = d.dataset.title || (sb ? txt(sb) : sum ? txt(sum) : d.id);
+        const c = d.cloneNode(true); const s2 = c.querySelector("summary"); if (s2) s2.remove();
+        const body = ((sm ? txt(sm) + "。" : "") + txt(c)).slice(0, 3000);
+        out.push(mk("guides", title, body.slice(0, 140), [label, tabName[sec.id.slice(4)] || ""].filter(Boolean),
+          [[title, 10], [body, 2]], page + "#" + d.id));
+      });
+      // 沒有 id 的說明卡（注意事項、技術選擇）：連到那個分頁
+      doc.querySelectorAll("section[id^='tab-'] .card").forEach((card) => {
+        const h = card.querySelector("h2"); if (!h || card.closest("details[id]")) return;
+        const sec = card.closest("section[id^='tab-']"), c = card.cloneNode(true);
+        c.querySelectorAll("details[id], script").forEach((n) => n.remove());
+        const title = txt(h), body = txt(c);
+        out.push(mk("guides", title, body.replace(title, "").trim().slice(0, 140), [label, tabName[sec.id.slice(4)] || ""].filter(Boolean),
+          [[title, 8], [body, 2]], page + "#" + sec.id));
+      });
+      // 範例庫（頁面裡的 JSON，畫面上由 guide.js 畫出來，卡片 id 是 tpl-xxx）
+      const tj = doc.getElementById("templates");
+      let tpl = []; try { tpl = tj ? JSON.parse(tj.textContent) : []; } catch (e) { tpl = []; }
+      tpl.forEach((t) => out.push(mk("guides", (t.icon || "") + " " + t.title, t.desc, [label, "範例・" + t.cat],
+        [[t.title, 10], [t.desc, 4], [t.cat, 5], [(t.skills || []).join(" "), 3]], page + "#tpl-" + encodeURIComponent(t.id))));
+    });
+    if (!out.length) throw new Error(bad.join("、") || "沒有內容");
+    if (bad.length) S.err.guides = "部分載入失敗：" + bad.join("、");
+    return out;
+  },
+};
+const COUNT_UNIT = { prompts: "則", skills: "個", ideas: "個", guides: "段", ai: "項" };
+
+/* ── 比對與排序 ── */
+function scoreItem(it, P) {
+  for (const n of P.nots) if (it.all.indexOf(n) > -1) return null;
+  let hit = 0, strong = 0, score = 0;
+  for (const c of P.concepts) {
+    let best = 0, bestV = 0;
+    for (const t of c.terms) {
+      if (t.v * 10 <= best || !t.m(it.all)) continue;           // 整份先看一次，有才逐欄位算分
+      for (const [h, fw] of it.h) if (t.v * fw > best && t.m(h)) { best = t.v * fw; bestV = t.v; }
+    }
+    // 只靠相關詞對到的（例如「股票」對到只寫 finance 的）算數但排後面：核心詞對到的同一個概念另外記
+    let sb = 0;
+    if (bestV < 0.8) for (const t of c.terms) if (t.v >= 0.8 && t.m(it.all)) { sb = 1; break; }
+    if (!best && /^[a-z]{5,}$/.test(c.raw) && !c.typo) {
+      if (!it.words) it.words = new Set(it.all.split(/[^a-z]+/).filter((w) => w.length >= 4));
+      for (const w of it.words) if (editWithin(c.raw, w, c.raw.length >= 8 ? 2 : 1)) { best = 3; bestV = 0.8; break; }
+    }
+    if (best) { hit++; score += best; if (bestV >= 0.8 || sb) strong++; }
+  }
+  return hit ? { it, hit, strong, score } : null;
+}
+function searchAll(P) {
+  const out = {}, n = P.concepts.length;
+  for (const g of GROUPS) {
+    const rows = S.items[g.k].map((it) => scoreItem(it, P)).filter(Boolean);
+    rows.sort((a, b) => b.score - a.score);
+    // 三層：直接符合（每個詞都用原字或核心詞對到）→ 只靠相關詞 → 只對到部分的詞。
+    // 前一層夠多就不往下補，否則「爬蟲」會被一堆只寫了「網頁」的提示詞淹沒
+    const A = rows.filter((r) => r.hit === n && r.strong === n), B = rows.filter((r) => r.hit === n && r.strong < n);
+    let list = A;
+    if (list.length < 5) list = list.concat(B.slice(0, 20).map((r) => Object.assign(r, { tier: "相關" })));
+    if (list.length < 3 && n > 1) list = list.concat(rows.filter((r) => r.hit < n).slice(0, 20).map((r) => Object.assign(r, { tier: "部分符合" })));
+    out[g.k] = { full: A.length, rows: list };
+  }
+  return out;
+}
+
+/* ── 標出對到的字 ── */
+function hlRanges(text, P) {
+  const low = nz(text), rs = [];
+  if (low.length !== text.length) return [];               // 正規化後長度變了（少見的合字），寧可不標也不要標錯位置
+  for (const c of P.concepts) for (const t of c.terms) {
+    if (!t.m(low)) continue;
+    if (CJK.test(t.w) || /[^\x00-\x7f]/.test(t.w)) { let i = -1; while ((i = low.indexOf(t.w, i + 1)) > -1) rs.push([i, i + t.w.length]); }
+    else {
+      const re = new RegExp("(^|[^a-z0-9])(" + t.w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + (t.w.length <= 2 ? "" : SUFFIX) + ")(?![a-z0-9])", "g");
+      let m; while ((m = re.exec(low))) { const s = m.index + m[1].length; rs.push([s, s + m[2].length]); if (re.lastIndex === m.index) re.lastIndex++; }
+    }
+  }
+  rs.sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  for (const r of rs) { const l = merged[merged.length - 1]; if (l && r[0] <= l[1]) l[1] = Math.max(l[1], r[1]); else merged.push(r.slice()); }
+  return merged;
+}
+function hl(text, P, cut) {
+  text = String(text || "").normalize("NFKC");
+  const rs = hlRanges(text, P);
+  let from = 0, to = text.length;
+  if (cut && text.length > cut) {
+    from = rs.length ? Math.max(0, rs[0][0] - 30) : 0;
+    to = Math.min(text.length, from + cut);
+  }
+  let out = from > 0 ? "…" : "", i = from;
+  for (const [s, e] of rs) {
+    if (e <= from || s >= to) continue;
+    const a = Math.max(s, from), b = Math.min(e, to);
+    out += esc(text.slice(i, a)) + "<mark>" + esc(text.slice(a, b)) + "</mark>"; i = b;
+  }
+  return out + esc(text.slice(i, to)) + (to < text.length ? "…" : "");
+}
+function snippet(r, P) {
+  const it = r.it;
+  // 說明欄沒對到的話，從內文找有對到的那一段給使用者看（為什麼這筆會出現）
+  if (it.sub && hlRanges(it.sub.normalize("NFKC"), P).length) return hl(it.sub, P, 110);
+  for (const t of it.raw.slice(1)) if (t && hlRanges(t.normalize("NFKC"), P).length) return hl(t, P, 110);
+  return hl(it.sub || "", P, 110);
+}
+
+/* ── 畫面 ── */
+function paintStart() {
+  const ex = ["股票", "爬蟲", "影片剪輯", "記帳", "履歷", "資安", "行銷貼文", "每天自動通知"];
+  $("examples").innerHTML = ex.map((x) => `<button type="button" data-q="${esc(x)}">${esc(x)}</button>`).join("");
+  const rec = store.get("search-recent-v1", []);
+  $("recentBox").hidden = !rec.length;
+  $("recent").innerHTML = rec.map((x) => `<button type="button" data-q="${esc(x)}">${esc(x)}</button>`).join("");
+  const parts = GROUPS.filter((g) => S.items[g.k].length).map((g) => `${g.name} ${S.items[g.k].length.toLocaleString()} ${COUNT_UNIT[g.k]}`);
+  $("what").textContent = S.loaded < GROUPS.length ? "載入資料中…" : parts.length ? "可以搜：" + parts.join("、") + "。" : "";
+}
+function saveRecent(q) {
+  q = q.trim(); if (!q) return;
+  const rec = store.get("search-recent-v1", []).filter((x) => x !== q);
+  rec.unshift(q); store.set("search-recent-v1", rec.slice(0, 8));
+}
+function render() {
+  const q = $("q").value.trim();
+  $("start").hidden = !!q;
+  if (!q) { $("exp").hidden = true; $("gtabs").hidden = true; $("res").innerHTML = ""; paintStart(); return; }
+  const P = parse(q);
+  if (!P.concepts.length) { $("res").innerHTML = '<p class="hint">多打幾個字再搜（例如「股票」「影片剪輯」）。</p>'; $("exp").hidden = true; $("gtabs").hidden = true; return; }
+  const R = searchAll(P);
+  S.last = { P, R };
+  // 告訴使用者實際搜了哪些字：結果意外的時候看得出原因
+  const extra = [...new Set(P.concepts.flatMap((c) => c.terms.filter((t) => t.w !== c.raw && t.w !== c.typo).map((t) => t.w)))];
+  $("exp").hidden = false;
+  $("exp").innerHTML = "搜：<b>" + P.concepts.map((c) => esc(c.raw) + (c.typo ? "（應該是 " + esc(c.typo) + "）" : "")).join("</b> ＋ <b>") + "</b>" +
+    (P.nots.length ? "　排除：" + P.nots.map(esc).join("、") : "") +
+    (extra.length ? "　也一起找：" + esc(extra.slice(0, 14).join("、")) + (extra.length > 14 ? " 等 " + extra.length + " 個" : "") : "");
+  const order = P.focus ? [GROUPS.find((g) => g.k === P.focus)].concat(GROUPS.filter((g) => g.k !== P.focus)) : GROUPS;
+  const total = order.reduce((a, g) => a + R[g.k].rows.length, 0);
+  $("gtabs").hidden = false;
+  $("gtabs").innerHTML = `<button type="button" data-view="" aria-pressed="${!S.view}">全部<i>${total}</i></button>` +
+    order.map((g) => `<button type="button" data-view="${g.k}" aria-pressed="${S.view === g.k}">${g.icon} ${g.name}<i>${R[g.k].rows.length}</i></button>`).join("");
+  let html = "";
+  const miss = [];
+  for (const g of order) {
+    if (S.view && S.view !== g.k) continue;
+    const rows = R[g.k].rows, err = S.err[g.k];
+    if (!rows.length && !err && !S.view) { miss.push(g.icon + " " + g.name); continue; }
+    const lim = S.shown[g.k] || (S.view ? 20 : 5);
+    html += `<section class="grp" data-g="${g.k}"><h2>${g.icon} ${g.name}<small>${rows.length ? rows.length + " 筆" + (R[g.k].full < rows.length ? "（直接符合 " + R[g.k].full + "）" : "") : ""}</small></h2>`;
+    if (err) html += `<p class="err">⚠️ ${esc(err)}：這一類沒搜到不代表沒有。重新整理再試；一直失敗代表部署少了這份資料，到 GitHub Actions 看「Deploy web page」。</p>`;
+    else if (S.loaded < GROUPS.length && !rows.length) html += '<p class="hint">還在載入…</p>';
+    else html += `<p class="gh">${esc(g.hint)}</p>`;
+    if (!rows.length && !err && S.loaded >= GROUPS.length) html += '<p class="hint">這一類沒有符合的。</p>';
+    for (const r of rows.slice(0, lim)) {
+      const it = r.it;
+      html += `<a class="r" href="${esc(it.href)}" data-hit><b>${hl(it.title, P)}</b>` +
+        (it.sub || it.raw.length > 1 ? `<span class="s">${snippet(r, P)}</span>` : "") +
+        it.tags.map((t) => `<span class="t">${esc(t)}</span>`).join("") + (r.tier ? `<span class="t part">${r.tier}</span>` : "") + "</a>";
+    }
+    if (rows.length > lim) html += `<button class="btn ghost more" type="button" data-more="${g.k}">再看 ${Math.min(20, rows.length - lim)} 筆（還有 ${rows.length - lim} 筆）</button>`;
+    html += "</section>";
+  }
+  if (miss.length) html += `<p class="miss">沒找到：${miss.map(esc).join("、")}</p>`;
+  if (!total && S.loaded >= GROUPS.length) html = '<p class="hint">都沒找到。換個說法試試（英文也可以），或到下面用 Repo X-Ray 找 GitHub 上的專案。</p>' + html;
+  // GitHub：X-Ray 的模糊搜尋會把中文換成英文同義詞再查（每次 1～2 次 GitHub 額度）
+  html += `<a class="card ghcard" href="xray.html?q=${encodeURIComponent(q)}&fz=1" data-hit><b>🔬 到 GitHub 找「${esc(q)}」的開源專案</b>` +
+    "<span>用 Repo X-Ray 模糊搜尋（中文自動換英文同義詞），看別人怎麼做、能不能直接拿來參考。</span></a>";
+  $("res").innerHTML = html;
+}
+let timer = 0;
+function go(q, opts = {}) {
+  if (q != null) $("q").value = q;
+  const v = $("q").value.trim();
+  // 「股票 提示詞」直接只看提示詞；之後按「全部」就照使用者的，不再被拉回去
+  S.view = v ? parse(v).focus : ""; S.shown = {};
+  render();
+  try { history.replaceState(null, "", v ? "?q=" + encodeURIComponent(v) : location.pathname); } catch (e) {}
+  if (opts.save) saveRecent(v);
+}
+$("q").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => go(null), 220); });
+$("f").addEventListener("submit", (e) => { e.preventDefault(); clearTimeout(timer); go(null, { save: true }); $("q").blur(); });
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-q]"); if (b) { go(b.dataset.q, { save: true }); return; }
+  const v = e.target.closest("[data-view]"); if (v) { S.view = v.dataset.view; S.shown = {}; render(); return; }
+  const m = e.target.closest("[data-more]"); if (m) { const k = m.dataset.more; S.shown[k] = (S.shown[k] || (S.view ? 20 : 5)) + 20; render(); return; }
+  if (e.target.closest("[data-hit]")) saveRecent($("q").value);
+  if (e.target.id === "clearRecent") { store.set("search-recent-v1", []); paintStart(); }
+});
+
+(function init() {
+  const q0 = new URLSearchParams(location.search).get("q") || "";
+  if (q0) { $("q").value = q0; S.view = parse(q0).focus; }
+  render();
+  // 每份資料各自載入：先到的先能搜，壞掉的那份在結果裡說出來（不是一片空白）
+  for (const g of GROUPS) {
+    LOADERS[g.k]().then((items) => { S.items[g.k] = items; }, (e) => { S.err[g.k] = "載入失敗（" + (e && e.message || e) + "）"; })
+      .finally(() => {
+        S.loaded++;
+        if (S.loaded === GROUPS.length) {
+          const bad = GROUPS.filter((x) => S.err[x.k] && !S.items[x.k].length);
+          if (bad.length === GROUPS.length) { $("loadErr").hidden = false; $("loadErr").textContent = "全部資料都載入失敗：可能是網路斷了，重新整理再試。"; }
+        }
+        render();
+      });
+  }
+  if (q0) saveRecent(q0);
+})();
+
+// 手機常把舊分頁留在背景好幾天；切回前景時檢查版本，不同就自動重載（同其他頁）
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState !== "visible" || APP_VER.startsWith("__")) return;
+  try { const r = await fetch("version.json", { cache: "no-store" }); if (!r.ok) return;
+    const v = await r.json(); if (v.ver && v.ver !== APP_VER) location.reload(); } catch (e) { /* 離線略過 */ }
+});
+</script>
+</body>
+</html>

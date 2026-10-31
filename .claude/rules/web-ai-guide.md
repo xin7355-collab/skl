@@ -10,3 +10,4 @@ paths:
 
 - `web/ai.html`＋`web/ai/models.json`、`web/ai/features.json`：AI 模型與功能指南（含 Cowork 分頁：分區對照、範例只放通用情境，不放工作單位等敏感資訊）。資料由每週 Routine 自動
   研究更新（自我進化）；改資料後必須跑 `python3 web/ai/check_ai_data.py`，通過才能推。跑分一律附出處網址。
+- `ai.html?tab=claude|codex|cowork&f=功能名稱`：切分頁並把那一項標 `.feat.hit`、捲過去（超強搜尋連過來用）。

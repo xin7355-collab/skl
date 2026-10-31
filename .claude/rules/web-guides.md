@@ -23,3 +23,4 @@ paths:
   範例與案例只用公開 App（StockAI-DB、PriceHub）的架構，不寫工作相關 App 的內容。
   dev-guide 的選項用到的規定（LINE、推播、地圖等）出處放「注意」的「功能的眉角」。
   agent 依 `pickWay` 由簡到繁建議做法（Cowork → Routine → GitHub Actions → 自己寫 API），教學只顯示選的做法的步驟；B 段裝組合 `ai`＋`agent`。
+- 網址帶 `#st-…`／`#case-…`／`#tpl-…`（範例卡 id）／`#tab-…` 會切分頁並打開（超強搜尋連過來用）；改 id 規則要一起改 search.html 的教學索引。

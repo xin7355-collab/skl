@@ -68,6 +68,14 @@ const Guide = (() => {
       else if ($(target)) { e.preventDefault(); goTo(target); }
     });
     showTab(store.get(key, ids[0]), { keepScroll: true });
+    // 超強搜尋（search.html）連過來會帶 #id：等頁面其他程式畫完（範例庫是之後才畫的）再跳
+    const fromHash = () => {
+      const h = decodeURIComponent(location.hash.slice(1));
+      if (h.startsWith("tab-") && tabs.includes(h.slice(4))) showTab(h.slice(4));
+      else if (h && $(h)) goTo(h);
+    };
+    if (location.hash) setTimeout(fromHash, 0);
+    window.addEventListener("hashchange", fromHash);
     // 分頁列是兩排、會隨字級與螢幕寬度變高，用實際高度當捲動的保留空間
     const nav = document.querySelector("nav.tabs");
     const setNavH = () => { if (nav) document.documentElement.style.setProperty("--navh", nav.offsetHeight + "px"); };
@@ -287,7 +295,7 @@ const Guide = (() => {
         const refs = (t.refs || []).map((r) => r.repo
           ? el("div", {}, "參考：", el("a", { href: `${xray}?repo=${encodeURIComponent(r.repo)}`, text: r.repo }), r.why ? "（" + r.why + "）" : "")
           : el("div", {}, "參考：", el("a", { href: r.url, target: "_blank", rel: "noopener", text: r.name }), r.why ? "（" + r.why + "）" : ""));
-        root.append(el("div", { class: "tcard", "data-tpl": t.id },
+        root.append(el("div", { class: "tcard", "data-tpl": t.id, id: "tpl-" + t.id },
           el("h3", { text: `${t.icon} ${t.title}` }),
           el("div", { class: "meta", text: `${t.cat}　難度 ${"★".repeat(t.level)}${"☆".repeat(3 - t.level)}${t.meta ? "　" + t.meta : ""}` }),
           el("p", { text: t.desc }),

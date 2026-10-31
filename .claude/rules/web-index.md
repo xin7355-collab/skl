@@ -16,3 +16,4 @@ paths:
   （`advicePrompt`，只建議不安裝；App 清單讀部署時複製的 `apps.json`，用原生 `<select>`，不要用 `<datalist>`——iPhone Safari 常選不到；可一鍵開 X-Ray 顧問）。
 - 「下載 ZIP」：`web/build_zips.py`（selftest 在 CI）部署時把技能打包到 `_site/zips/`，並在 catalog.json 寫 `zip` 欄位；
   卡片只對有這個欄位的技能顯示連結。ZIP 裡超過 200 字元的說明會縮短（claude.ai 規定），原檔不動。
+- 頂端 `form.gsearch` 送到超強搜尋（search.html）；超強搜尋的技能結果連回 `index.html?q=名稱`：切到「瀏覽技能」並清掉類別、領域、只看勾選。

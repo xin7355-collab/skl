@@ -172,7 +172,18 @@ function save() { try { localStorage.setItem("ideas-ui-v1", JSON.stringify({ cat
   $("steps").innerHTML = D.steps.map((s) => `<li><b>${esc(s.t)}</b><span>${esc(s.d)}</span>` +
     (s.url ? ` <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.replace(/^https:\/\//, ""))} ↗</a>` : "") + "</li>").join("");
   render();
+  openHash();
 })();
+// 超強搜尋（search.html）連過來是 ideas.html#點子id
+function openHash() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  const it = id && D && D.ideas.find((x) => x.id === id);
+  if (!it) return;
+  if ((cat !== "全部" && it.cat !== cat) || (level !== "全部" && it.level !== level)) { cat = "全部"; level = "全部"; render(); }
+  const d = document.querySelector(`details.idea[data-id="${CSS.escape(id)}"]`);
+  if (d) { d.open = true; requestAnimationFrame(() => d.scrollIntoView({ block: "start" })); }
+}
+window.addEventListener("hashchange", openHash);
 </script>
 </body>
 </html>

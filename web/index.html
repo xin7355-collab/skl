@@ -99,6 +99,10 @@ label.toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; co
 .error { color: var(--warn); }
 [hidden] { display: none !important; }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+/* 超強搜尋列：輸入框 16px（iPhone 小於 16px 會放大整頁）、按鈕至少 46px 高 */
+.gsearch { display: flex; gap: 8px; margin: 12px 0 0; }
+.gsearch input { flex: 1; min-width: 0; min-height: 46px; }
+.gsearch .btn { flex: none; min-height: 46px; min-width: 76px; font-size: 16px; }
 /* 工具卡：兩欄、整張可點、至少 64px 高（手機好按） */
 .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 2px; }
 .tool { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center;
@@ -116,6 +120,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 <header>
   <h1>skl 技能庫</h1>
   <p class="sub">挑技能 → 按「複製」→ 貼到其他 App 的 Claude Code 對話</p>
+  <!-- 2026-10-31 使用者要「超強搜尋」：打「股票」就一起找技能、提示詞、點子、教學（search.html） -->
+  <form class="gsearch" action="search.html" method="get" role="search">
+    <input name="q" type="search" enterkeyhint="search" placeholder="🔎 搜全部，例如：股票" aria-label="超強搜尋">
+    <button class="btn" type="submit">搜尋</button>
+  </form>
   <!-- 2026-10-31 使用者：「不想要用這種方式呈現」（一行一行的文字連結）→ 改成兩欄工具卡：圖示、短標題、一行說明，整張都可以點 -->
   <nav class="tools" aria-label="其他工具">
     <a class="tool" href="ideas.html"><span class="ti">💡</span><b>App 點子</b><small>可以做什麼、怎麼做</small></a>
@@ -591,10 +600,13 @@ async function load() {
     o.textContent = `${d.zh}（${d.count}）`;
     sel.appendChild(o);
   }
+  // 超強搜尋（search.html）點技能會帶 ?q=名稱：直接到「瀏覽技能」找好；類別、領域、只看勾選先清掉，否則可能被舊的篩選藏起來
+  const q0 = new URLSearchParams(location.search).get("q");
+  if (q0) { $("q").value = q0; $("domain").value = ""; csel.value = ""; $("onlySel").checked = false; }
   renderPacks();
   renderSkills();
   $("verLine").textContent = `版本：${APP_VER.startsWith("__") ? "本機預覽" : APP_VER}・共 ${catalog.skills.length} 個技能`;
-  showTab(store.get("tab", "packs"));
+  showTab(q0 ? "browse" : store.get("tab", "packs"));
 }
 
 // 手機常把舊分頁留在背景好幾天；切回前景時檢查版本，不同就自動重載。

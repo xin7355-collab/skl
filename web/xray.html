@@ -4040,6 +4040,7 @@ try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}
 try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").checked=true; }
 (async function(){
   const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q"), t=p.get("t");
+  if(p.get("fz")==="1") $("fuzzy").checked=true;   // 超強搜尋帶過來的中文查詢：這次用模糊搜尋，不寫回 xray-fuzzy
   // 分頁：網址決定優先（分享出去的連結、返回），沒有就回到上次停留的分頁
   let tab="explore"; try{ tab=localStorage.getItem(TAB_KEY)||"explore"; }catch(e){}
   if(p.get("tab")) tab=p.get("tab");

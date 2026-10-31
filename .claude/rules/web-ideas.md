@@ -14,3 +14,4 @@ paths:
 - 費用數字沿用 `dev-guide.html` 已查證的那幾條（Pages、Actions、Workers）；新增別的服務要先查官方頁面，查不到就不要寫金額。
 - 「📋 複製開工指令」`startPrompt`：叫新 repo 的 Claude 用 app-bootstrap 裝組合（跟首頁同一行 FETCH_CMD／TOOL），先做第一版。
 - 篩選存 `ideas-ui-v1`。首頁頂端是兩欄工具卡 `.tools`（使用者不要一行一行的文字連結），新增頁面時一起加一張卡。
+- `ideas.html#點子id` 會打開那一個（`openHash`，被篩選藏住就先切回全部、不存）；超強搜尋用它，id 改了舊連結會失效。
