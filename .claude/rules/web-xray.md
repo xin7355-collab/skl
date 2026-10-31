@@ -42,3 +42,13 @@ paths:
 - 「🌐 有線上成品」：`quickLive`（只看清單本身的 `homepage`／`has_pages`，指回 github.com 或本機位址的不算；不打 API），
   開關存 `xray-live`；清單列的「開成品」是 `span[data-live]`（列是 `<button>`，捕捉階段攔下來 `window.open`）。
   trending.json 要有這兩個欄位（`build_trending.py` 的 `KEEP`，空的不寫）。CSS 已有 `.live`（詳細頁的線上網址），別再用這個 class 名。
+- 2026-10-31 搜尋（依 `web/xray_search_probe.py` 在 Actions 實查 GitHub，改組字規則前先重跑 `X-Ray search probe` 工作流）：
+  空格 = 全部都要、OR = 有一個就算（跨概念用 OR 會放寬到上百萬筆）、括號不分組、**「-字」不會排除，要寫 NOT**（`-language:x` 這種條件才認 `-`）、
+  6 個 OR 就 422（5 個 OR + 1 個 NOT 可以）。所以：`parseQ` 拆出詞／NOT／條件；一般模式 `plainQuery` 只把 -字 換 NOT；
+  模糊模式 `fzPlan`：好幾個詞先查「全部都要」（中文換英文代表字），總數 < `FZ_MIN` 才放寬成 OR 再查一次（2 次額度、合併去重）；
+  純數字（年份）不放進 OR；排除的字不加同義詞；回來後 `hasNot` 在手機上再擋一次。字典 `SYN` 沒有的中文詞用 `toEnglishTerms`
+  （Google 免費翻譯 tl=en，快取 `xray-q2en-v1`，被限流就照原詞搜）。
+- 描述語言篩選 `#rlang`（`descLang`／`DLANGS`／`langOk`，存 `xray-dlang`）：只看搜尋結果的描述，假名 → 日文、諺文 → 韓文、
+  中文用 `SIMP_RE` 判簡繁（只有共用字分不出來 → 歸繁中）。
+- 搜尋列：輸入框 16px（iPhone 小於 16px 會自動放大整頁）、「開始」至少 46px 高；`.bar` 有 `scroll-margin-top`，
+  加上 `#url` focus 後檢查一次，避免被置頂分頁列 `.tabs` 蓋住（實測以前上緣 4 成被蓋）。

@@ -118,4 +118,9 @@ def selftest():
 
 
 if __name__ == "__main__":
-    sys.exit(selftest() if sys.argv[1:] == ["selftest"] else run())
+    if sys.argv[1:] == ["selftest"]:
+        sys.exit(selftest())
+    if sys.argv[1:]:                     # --help 或其他參數:只印用法,不連網(smoke_scripts 會用 --help 試跑)
+        print(__doc__)
+        sys.exit(0)
+    sys.exit(run())

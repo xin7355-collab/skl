@@ -42,11 +42,15 @@ header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:1
 .gauge.out span{color:var(--red)}
 
 /* ─────────── 輸入列 ─────────── */
-.bar{display:flex;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:6px}
+/* 輸入框 16px：iPhone 遇到小於 16px 的輸入框會自動放大整頁，按鈕會跑位、要再縮回來才按得到。
+   scroll-margin-top：點輸入框時手機把它捲到最上面，會躲在置頂的分頁列底下（實測「開始」鈕上緣 4 成被蓋住，
+   點上半部其實點到分頁列）—— 留出分頁列的高度。 */
+.bar{display:flex;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:6px;scroll-margin-top:72px}
 .bar input{
   flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--text);
-  font-family:var(--mono);font-size:13px;padding:8px 8px;
+  font-family:var(--mono);font-size:16px;padding:8px 8px;scroll-margin-top:78px;
 }
+.bar #go{min-height:46px;min-width:84px;font-size:15px;touch-action:manipulation}   /* 好按範圍至少 44px（Apple 建議） */
 .bar input::placeholder{color:#55606F}
 button{
   font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;
@@ -338,6 +342,9 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .trend .tnote{width:100%;font-size:10px}
 .fz{display:inline-flex;gap:6px;align-items:center;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer}
 .fz input{accent-color:var(--cyan);width:16px;height:16px}
+.results .rlangrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 12px 0;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.results .rlangrow select{font-size:16px;min-height:40px}
+.results .rlangrow small{font-size:10px}
 .results .rfilter{display:block;width:calc(100% - 24px);margin:8px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:8px 10px;font-family:var(--mono);font-size:13px}
 .results .gain{color:var(--amber)}
 .tb{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--cyan);border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;vertical-align:1px}
@@ -408,7 +415,8 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
   <button id="go">開始</button>
 </div>
 <div class="hint">貼網址 → 直接掃描；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。看過、下載過的專案會標 <span class="hb seen">👁 看過</span><span class="hb dl">⤓ 下載過</span>。</div>
-<label class="fz"><input type="checkbox" id="fuzzy"> 🌀 模糊搜尋：中文自動加英文同義詞、拼錯也找得到、依相關度排序（一樣只用 1 次額度）</label>
+<label class="fz"><input type="checkbox" id="fuzzy"> 🌀 模糊搜尋：中文自動換英文同義詞、拼錯也找得到、依相關度排序（通常 1 次額度；好幾個詞「全部都要」太少才放寬再查 1 次）</label>
+<div class="hint">要排除某個字：前面加 <b>-</b>（例如 <code>小說 -漫畫</code>），會自動換成 GitHub 認得的 NOT。</div>
 <label class="fz"><input type="checkbox" id="zh"> 🈯 描述翻成繁體中文（Google 翻譯，免費；只送公開的專案描述）</label>
 <div class="catrow" id="cats"></div>
 <details class="sopt" id="sopt">
@@ -741,9 +749,27 @@ function isZh(t){
   const sc=(t.match(SIMP_RE)||[]).length;
   return !(sc>=2 || (sc>=1 && m.length<12));
 }
+/* 專案描述是哪一種語言（「只看繁中」用）：GitHub 搜尋沒有「語言＝中文」這種條件，只能拿回來後在手機上判斷。
+   只看描述（搜尋結果只給描述，README 要另外花額度）；日文先看假名（日文也有漢字）、韓文看諺文；
+   中文用同一份簡體字表判簡繁 —— 短描述只有兩邊共用的字（例如「股票分析」）分不出來，歸繁中。 */
+const KANA_RE=/[\u3040-\u30ff]/g, HANGUL_RE=/[\uac00-\ud7af]/g, HAN_RE=/[\u3400-\u9fff]/g;
+function descLang(it){
+  const t=String((it&&it.description)||"");
+  if(!t.trim()) return "none";
+  if((t.match(KANA_RE)||[]).length>=2) return "ja";
+  if((t.match(HANGUL_RE)||[]).length>=2) return "ko";
+  const h=(t.match(HAN_RE)||[]).length;
+  if(h>=2){ const sc=(t.match(SIMP_RE)||[]).length; return (sc>=2||(sc>=1&&h<12)) ? "zhs" : "zht"; }
+  return /[a-z]/i.test(t) ? "en" : "none";
+}
+const DLANGS=[["all","全部語言"],["zht","繁體中文"],["zhs","簡體中文"],["zh","中文（繁＋簡）"],["en","英文"],["ja","日文"],["ko","韓文"]];
+function langOk(it,L){
+  L=L||S.dlang||"all"; if(L==="all") return true;
+  const d=descLang(it); return L==="zh" ? (d==="zht"||d==="zhs") : d===L;
+}
 const trQueue=(()=>{ let p=Promise.resolve(); return fn=>{ const r=p.then(fn); p=r.catch(()=>{}); return r; }; })();
-async function trFetch(text,tries){
-  tries=tries||0;
+async function trFetch(text,tries,base){
+  tries=tries||0; base=base||TR.url;
   // Google 開始擋（回 429，或導到驗證頁 → 瀏覽器只看到連線失敗）時，再送只會被擋更久：
   // 暫停 3 分鐘不送，畫面先顯示原文，並說明可以怎麼做
   if(S.trPauseUntil && Date.now()<S.trPauseUntil) throw new Error("Google 翻譯暫時擋住太多請求，約 "+Math.ceil((S.trPauseUntil-Date.now())/60000)+" 分鐘後會自動再試");
@@ -751,8 +777,8 @@ async function trFetch(text,tries){
   // 10 秒逾時：Google 偶爾不回應，沒有逾時的話整個翻譯佇列會卡死，後面的描述都不會再翻
   const ac=typeof AbortController!=="undefined"?new AbortController():null;
   const timer=ac?setTimeout(()=>ac.abort(),10000):null;
-  try{ r=await fetch(TR.url+encodeURIComponent(text),ac?{signal:ac.signal}:{}); clearTimeout(timer); }
-  catch(e){ clearTimeout(timer); if(tries<3){ await sleep(800*Math.pow(2,tries)+Math.random()*300); return trFetch(text,tries+1); }
+  try{ r=await fetch(base+encodeURIComponent(text),ac?{signal:ac.signal}:{}); clearTimeout(timer); }
+  catch(e){ clearTimeout(timer); if(tries<3){ await sleep(800*Math.pow(2,tries)+Math.random()*300); return trFetch(text,tries+1,base); }
     S.trPauseUntil=Date.now()+180e3; throw new Error("連不到翻譯服務（可能被 Google 暫時限流）"); }
   if((r.status===429||r.status>=500) && tries<3){ await sleep(1200*Math.pow(2,tries)+Math.random()*300); return trFetch(text,tries+1); }
   if(r.status===429){ S.trPauseUntil=Date.now()+180e3; throw new Error("Google 翻譯暫時限流"); }
@@ -2584,6 +2610,7 @@ function setCat(id){
    詳細頁的 liveCandidates 會再從 README、CNAME 找更多，並實際連一次；這裡只求快、不保證連得上。 */
 S.liveOnly=false;
 try{ S.liveOnly=localStorage.getItem("xray-live")==="1"; }catch(e){}
+try{ S.dlang=localStorage.getItem("xray-dlang")||"all"; if(!DLANGS.some(o=>o[0]===S.dlang)) S.dlang="all"; }catch(e){ S.dlang="all"; }
 function quickLive(it){
   const h=String(it.homepage||"").trim();
   if(/^https?:\/\/[^\s]+$/i.test(h)){
@@ -2659,24 +2686,89 @@ const SYN={
 };
 function nz(s){ return String(s||"").normalize("NFKC").toLowerCase(); }
 function compact(s){ return nz(s).replace(/[\s\-_.\/]+/g,""); }
-/* 每個輸入的詞變成一組「同義詞」；中文詞沒空格也能拆出字典裡的詞（小說下載器 → 小說、下載） */
-function fzGroups(q){
-  return nz(q).split(/\s+/).filter(Boolean).map(t=>{
-    const g=[t];
+/* 每個輸入的詞變成一組「同義詞」；中文詞沒空格也能拆出字典裡的詞（小說下載器 → 小說、下載）
+   en = 字典沒有的中文詞自動翻成的英文（toEnglishTerms，Google 免費翻譯、存在這支手機） */
+function fzGroups(q,en){ return fzGroupsOf(nz(q).split(/\s+/).filter(Boolean),en); }
+function fzGroupsOf(terms,en){
+  return terms.map(t0=>{
+    const t=nz(t0).replace(/^"|"$/g,""), g=[t];
     Object.keys(SYN).forEach(k=>{ if(t.indexOf(k)>-1) SYN[k].forEach(w=>{ if(g.indexOf(w)<0) g.push(w); }); });
+    if(en && en[t] && g.indexOf(en[t])<0) g.push(en[t]);
     if(/^[a-z0-9]+s$/.test(t) && t.length>3) g.push(t.slice(0,-1));   // 複數 → 單數
     return g;
   });
 }
-function fuzzyQuery(q){
-  if(q.indexOf(":")>-1) return q;                 // 使用者自己下了 GitHub 語法（stars:>100），不要動它
-  const gs=fzGroups(q), terms=[];
-  for(let i=0;terms.length<6;i++){                // 先放每組原詞，再輪流補同義詞
+/* 2026-10-31 在 Actions 實查 GitHub 搜尋（web/xray_search_probe.py）：
+   ① 空格 = 全部都要（2026 election 1,814 筆）② OR = 有一個就算（2026 OR election 116 萬筆，想找的被淹沒）
+   ③ 括號不會分組 ④「-字」不會排除（novel -manga 前 30 筆全有 manga），要寫 NOT（0 筆）
+   ⑤ 運算子最多 5 個（7 個詞用 OR 串 → 422）
+   所以：好幾個詞 → 先查「全部都要」（中文換成英文同義詞），太少（< FZ_MIN）才放寬成 OR 再查一次；
+   排除一律轉成 NOT，回來後在手機上再擋一次（GitHub 沒擋乾淨也不會出現）。 */
+const FZ_MIN=30, FZ_OPS=5;
+function isCJK(t){ return /[㐀-鿿]/.test(t); }
+function quoteIf(w){ return /\s/.test(w) && w[0]!=='"' ? '"'+w+'"' : w; }
+function parseQ(q){
+  const toks=String(q).match(/"[^"]+"|\S+/g)||[], out={terms:[],nots:[],quals:[],raw:false};
+  for(let i=0;i<toks.length;i++){
+    const t=toks[i];
+    if(t==="OR"||t==="AND"){ out.raw=true; out.terms.push(t); continue; }           // 使用者自己寫了運算子：照他的
+    if(t==="NOT"){ if(toks[i+1]) out.nots.push(toks[++i].replace(/^-/,"")); continue; }
+    if(t.indexOf(":")>-1){ out.quals.push(t); continue; }                         // GitHub 條件（-language:x 這種 GitHub 認得）
+    if(t.length>1 && (t[0]==="-"||t[0]==="－")){ out.nots.push(t.slice(1)); continue; }   // -字 → NOT 字（全形減號也算）
+    out.terms.push(t);
+  }
+  return out;
+}
+function notQ(nots){ return nots.map(w=>"NOT "+quoteIf(w)).join(" "); }
+/* 一般模式：只把「-字」換成 GitHub 認得的 NOT，其他照打的送 */
+function plainQuery(q){
+  const p=parseQ(q);
+  return p.nots.length ? [p.terms.join(" "),notQ(p.nots),p.quals.join(" ")].filter(Boolean).join(" ") : String(q);
+}
+/* 模糊模式要送的查詢：and = 全部都要（一個詞就沒有）、or = 放寬版；groups 給本機排序、nots 給本機再擋一次 */
+function fzPlan(q,en){
+  const p=parseQ(q), tail=[notQ(p.nots),p.quals.join(" ")].filter(Boolean).join(" ");
+  const add=x=>[x,tail].filter(Boolean).join(" ");
+  const groups=fzGroupsOf(p.terms.filter(t=>t!=="OR"&&t!=="AND"),en);
+  if(p.raw || !p.terms.length) return {and:null,or:add(p.terms.join(" "))||String(q),groups,nots:p.nots};
+  // 每組的代表字：中文詞有英文同義詞就用英文（GitHub 上大多是英文描述）
+  const rep=g=>{ if(!isCJK(g[0])) return quoteIf(g[0]); const e=g.find(w=>!isCJK(w)); return quoteIf(e||g[0]); };
+  const and=groups.length>1 ? add(groups.map(rep).join(" ")) : null;
+  // 放寬版：純數字（年份）放進 OR 會把幾百萬個專案都算進來 → 不放（本機排序時還是要對得上）
+  const strong=groups.filter(g=>!/^\d+$/.test(g[0])), use=strong.length?strong:groups;
+  const cap=Math.max(1,FZ_OPS+1-p.nots.length), terms=[];   // 運算子 = (詞數 − 1) 個 OR + NOT 數，最多 5 個
+  for(let i=0;terms.length<cap;i++){
     let added=false;
-    gs.forEach(g=>{ if(g[i]!==undefined && terms.length<6 && terms.indexOf(g[i])<0){ terms.push(g[i]); added=true; } });
+    use.forEach(g=>{ if(g[i]!==undefined && terms.length<cap){ const w=quoteIf(g[i]); if(terms.indexOf(w)<0){ terms.push(w); added=true; } } });
     if(!added) break;
   }
-  return terms.length>1 ? terms.join(" OR ") : q;
+  return {and,or:add(terms.length>1?terms.join(" OR "):(terms[0]||String(q))),groups,nots:p.nots};
+}
+/* 字典沒有的中文詞 → 英文（選舉 → election）。Google 免費翻譯，結果存在這支手機（xray-q2en-v1）；
+   翻譯被限流就這次不翻（照原詞搜），不擋搜尋。 */
+const Q2EN_KEY="xray-q2en-v1", TR_EN="https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=";
+async function toEnglishTerms(terms){
+  const need=[...new Set(terms.map(t=>nz(t).replace(/^"|"$/g,"")))].filter(t=>isCJK(t) && !Object.keys(SYN).some(k=>t.indexOf(k)>-1));
+  if(!need.length) return {};
+  let cache={}; try{ cache=JSON.parse(localStorage.getItem(Q2EN_KEY)||"{}")||{}; }catch(e){}
+  const out={};
+  for(const t of need){
+    if(cache[t]===undefined){
+      try{
+        const e=nz(await trFetch(t,2,TR_EN)).replace(/[^a-z0-9\s\-]/g," ").replace(/\s+/g," ").trim();
+        cache[t]=(e && e.split(" ").length<=3) ? e : "";   // 翻不出來或翻成一長句就不用
+      }catch(err){ break; }
+    }
+    if(cache[t]) out[t]=cache[t];
+  }
+  try{ localStorage.setItem(Q2EN_KEY,JSON.stringify(cache)); }catch(e){}
+  return out;
+}
+/* 本機再擋一次排除的字（名稱、描述、topics 有出現就不顯示） */
+function hasNot(it,nots){
+  if(!nots||!nots.length) return false;
+  const hay=nz([it.full_name,it.description,(it.topics||[]).join(" ")].join(" ")), hc=compact(hay);
+  return nots.some(w=>{ const x=nz(w).replace(/^"|"$/g,""); return x && (hay.indexOf(x)>-1 || hc.indexOf(compact(x))>-1); });
 }
 function editWithin(a,b,k){                        // 編輯距離是否 ≤ k（只算短字，夠快）
   if(Math.abs(a.length-b.length)>k) return false;
@@ -2725,7 +2817,7 @@ async function search(more,qArg,fromHistory){
     // 同一個關鍵字（同一種模式）已經有結果：直接顯示記憶體裡的，不再花搜尋額度
     if(S.view==="search" && key===S.qKey && S.results && S.results.length){ showResults(); if(!fromHistory) pushView({v:"search",q:q}); return; }
     qLast=q; S.qKey=key; S.extra=extra; S.page=1; S.results=[]; S.view="search"; S.filter="";
-    S.fzGroups=fzGroups(q); S.sort=fuzzy?"rel":"best"; markTrend("");
+    S.sort=fuzzy?"rel":"best"; markTrend("");
   }else S.page=(S.page||1)+1;
 
   // 每次搜尋（含載入更多）都拿一個新編號：回來時已經不是最新的就丟掉。
@@ -2733,17 +2825,49 @@ async function search(more,qArg,fromHistory){
   const tok=S.searchTok=(S.searchTok||0)+1;
   const btn=$("more-btn");
   if(btn){ btn.textContent="載入中…"; btn.disabled=true; }
-  const apiQ=(fuzzy?fuzzyQuery(q):q)+(extra.kw?" "+extra.kw:"")+(extra.qs?" "+extra.qs:"");
-  say("搜尋「"+apiQ+"」…");
+  const withExtra=base=>base+(extra.kw?" "+extra.kw:"")+(extra.qs?" "+extra.qs:"");
+  // 模糊模式交給 GitHub 依相關度排；一般模式照星數
+  const fetchQ=(base,page)=>getJSON("https://api.github.com/search/repositories?q="+encodeURIComponent(withExtra(base))+
+    (fuzzy?"":"&sort=stars&order=desc")+"&per_page="+PER+"&page="+page);
   try{
-    // 模糊模式交給 GitHub 依相關度排；一般模式照星數
-    const r=await getJSON("https://api.github.com/search/repositories?q="+encodeURIComponent(apiQ)+
-      (fuzzy?"":"&sort=stars&order=desc")+"&per_page="+PER+"&page="+S.page);
+    let r, note="";
+    if(!more){
+      let plan;
+      if(fuzzy){
+        const terms=parseQ(q).terms;
+        if(terms.some(isCJK)) say("把中文關鍵字換成英文同義詞…");
+        const en=await toEnglishTerms(terms);
+        if(tok!==S.searchTok) return;
+        plan=fzPlan(q,en);
+      }else plan={and:null,or:plainQuery(q),groups:fzGroups(q),nots:parseQ(q).nots};
+      S.fzGroups=plan.groups; S.nots=plan.nots;
+      if(plan.and){
+        // 好幾個詞：先查「全部都要」；太少才放寬再查一次（第 2 次額度），兩份合併、全部都要的排前面
+        say("搜尋「"+withExtra(plan.and)+"」…");
+        r=await fetchQ(plan.and,1);
+        if(tok!==S.searchTok) return;
+        S.apiQ=plan.and;
+        if((r.total_count||0)<FZ_MIN){
+          const n1=r.total_count||0;
+          say("全部都要只有 "+n1+" 個，放寬成「有其中一個就算」再查一次…");
+          const r2=await fetchQ(plan.or,1);
+          if(tok!==S.searchTok) return;
+          const seen=new Set((r.items||[]).map(i=>i.full_name));
+          r={total_count:r2.total_count,items:(r.items||[]).concat((r2.items||[]).filter(i=>!seen.has(i.full_name)))};
+          S.apiQ=plan.or; note="（全部都要 "+n1+" 個 → 放寬再查，共 2 次額度）";
+        }
+      }else{
+        say("搜尋「"+withExtra(plan.or)+"」…");
+        r=await fetchQ(plan.or,1); S.apiQ=plan.or;
+      }
+    }else r=await fetchQ(S.apiQ||q,S.page);
     if(tok!==S.searchTok) return;
-    S.results=(S.results||[]).concat(r.items||[]);
-    S.total=Math.min(r.total_count||0,1000);   // GitHub 搜尋最多只讓翻到第 1000 筆
+    const have=new Set((S.results||[]).map(i=>i.full_name));
+    S.results=(S.results||[]).concat((r.items||[]).filter(i=>!have.has(i.full_name)));
+    S.total=Math.min(Math.max(r.total_count||0,S.results.length),1000);   // GitHub 搜尋最多只讓翻到第 1000 筆
     if(!more){ addRecent("q",q); if(!fromHistory) pushView({v:"search",q:q}); }
-    say("找到 "+Number(S.total).toLocaleString()+" 個專案"+(apiQ!==q?"（實際查詢："+apiQ+"）":"")+"，點一個開始掃描、點方框勾選","✓");
+    const sent=withExtra(S.apiQ);
+    say("找到 "+Number(S.total).toLocaleString()+" 個專案"+(sent!==q?"（實際查詢："+sent+"）":"")+note+"，點一個開始掃描、點方框勾選","✓");
     showResults();
   }catch(e){
     if(tok!==S.searchTok) return;
@@ -2772,7 +2896,7 @@ function sortedIdx(){
   const it=S.results||[];
   const fg=S.filter?fzGroups(S.filter):null;
   // 篩選：每個詞都要「對得上」（含同義詞、拼錯、縮寫），在手機上算，不耗額度
-  let idx=it.map((_,i)=>i).filter(i=>(!fg || fg.every(g=>fzScore([g],it[i])>=0.5)) && (S.cat==="all" || catsOf(it[i]).has(S.cat)) && (!S.liveOnly || quickLive(it[i])));
+  let idx=it.map((_,i)=>i).filter(i=>(!fg || fg.every(g=>fzScore([g],it[i])>=0.5)) && (S.cat==="all" || catsOf(it[i]).has(S.cat)) && (!S.liveOnly || quickLive(it[i])) && langOk(it[i]) && !(S.view==="search" && hasNot(it[i],S.nots)));
   const rel=i=>fzScore(S.fzGroups||[],it[i])*10+Math.log10(it[i].stargazers_count+1)*0.5;
   const by={
     stars:(a,b)=>it[b].stargazers_count-it[a].stargazers_count,
@@ -2796,7 +2920,11 @@ function paintResults(){
     .map(o=>'<option value="'+o[0]+'"'+(S.sort===o[0]?" selected":"")+'>'+o[1]+'</option>').join("");
   const label=trend ? '⭐ '+esc(S.trendTitle)+' · '+items.length+' 個（每天自動收集，不耗額度）'
     : '「'+esc(qLast)+'」共 '+Number(S.total).toLocaleString()+' 個 · 已顯示 '+items.length;
+  const lopts=DLANGS.map(o=>{ const n=o[0]==="all"?items.length:items.filter(it=>langOk(it,o[0])).length;
+    return '<option value="'+o[0]+'"'+((S.dlang||"all")===o[0]?" selected":"")+'>'+o[1]+'（'+n+'）</option>'; }).join("");
   const head='<div class="rhead"><span>'+label+'</span><select id="rsort" aria-label="排序">'+opts+'</select></div>'+
+    '<div class="rlangrow">🈯 描述語言 <select id="rlang" aria-label="只看哪一種語言的專案描述">'+lopts+'</select>'+
+    '<small>看專案描述判斷，不耗額度</small></div>'+
     '<div class="catrow" id="rcats"></div>'+
     '<input class="rfilter" id="rfilter" type="search" autocomplete="off" placeholder="🌀 結果內模糊篩選（nvl、downlod、影片）不耗額度" value="'+esc(S.filter||"")+'">';
   const more=(!trend && items.length<S.total && items.length<1000)
@@ -2833,7 +2961,9 @@ function paintRows(){
       '<div class="rz"><b>★ '+fmtStars(it.stargazers_count)+'</b><span>星星</span><i>'+fmtSize(it.size)+'</i></div></div></button>';
   }).join("") : '<button disabled style="color:var(--muted)">'+(S.liveOnly&&!S.filter
       ? '已載入的結果中沒有線上成品（homepage 沒填、也沒開 GitHub Pages）。可以「載入更多」，或關掉「🌐 有線上成品」'
-      : '已載入的結果中沒有符合'+(S.filter?'「'+esc(S.filter)+'」':'')+(S.liveOnly?'又有線上成品':'')+'的，清空篩選或換個詞')+'</button>';
+      : '已載入的結果中沒有符合'+(S.filter?'「'+esc(S.filter)+'」':'')+(S.liveOnly?'又有線上成品':'')+
+        ((S.dlang||"all")!=="all"?'、描述是'+esc((DLANGS.find(o=>o[0]===S.dlang)||[])[1]||""):'')+'的，清空篩選或換個詞'+
+        ((S.dlang||"all")!=="all"&&S.view!=="trend"?'（用中文關鍵字搜尋，中文專案會比較多；也可以「載入更多」）':''))+'</button>';
   // 還沒翻的描述分批送出、每批翻好就重畫；每段話這次開頁只試一次，失敗就留原文，不會無限重試
   S.trTried=S.trTried||new Set();
   const todo=missing.filter(t=>!S.trTried.has(t));
@@ -3356,6 +3486,7 @@ $("doc-list").addEventListener("click",e=>{
 $("dq").addEventListener("keydown",e=>{ if(e.key==="Enter") searchDocs(); });
 $("results").addEventListener("change",e=>{
   if(e.target.id==="rsort"){ S.sort=e.target.value; paintRows(); }
+  if(e.target.id==="rlang"){ S.dlang=e.target.value; try{ localStorage.setItem("xray-dlang",S.dlang); }catch(e2){} paintRows(); }
 });
 $("results").addEventListener("input",e=>{
   if(e.target.id==="rfilter"){ S.filter=e.target.value.trim(); paintRows(); }
@@ -3599,6 +3730,11 @@ $("copyfb").addEventListener("click",e=>{ if(e.target===$("copyfb")) hideCopyPan
 
 $("go").addEventListener("click",go);
 $("url").addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+// 手機點輸入框時鍵盤推上來、頁面自己捲：iOS 不一定照 scroll-margin，捲完再檢查一次「開始」鈕有沒有被置頂分頁列蓋住
+$("url").addEventListener("focus",()=>setTimeout(()=>{
+  const bar=document.querySelector(".bar"), t=$("tabs").getBoundingClientRect(), b=bar.getBoundingClientRect();
+  if(b.top<t.bottom+4) window.scrollBy(0,b.top-t.bottom-8);
+},350));
 /* Token：使用者要求記在自己手機，不想每次重貼。存 localStorage（只在這支手機這個瀏覽器）。
    注意同一個 github.io 網域下的其他頁面也讀得到，所以只建議放唯讀 Token；畫面上只顯示末 4 碼。 */
 const TOK_KEY="xray-token-v1";

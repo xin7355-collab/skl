@@ -206,10 +206,12 @@ function rawResponse(url) {
 
 // 假翻譯：每一行前面加「中：」，看得出哪些字有送去翻、哪些沒送
 const zhLines = (q) => q.split('\n').map((l) => '中：' + l).join('\n');
+// 翻成英文（X-Ray 模糊搜尋把字典沒有的中文詞換成英文）：像真的 Google 一樣，認得的回英文、不認得的原樣回來
+const EN_DICT = { '選舉': 'election', '週報': 'weekly report', '漫畫': 'comics' };
 
 async function mockNetwork(context, opts) {
   // apiOverride：個別測試可以塞一個 (url) => 回應｜undefined，用來模擬限流等狀況；回 undefined 就照平常回應
-  const stats = { api: [], raw: 0, translate: 0, blocked: [], apiOverride: null };
+  const stats = { api: [], searchQ: [], raw: 0, translate: 0, blocked: [], apiOverride: null };
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') {
@@ -223,6 +225,7 @@ async function mockNetwork(context, opts) {
     }
     if (url.hostname === 'api.github.com') {
       stats.api.push(url.pathname);
+      if (url.pathname === '/search/repositories') stats.searchQ.push(url.searchParams.get('q'));
       // 可以回傳 Promise：用來模擬「這個請求比較慢回來」
       const o = stats.apiOverride && await stats.apiOverride(url);
       return route.fulfill(o || apiResponse(url));
@@ -231,7 +234,8 @@ async function mockNetwork(context, opts) {
     if (url.hostname === 'translate.googleapis.com') {
       stats.translate++;
       const q = url.searchParams.get('q') || '';
-      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([[[zhLines(q), q]]]) });
+      const out = url.searchParams.get('tl') === 'en' ? (EN_DICT[q] || q) : zhLines(q);
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([[[out, q]]]) });
     }
     if (url.hostname.endsWith('.workers.dev')) return route.fulfill({ status: 200, body: 'ok' });
     stats.blocked.push(url.href);

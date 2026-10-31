@@ -475,3 +475,130 @@ test('連續搜尋兩次：先送出但比較慢回來的舊結果，不能混�
   await expect(page.locator('#rrows')).not.toContainText('old/a');
   await expect(page.locator('#results .rhead')).toContainText('fastword');
 });
+
+// ── 2026-10-31 使用者回報四件事：①「開始」不好按 ②模糊搜尋找不到 ③有「-」模糊搜尋就壞 ④只看繁中 ──
+test.describe('搜尋列與模糊搜尋（2026-10-31）', () => {
+  const ITEM = (full, extra = {}) => Object.assign({
+    id: full.length * 7 + full.charCodeAt(full.length - 1), name: full.split('/')[1], full_name: full, description: 'x',
+    stargazers_count: 100, language: 'JavaScript', pushed_at: new Date().toISOString(), created_at: new Date(Date.now() - 400 * 864e5).toISOString(),
+    size: 100, html_url: 'https://github.com/' + full, topics: [], license: { spdx_id: 'MIT' }, homepage: null, has_pages: false,
+  }, extra);
+  const reply = (items, total) => ({ status: 200, headers: RATE, contentType: 'application/json',
+    body: JSON.stringify({ total_count: total == null ? items.length : total, incomplete_results: false, items }) });
+  async function go(page, q, fuzzy) {
+    await page.goto('/xray.html');
+    if (fuzzy) await page.locator('#fuzzy').check(); else await page.locator('#fuzzy').uncheck();
+    await page.locator('#url').fill(q);
+    await page.locator('#go').click();
+    await expect(page.locator('#rrows button[data-i]').first()).toBeVisible();
+  }
+
+  test('①「開始」夠大；點輸入框被捲到最上面時不會躲在分頁列底下；輸入框 16px（iPhone 不自動放大）', async ({ page }) => {
+    await page.goto('/xray.html');
+    const box = await page.locator('#go').boundingBox();
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.width).toBeGreaterThanOrEqual(64);
+    expect(await page.locator('#url').evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(16);
+    // 手機點輸入框會把它捲到最上面；以前「開始」上緣 4 成在置頂分頁列底下，點上半部是點到分頁列
+    await page.locator('#url').evaluate((e) => e.scrollIntoView({ block: 'start' }));
+    const hit = await page.evaluate(() => {
+      const b = document.getElementById('go').getBoundingClientRect(); let n = 0, all = 0;
+      for (const fy of [0.1, 0.3, 0.5, 0.7, 0.9]) for (const fx of [0.2, 0.5, 0.8]) {
+        all++; const el = document.elementFromPoint(b.left + b.width * fx, b.top + b.height * fy);
+        if (el && el.closest('#go')) n++;
+      }
+      return n + '/' + all;
+    });
+    expect(hit).toBe('15/15');
+    // 就算瀏覽器沒照 scroll-margin 捲（iPhone 鍵盤推上來時），focus 之後也會自己挪開
+    await page.evaluate(() => { const b = document.querySelector('.bar'); window.scrollTo(0, b.getBoundingClientRect().top + scrollY - 20); });
+    await page.locator('#url').focus();
+    await page.waitForTimeout(500);
+    const gap = await page.evaluate(() => document.querySelector('.bar').getBoundingClientRect().top - document.getElementById('tabs').getBoundingClientRect().bottom);
+    expect(gap).toBeGreaterThanOrEqual(0);
+  });
+
+  test('②好幾個詞：先查「全部都要」，字典沒有的中文自動換英文（選舉 → election），夠多就只花 1 次', async ({ page, net }) => {
+    net.apiOverride = (u) => (u.pathname === '/search/repositories'
+      ? reply([ITEM('a/election-2026', { description: '2026 election results tracker' }), ITEM('b/other', { description: 'misc 2026 notes' })], 1814)
+      : undefined);
+    await go(page, '2026 選舉', true);
+    expect(net.searchQ).toEqual(['2026 election']);   // 舊版：「2026 OR 選舉」（實查 110 萬筆）
+    // 全部都有對到的排第一
+    await expect(page.locator('#rrows button[data-i]').first()).toContainText('a/election-2026');
+    await expect(page.locator('#status')).toContainText('2026 election');
+  });
+
+  test('②「全部都要」太少（< 30）才放寬成 OR 再查一次，合併時全部都要的排前面、不重複', async ({ page, net }) => {
+    net.apiOverride = (u) => {
+      if (u.pathname !== '/search/repositories') return undefined;
+      const q = u.searchParams.get('q');
+      if (!q.includes(' OR ')) return reply([ITEM('and/novel-download', { description: 'novel download tool' })], 1);
+      return reply([ITEM('and/novel-download', { description: 'novel download tool' }), ITEM('or/fiction-only', { description: 'fiction' }),
+        ITEM('or/download-only', { description: 'downloader' })], 500);
+    };
+    await go(page, '小說 下載', true);
+    expect(net.searchQ.length).toBe(2);
+    expect(net.searchQ[0]).toBe('novel download');
+    expect(net.searchQ[1]).toContain(' OR ');
+    expect((net.searchQ[1].match(/ OR /g) || []).length).toBeLessThanOrEqual(5);   // 實查：6 個 OR 就 422
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(3);
+    await expect(page.locator('#rrows button[data-i]').first()).toContainText('and/novel-download');
+  });
+
+  test('③「-字」在模糊模式：換成 NOT、排除的字不加同義詞、回來的結果在手機上再擋一次', async ({ page, net }) => {
+    net.apiOverride = (u) => (u.pathname === '/search/repositories'
+      ? reply([ITEM('ok/novel-reader', { description: 'novel reader' }), ITEM('bad/manhua', { description: '漫畫 小說 reader' })], 2)
+      : undefined);
+    await go(page, '小說 -漫畫', true);
+    expect(net.searchQ.length).toBe(1);
+    const q = net.searchQ[0];
+    expect(q).toContain('NOT 漫畫');
+    expect(q).not.toMatch(/(^|\s)-漫畫/);               // GitHub 不吃「-字」（實查：novel -manga 前 30 筆全有 manga）
+    expect(q).not.toMatch(/manga|comic|OR 漫畫|漫畫 OR/);   // 舊版把排除的字也加了同義詞 → 反而去找漫畫
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(1);
+    await expect(page.locator('#rrows')).not.toContainText('bad/manhua');
+  });
+
+  test('③「-字」在一般模式也換成 NOT；GitHub 條件（-language:x）照原樣', async ({ page, net }) => {
+    net.apiOverride = (u) => (u.pathname === '/search/repositories'
+      ? reply([ITEM('ok/novel', { description: 'novel app' }), ITEM('bad/manga-novel', { description: 'manga novel' })], 2)
+      : undefined);
+    await go(page, 'novel -manga -language:python', false);
+    expect(net.searchQ[0]).toBe('novel NOT manga -language:python');
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(1);
+  });
+
+  test('④描述語言篩選：繁中／簡中／英文／日文／韓文分得出來、數量寫在選項上、記住選擇', async ({ page, net }) => {
+    const items = [
+      ITEM('tw/stock', { description: '股票看盤工具，台灣上市櫃都能看' }),
+      ITEM('cn/novel', { description: '小说下载器，支持多个网站' }),
+      ITEM('en/novel', { description: 'A novel downloader' }),
+      ITEM('jp/novel', { description: 'ノベルをダウンロードするツール' }),
+      ITEM('kr/novel', { description: '소설 다운로더' }),
+      ITEM('no/desc', { description: null }),
+    ];
+    net.apiOverride = (u) => (u.pathname === '/search/repositories' ? reply(items, 6) : undefined);
+    await go(page, 'novel tool', false);
+    const rows = page.locator('#rrows button[data-i]');
+    await expect(rows).toHaveCount(6);
+    const pick = async (v, n, name) => {
+      await page.locator('#rlang').selectOption(v);
+      await expect(rows).toHaveCount(n);
+      if (name) await expect(rows.first()).toContainText(name);
+    };
+    await expect(page.locator('#rlang option[value="zht"]')).toContainText('（1）');
+    await pick('zht', 1, 'tw/stock');
+    await pick('zhs', 1, 'cn/novel');
+    await pick('zh', 2);
+    await pick('en', 1, 'en/novel');
+    await pick('ja', 1, 'jp/novel');
+    await pick('ko', 1, 'kr/novel');
+    await pick('zht', 1, 'tw/stock');
+    await expectNoHorizontalScroll(page);
+    // 重新整理再搜一次：記得上次選的
+    await go(page, 'novel tool 2', false);
+    await expect(page.locator('#rlang')).toHaveValue('zht');
+    await expect(rows).toHaveCount(1);
+  });
+});
