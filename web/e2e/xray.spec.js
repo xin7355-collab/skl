@@ -637,7 +637,7 @@ test.describe('我的 App：每天自動健檢', () => {
     apps: [
       { repo: 'xin7355-collab/Camera', score: 11, issues: 4, want: 12, installed: 0, prev_score: 9, prev_issues: 3 },
       { repo: 'xin7355-collab/StockAI-DB', score: 5, issues: 1, want: 9, installed: 8, prev_score: 7, prev_issues: 3 },
-      { repo: 'xin7355-collab/GALEPOST', score: 0, issues: 0, want: 2, installed: 15 },
+      { repo: 'xin7355-collab/k7m2q', score: 0, issues: 0, want: 2, installed: 15 },
     ],
     skipped: ['xin7355-collab/twns'], empty: ['xin7355-collab/argus-pwa'], failed: [],
   });

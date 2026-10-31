@@ -3,7 +3,6 @@
   "owner": "xin7355-collab",
   "exclude": ["xin7355-collab/skl"],
   "apps": [
-    {"repo": "xin7355-collab/GALEPOST"},
     {"repo": "xin7355-collab/tool"},
     {"repo": "xin7355-collab/StockAI-DB"},
     {"repo": "xin7355-collab/PriceHub"},
