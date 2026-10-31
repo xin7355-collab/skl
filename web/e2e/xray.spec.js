@@ -602,3 +602,93 @@ test.describe('搜尋列與模糊搜尋（2026-10-31）', () => {
     await expect(rows).toHaveCount(1);
   });
 });
+
+// ── 2026-10-31：A 每天自動健檢（fleet.json，只有數量）、C 追蹤搜尋（存手機、新專案標 🆕）──
+test.describe('我的 App：每天自動健檢', () => {
+  const FLEET = (daysAgo) => ({
+    at: new Date(Date.now() - daysAgo * 864e5).toISOString(),
+    apps: [
+      { repo: 'xin7355-collab/Camera', score: 11, issues: 4, want: 12, installed: 0, prev_score: 9, prev_issues: 3 },
+      { repo: 'xin7355-collab/StockAI-DB', score: 5, issues: 1, want: 9, installed: 8, prev_score: 7, prev_issues: 3 },
+      { repo: 'xin7355-collab/GALEPOST', score: 0, issues: 0, want: 2, installed: 15 },
+    ],
+    skipped: ['xin7355-collab/twns'], empty: ['xin7355-collab/argus-pwa'], failed: [],
+  });
+  test.describe('有今天的結果', () => {
+    test.use({ fleetJson: FLEET(0.2) });
+    test('打開就看得到分數、比上次多／少幾項、略過與空 repo 的原因；點「看內容」才即時查', async ({ page }) => {
+      await page.goto('/xray.html?tab=mine');
+      const box = page.locator('#autofleet');
+      await expect(box.locator('tr')).toHaveCount(3);
+      await expect(box).toContainText('每天自動健檢');
+      await expect(box.locator('tr').nth(0)).toContainText('比上次多 1 項');
+      await expect(box.locator('tr').nth(1)).toContainText('比上次少 2 項');
+      await expect(box.locator('tr').nth(2)).toContainText('沒有明顯缺口');
+      await expect(box).toContainText('SKL_READ_TOKEN');
+      await expect(box).toContainText('argus-pwa');
+      await expect(box).not.toContainText('天沒更新');
+      await expectNoHorizontalScroll(page);
+      await box.locator('[data-autoapp="xin7355-collab/Camera"]').click();
+      await expect(page.locator('#fleetbar')).toBeVisible();
+      await expect(box).toBeHidden();                   // 點進單一 App 時一起收起來
+    });
+  });
+  test.describe('結果太舊', () => {
+    test.use({ fleetJson: FLEET(5) });
+    test('超過 3 天沒更新要說出來', async ({ page }) => {
+      await page.goto('/xray.html?tab=mine');
+      await expect(page.locator('#autofleet')).toContainText('5 天沒更新');
+    });
+  });
+  test('沒有 fleet.json（本機、還沒部署過）就不顯示，不報錯', async ({ page }) => {
+    await page.goto('/xray.html?tab=mine');
+    await expect(page.locator('#myapps')).toContainText('我的 App');
+    await expect(page.locator('#autofleet')).toBeEmpty();
+  });
+});
+
+test.describe('追蹤搜尋', () => {
+  const ITEM = (full) => ({ id: full.length * 13 + full.charCodeAt(0), name: full.split('/')[1], full_name: full, description: 'novel thing',
+    stargazers_count: 10, language: 'JavaScript', pushed_at: new Date().toISOString(), created_at: new Date().toISOString(),
+    size: 10, html_url: 'https://github.com/' + full, topics: [], license: null, homepage: null, has_pages: false });
+  const reply = (items) => ({ status: 200, headers: RATE, contentType: 'application/json',
+    body: JSON.stringify({ total_count: items.length, incomplete_results: false, items }) });
+
+  test('追蹤 → 隔天打開只查一次（加 created:>=）→ 新專案在追蹤列標 🆕 → 點開只列新的、看過就歸零', async ({ page, net }) => {
+    net.apiOverride = (u) => {
+      if (u.pathname !== '/search/repositories') return undefined;
+      const q = u.searchParams.get('q');
+      if (q.includes('created:>=')) return reply([ITEM('old/seen-novel'), ITEM('new/fresh-novel')]);
+      return reply([ITEM('old/seen-novel'), ITEM('old/other-novel')]);
+    };
+    await page.goto('/xray.html');
+    await page.locator('#fuzzy').uncheck();
+    await page.locator('#url').fill('novel');
+    await page.locator('#go').click();
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(2);
+    await page.locator('#watchbtn').click();
+    await expect(page.locator('#watchbtn')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#watches a[data-w]')).toHaveCount(1);
+    // 剛追蹤：重新打開不會馬上再查
+    const before = net.searchQ.length;
+    await page.goto('/xray.html');
+    await page.waitForTimeout(800);
+    expect(net.searchQ.length).toBe(before);
+    // 假裝過了兩天
+    await page.evaluate(() => { const a = JSON.parse(localStorage.getItem('xray-watch-v1')); a[0].last = Date.now() - 2 * 864e5; localStorage.setItem('xray-watch-v1', JSON.stringify(a)); });
+    await page.goto('/xray.html');
+    await expect(page.locator('#watches .wnew')).toHaveText('🆕1');
+    const checkQ = net.searchQ[net.searchQ.length - 1];
+    expect(checkQ).toMatch(/^novel created:>=\d{4}-\d{2}-\d{2}$/);
+    // 點開：只列追蹤後新建立的、標 🆕；追蹤列歸零；追蹤鈕仍顯示「已追蹤」
+    await page.locator('#watches a[data-w]').click();
+    await expect(page.locator('#rrows')).toContainText('new/fresh-novel');
+    await expect(page.locator('#rrows button[data-i]', { hasText: 'new/fresh-novel' })).toContainText('追蹤後新出現');
+    await expect(page.locator('#rrows button[data-i]', { hasText: 'old/seen-novel' })).not.toContainText('追蹤後新出現');
+    await expect(page.locator('#watches .wnew')).toHaveCount(0);
+    await expect(page.locator('#watchbtn')).toHaveAttribute('aria-pressed', 'true');
+    // 取消追蹤
+    await page.locator('#watchbtn').click();
+    await expect(page.locator('#watches a[data-w]')).toHaveCount(0);
+  });
+});

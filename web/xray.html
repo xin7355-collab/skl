@@ -363,17 +363,24 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .adv .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .myapps{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .myapps a{color:var(--text);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer}
-#fleet table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
-#fleet td{border-top:1px solid var(--line);padding:8px 4px;vertical-align:top}
-#fleet td.sc{font-family:var(--mono);color:var(--amber);font-size:14px;text-align:center;width:36px}
-#fleet .an{font-family:var(--mono);color:var(--text);font-weight:600}
-#fleet .iss{color:var(--muted);margin-top:3px;line-height:1.5}
-#fleet .fbar{height:4px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
-#fleet .fbar i{display:block;height:100%;background:var(--amber)}
+#fleet table,#autofleet table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+#fleet td,#autofleet td{border-top:1px solid var(--line);padding:8px 4px;vertical-align:top}
+#fleet td.sc,#autofleet td.sc{font-family:var(--mono);color:var(--amber);font-size:14px;text-align:center;width:36px}
+#fleet .an,#autofleet .an{font-family:var(--mono);color:var(--text);font-weight:600}
+#fleet .iss,#autofleet .iss{color:var(--muted);margin-top:3px;line-height:1.5}
+#fleet .fbar,#autofleet .fbar{height:4px;background:var(--line);border-radius:2px;margin-top:6px;overflow:hidden}
+#fleet .fbar i,#autofleet .fbar i{display:block;height:100%;background:var(--amber)}
 #fleet.folded{display:none}
+[data-pane="mine"]:has(#fleet.folded) #autofleet{display:none}   /* 點進單一 App 時跟全部健檢一起收起來 */
+#autofleet .dl{font-size:11px;margin-left:4px}
+#autofleet .dl.up{color:var(--amber)}
+#autofleet .dl.dn{color:var(--cyan)}
+#autofleet .gq{min-height:36px;font-size:12px;padding:6px 10px}
 .recent{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .recent a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);border-radius:3px;padding:2px 7px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .recent a i{font-style:normal;color:var(--muted)}
+.recent .wnew{color:var(--amber);font-weight:700;margin-left:2px}
+#watchbtn{font-size:13px;min-height:40px;padding:6px 12px}
 .results .rr{display:flex;gap:10px;align-items:flex-start}
 .results .rmain{flex:1;min-width:0}
 .results .rz{flex:none;text-align:right;font-family:var(--mono);min-width:74px}
@@ -435,6 +442,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 </div>
 <div class="results" id="results"></div>
 <div class="recent" id="recent"></div>
+<div class="recent" id="watches"></div>
 <div class="subbar">
   <div class="samples">
     <a data-s="https://github.com/shadcn-ui/ui">shadcn/ui</a>
@@ -447,6 +455,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 <div class="pane" data-pane="mine">
 <div class="hint">只有這裡會用 skl 技能幫你的 App 健檢（外部專案不做）。點 App 名稱看單一 App 的顧問建議，或一次健檢全部。</div>
 <div class="myapps" id="myapps"></div>
+<div class="adv" id="autofleet"></div>
 <div class="adv" id="fleet"></div>
 <div class="navrow" id="fleetbar" hidden><button class="ghost" id="fleet-back">← 回到全部健檢</button></div>
 </div>
@@ -1074,6 +1083,31 @@ async function runFleet(){
   try{ localStorage.setItem(FLEET_KEY,JSON.stringify(S.fleetData)); }catch(e){ /* 空間不足：這次照常顯示，只是不記住 */ }
   paintFleet();
   pushView({v:"fleet"});
+}
+/* 🤖 每天自動健檢（部署時 web/build_fleet.mjs 用同一支 analyzeLite 跑、寫成 fleet.json）：打開就有、不花手機的額度。
+   ⛔ 公開網站上只有數量；要看問題內容 → 點那個 App，用自己的額度即時查。沒有 fleet.json（本機開、還沒部署過）就不顯示。 */
+function paintAutoFleet(){
+  const d=S.autoFleet, box=$("autofleet");
+  if(!d || !Array.isArray(d.apps)){ box.innerHTML=""; return; }
+  const t=new Date(d.at), when=(t.getMonth()+1)+"/"+t.getDate()+" "+String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
+  const days=(Date.now()-t.getTime())/864e5, max=Math.max(1,...d.apps.map(o=>o.score));
+  const delta=o=>{
+    if(o.prev_issues==null) return '';
+    const k=o.issues-o.prev_issues;
+    return k>0 ? '<span class="dl up">比上次多 '+k+' 項</span>' : k<0 ? '<span class="dl dn">比上次少 '+(-k)+' 項 👍</span>' : '<span class="dl">跟上次一樣</span>';
+  };
+  let html='<div class="h" style="margin-top:14px"><u>🤖</u> 每天自動健檢・'+esc(when)+'（不耗你的額度；公開網站只放數量，點「看內容」才即時查）</div>'+
+    (days>3?'<div class="hint" style="color:var(--amber)">⚠️ 自動健檢已經 '+Math.floor(days)+' 天沒更新：看 skl 的 Deploy web page 工作流</div>':'')+
+    '<table>'+d.apps.map(o=>'<tr><td class="sc">'+o.score+'</td><td><span class="an">'+esc(o.repo.split("/").pop())+'</span>'+
+      (o.installed?' <span class="chip">已裝 '+o.installed+' 個技能</span>':'')+
+      '<div class="iss">'+(o.issues?o.issues+' 項待補強':'沒有明顯缺口 👍')+(o.want?'・建議裝 '+o.want+' 個技能':'')+' '+delta(o)+'</div>'+
+      '<div class="fbar"><i style="width:'+Math.round(o.score/max*100)+'%"></i></div>'+
+      '<button class="gq" data-autoapp="'+esc(o.repo)+'">🔍 看內容</button></td></tr>').join("")+'</table>';
+  const sk=d.skipped||[], em=d.empty||[], fl=d.failed||[];
+  if(sk.length) html+='<div class="hint">🔒 略過 '+sk.length+' 個私人 App（'+sk.map(r=>esc(r.split("/").pop())).join("、")+'）：要自動掃，在 skl 的 Settings → Secrets 加 SKL_READ_TOKEN（唯讀）</div>';
+  if(em.length) html+='<div class="hint">📭 空的 repo（還沒有程式）：'+em.map(r=>esc(r.split("/").pop())).join("、")+'</div>';
+  if(fl.length) html+='<div class="hint" style="color:var(--red)">✕ '+fl.length+' 個這次沒掃成：'+fl.map(f=>esc(String(f[0]).split("/").pop())+'（'+esc(f[1])+'）').join("、")+'</div>';
+  box.innerHTML=html;
 }
 /* 畫出健檢結果（剛跑完或從手機裡讀出上一次的）。只有再按「一鍵健檢」才會重新查。 */
 const FLEET_KEY="xray-fleet-v1";
@@ -2764,6 +2798,13 @@ async function toEnglishTerms(terms){
   try{ localStorage.setItem(Q2EN_KEY,JSON.stringify(cache)); }catch(e){}
   return out;
 }
+/* 一般／模糊模式要送的查詢（search 與追蹤檢查共用同一份） */
+async function planFor(q,fuzzy){
+  if(!fuzzy) return {and:null,or:plainQuery(q),groups:fzGroups(q),nots:parseQ(q).nots};
+  const terms=parseQ(q).terms;
+  if(terms.some(isCJK)) say("把中文關鍵字換成英文同義詞…");
+  return fzPlan(q,await toEnglishTerms(terms));
+}
 /* 本機再擋一次排除的字（名稱、描述、topics 有出現就不顯示） */
 function hasNot(it,nots){
   if(!nots||!nots.length) return false;
@@ -2812,7 +2853,8 @@ async function search(more,qArg,fromHistory){
   const q = more ? qLast : String(qArg!=null ? qArg : $("url").value).trim();
   S.outTab="explore"; if(S.tab!=="explore") setTab("explore"); else showOut();
   if(q.length<2){ fail("關鍵字至少 2 個字。"); return; }
-  const fuzzy=$("fuzzy").checked, extra=more?(S.extra||{qs:"",kw:""}):searchExtra(q,fuzzy), key=(fuzzy?"~":"")+q+"|"+extra.qs+"|"+extra.kw;
+  const fuzzy=$("fuzzy").checked, extra=more?(S.extra||{qs:"",kw:""}):(S.forceExtra||searchExtra(q,fuzzy)), key=(fuzzy?"~":"")+q+"|"+extra.qs+"|"+extra.kw;
+  if(!more){ if(!S.forceExtra){ S.watchViewKey=null; S.watchFresh=null; } S.forceExtra=null; }
   if(!more){
     // 同一個關鍵字（同一種模式）已經有結果：直接顯示記憶體裡的，不再花搜尋額度
     if(S.view==="search" && key===S.qKey && S.results && S.results.length){ showResults(); if(!fromHistory) pushView({v:"search",q:q}); return; }
@@ -2832,14 +2874,8 @@ async function search(more,qArg,fromHistory){
   try{
     let r, note="";
     if(!more){
-      let plan;
-      if(fuzzy){
-        const terms=parseQ(q).terms;
-        if(terms.some(isCJK)) say("把中文關鍵字換成英文同義詞…");
-        const en=await toEnglishTerms(terms);
-        if(tok!==S.searchTok) return;
-        plan=fzPlan(q,en);
-      }else plan={and:null,or:plainQuery(q),groups:fzGroups(q),nots:parseQ(q).nots};
+      const plan=await planFor(q,fuzzy);
+      if(tok!==S.searchTok) return;
       S.fzGroups=plan.groups; S.nots=plan.nots;
       if(plan.and){
         // 好幾個詞：先查「全部都要」；太少才放寬再查一次（第 2 次額度），兩份合併、全部都要的排前面
@@ -2923,6 +2959,7 @@ function paintResults(){
   const lopts=DLANGS.map(o=>{ const n=o[0]==="all"?items.length:items.filter(it=>langOk(it,o[0])).length;
     return '<option value="'+o[0]+'"'+((S.dlang||"all")===o[0]?" selected":"")+'>'+o[1]+'（'+n+'）</option>'; }).join("");
   const head='<div class="rhead"><span>'+label+'</span><select id="rsort" aria-label="排序">'+opts+'</select></div>'+
+    (S.view==="search"?'<div class="rlangrow"><button class="ghost" id="watchbtn" type="button" aria-pressed="false"></button></div>':'')+
     '<div class="rlangrow">🈯 描述語言 <select id="rlang" aria-label="只看哪一種語言的專案描述">'+lopts+'</select>'+
     '<small>看專案描述判斷，不耗額度</small></div>'+
     '<div class="catrow" id="rcats"></div>'+
@@ -2934,6 +2971,7 @@ function paintResults(){
   $("results").classList.add("on");
   paintCats();
   paintRows();
+  paintWatchBtn();
 }
 /* 只重畫清單列：篩選框打字時不重建輸入框，鍵盤才不會一直收起來 */
 function paintRows(){
@@ -2949,7 +2987,7 @@ function paintRows(){
     const hb=histBadges(it.full_name,it.pushed_at), live=quickLive(it);
     return '<button data-i="'+i+'"'+(hb?' class="was"':'')+'><div class="rr">'+pickBox(it.full_name)+'<div class="rmain">'+
       // 🆕 只在 trending.json 明確寫 new: true（這次第一次上榜）才加；欄位不存在就跟以前一樣
-      '<span class="rn">'+esc(it.full_name)+'</span>'+(it.new===true?' <span class="hb newin" title="'+esc(it.first_seen?"第一次上榜："+it.first_seen:"這次第一次上榜")+'">🆕 新上榜</span>':'')+
+      '<span class="rn">'+esc(it.full_name)+'</span>'+(S.watchFresh&&S.watchFresh.has(it.full_name)?' <span class="hb newin">🆕 追蹤後新出現</span>':'')+(it.new===true?' <span class="hb newin" title="'+esc(it.first_seen?"第一次上榜："+it.first_seen:"這次第一次上榜")+'">🆕 新上榜</span>':'')+
       (hb?'<div class="rd">'+hb+'</div>':'')+
       '<div class="rd">'+typeBadge(quickType(it))+esc(shown||"（沒有描述）")+'</div>'+
       (live?'<span class="golive" data-live="'+esc(live)+'" role="link" aria-label="開啟 '+esc(it.full_name)+' 的線上成品">🌐 開成品 ↗ <small>'+esc(live.replace(/^https?:\/\//i,"").replace(/\/$/,""))+'</small></span>':'')+
@@ -3104,6 +3142,70 @@ function addRecent(t,v){
   try{ localStorage.setItem("xray-recent",JSON.stringify(r)); }catch(e){}
   paintRecent();
 }
+/* 🔔 追蹤搜尋：存在這支手機（xray-watch-v1），⛔ 不放公開 repo（關鍵字會透露你在找什麼）。
+   打開 X-Ray 時，距離上次超過 WATCH_EVERY 的才查：同一個查詢加 created:>=（上次查的前一天），
+   一個關鍵字 1 次額度；跟上次看過的比，新出現的記成 🆕。額度不夠或被限流就今天先停，下次打開再查。 */
+const WATCH_KEY="xray-watch-v1", WATCH_MAX=10, WATCH_EVERY=20*3600e3;
+function loadWatches(){ try{ const a=JSON.parse(localStorage.getItem(WATCH_KEY)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function saveWatches(a){ try{ localStorage.setItem(WATCH_KEY,JSON.stringify(a)); }catch(e){} }
+function curWatchKey(){ return S.watchViewKey||S.qKey; }
+function toggleWatch(){
+  const a=loadWatches(), key=curWatchKey(), i=a.findIndex(w=>w.key===key);
+  if(i>-1){ a.splice(i,1); saveWatches(a); toast("已取消追蹤"); }
+  else{
+    if(!qLast||S.view!=="search") return;
+    if(a.length>=WATCH_MAX){ toast("最多追蹤 "+WATCH_MAX+" 個搜尋，先取消一個"); return; }
+    a.push({key:key,q:qLast,fuzzy:$("fuzzy").checked,extra:S.extra||{qs:"",kw:""},
+      seen:(S.results||[]).map(i=>i.full_name).slice(0,1000),fresh:[],last:Date.now()});
+    saveWatches(a); toast("🔔 已追蹤：每天第一次打開 X-Ray 會查一次，有新專案就標 🆕");
+  }
+  paintWatches(); paintWatchBtn();
+}
+function paintWatchBtn(){
+  const b=$("watchbtn"); if(!b) return;
+  const on=loadWatches().some(w=>w.key===curWatchKey());
+  b.textContent=on?"🔕 取消追蹤":"🔔 追蹤這個搜尋（有新專案就標 🆕）"; b.setAttribute("aria-pressed",on);
+}
+function paintWatches(){
+  const a=loadWatches(), el=$("watches"); if(!el) return;
+  el.innerHTML=a.length?'🔔 追蹤：'+a.map((w,i)=>'<a data-w="'+i+'" title="'+esc(w.q)+'">'+(w.fuzzy?'🌀 ':'')+esc(w.q)+
+    ((w.fresh||[]).length?' <b class="wnew">🆕'+w.fresh.length+'</b>':'')+'</a>').join(""):"";
+}
+async function checkWatches(){
+  if(S.watchBusy || !loadWatches().length) return;
+  S.watchBusy=true;
+  try{
+    for(const w of loadWatches()){
+      if(Date.now()-(w.last||0)<WATCH_EVERY) continue;
+      const since=new Date((w.last||Date.now())-864e5).toISOString().slice(0,10);
+      const plan=await planFor(w.q,w.fuzzy), ex=w.extra||{};
+      const apiQ=(plan.and||plan.or)+(ex.kw?" "+ex.kw:"")+(ex.qs?" "+ex.qs:"")+" created:>="+since;
+      let r;
+      try{ r=await getJSON("https://api.github.com/search/repositories?q="+encodeURIComponent(apiQ)+"&sort=stars&order=desc&per_page=100&page=1"); }
+      catch(e){ break; }
+      const cur=loadWatches(), x=cur.find(y=>y.key===w.key);
+      if(!x) continue;                                   // 查的時候被取消追蹤了
+      const seen=new Set(x.seen||[]), fresh=(r.items||[]).map(i=>i.full_name).filter(n=>!seen.has(n)&&!hasNot({full_name:n},plan.nots));
+      if(fresh.length && !(x.fresh||[]).length) x.since=since;
+      x.fresh=[...new Set((x.fresh||[]).concat(fresh))].slice(0,200);
+      x.seen=[...seen].concat(fresh).slice(-1000);
+      x.last=Date.now(); saveWatches(cur); paintWatches();
+      await sleep(1500);                                 // 不要一次連發（搜尋 API 每分鐘有上限）
+    }
+  }finally{ S.watchBusy=false; }
+}
+function openWatch(i){
+  const a=loadWatches(), w=a[i]; if(!w) return;
+  $("fuzzy").checked=!!w.fuzzy; $("url").value=w.q;
+  const ex=Object.assign({qs:"",kw:""},w.extra||{});
+  // 有新專案：只列追蹤後新出現的那幾個（加 created:>=）；沒有就是一般搜尋
+  if((w.fresh||[]).length){ ex.qs=(ex.qs+" created:>="+(w.since||new Date(w.last-864e5).toISOString().slice(0,10))).trim(); S.watchFresh=new Set(w.fresh); }
+  else S.watchFresh=null;
+  S.forceExtra=ex; S.watchViewKey=w.key;
+  w.fresh=[]; saveWatches(a); paintWatches();          // 看過就歸零（這次畫面上仍標 🆕）
+  search(false,w.q);
+}
+
 function paintRecent(){
   const r=loadRecent();
   $("recent").innerHTML = r.length ? '最近：'+r.map((x,i)=>'<a data-r="'+i+'" title="'+esc(x.v)+'"><i>'+
@@ -3501,6 +3603,7 @@ $("trend").addEventListener("click",e=>{
 $("fuzzy").addEventListener("change",()=>{ try{ localStorage.setItem("xray-fuzzy",$("fuzzy").checked?"1":"0"); }catch(e){} });
 $("results").addEventListener("click",e=>{
   if(e.target.closest("#more-btn")){ search(true); return; }
+  if(e.target.closest("#watchbtn")){ toggleWatch(); return; }
   if(e.target.closest("#rfilter")) return;
   const b=e.target.closest("button[data-i]"); if(!b||!S.results) return;
   rememberScroll();
@@ -3511,6 +3614,7 @@ $("results").addEventListener("click",e=>{
   run(it.html_url);                           // 輸入框保留原本的關鍵字
 });
 $("back").addEventListener("click",()=>{ showResults(); pushView(S.view==="trend"?{v:"trend",id:S.trendId}:{v:"search",q:qLast}); window.scrollTo(0,0); });
+$("watches").addEventListener("click",e=>{ const a=e.target.closest("a[data-w]"); if(a) openWatch(+a.dataset.w); });
 $("recent").addEventListener("click",e=>{
   if(e.target.closest("#clear-recent")){ try{ localStorage.removeItem("xray-recent"); }catch(err){} paintRecent(); return; }
   const a=e.target.closest("a[data-r]"); if(!a) return;
@@ -3667,6 +3771,7 @@ $("fleet-back").addEventListener("click",()=>{
   if(history.state && history.state.v==="scan"){ history.back(); return; }
   unfoldFleet(); $("out").classList.remove("on"); $("fleet").scrollIntoView({block:"start"});
 });
+$("autofleet").addEventListener("click",e=>{ const b=e.target.closest("[data-autoapp]"); if(b) openMine(b.dataset.autoapp); });
 $("myapps").addEventListener("click",e=>{
   if(e.target.closest("#fleet-go")){ runFleet(); return; }
   const a=e.target.closest("a[data-app]"); if(!a) return;
@@ -3764,6 +3869,7 @@ document.querySelectorAll("[data-s]").forEach(a=>a.addEventListener("click",e=>{
 }));
 
 paintRecent();
+paintWatches();
 paintLogCount();
 paintPickbar();
 soptLoad();
@@ -3782,6 +3888,7 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
   setTab(tab);
   if(!r&&!q&&!t) try{ history.replaceState({v:p.has("fleet")?"fleet":"home",tab:tab},"",location.search); }catch(e){}
   await loadTrend();
+  checkWatches();                                  // 不等它：查完會自己更新「🔔 追蹤」那一列
   // 我的 App：skl 的 .github/apps.json 部署時複製成 apps.json；點一下就掃描並看 App 顧問
   loadStatic("apps.json").then(d=>{
     const apps=(d&&d.apps)||[];
@@ -3791,6 +3898,7 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
       (x.private?"🔒 ":"")+esc(x.repo.split("/").pop())+'</a>').join("")+
       '<a id="fleet-go" style="border-color:var(--amber);color:var(--amber)">🩺 一鍵健檢全部（約 '+apps.length*2+' 次額度）</a>':"";
     paintFleet();
+    loadStatic("fleet.json").then(f=>{ S.autoFleet=f; paintAutoFleet(); });
     if(S.tab==="log") paintLog();        // 「外部專案」篩選要等 apps.json 才分得準
     if(new URLSearchParams(location.search).has("fleet") && S.fleetData) $("fleet").scrollIntoView({block:"start"});
   });

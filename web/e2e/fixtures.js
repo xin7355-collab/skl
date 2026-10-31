@@ -221,6 +221,11 @@ async function mockNetwork(context, opts) {
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(opts.trendingJson) });
       }
       if (url.pathname === '/apps.json' && opts.appsJson === 'fail') return route.fulfill({ status: 404, body: '' });
+      if (url.pathname === '/fleet.json') {
+        // 每天自動健檢的結果也只在部署時產生：預設 404；測試用 test.use({ fleetJson }) 給一份假的
+        if (!opts.fleetJson) return route.fulfill({ status: 404, body: '' });
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(opts.fleetJson) });
+      }
       return route.continue();
     }
     if (url.hostname === 'api.github.com') {
@@ -247,8 +252,9 @@ async function mockNetwork(context, opts) {
 const test = base.extend({
   appsJson: ['ok', { option: true }],
   trendingJson: [null, { option: true }],
-  net: [async ({ context, appsJson, trendingJson }, use) => {
-    const stats = await mockNetwork(context, { appsJson, trendingJson });
+  fleetJson: [null, { option: true }],
+  net: [async ({ context, appsJson, trendingJson, fleetJson }, use) => {
+    const stats = await mockNetwork(context, { appsJson, trendingJson, fleetJson });
     await use(stats);
     // 網頁不該偷偷連到沒預期的網站（隱私，也代表有新的外部相依沒被測到）
     expect(stats.blocked, '連到了沒列在 fixtures.js 的外部網站').toEqual([]);

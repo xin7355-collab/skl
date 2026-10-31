@@ -1,0 +1,164 @@
+{
+  "_說明": "App 點子頁（ideas.html）的資料。每個點子：做什麼、第一版、之後加、要注意、技能組合（packs.json 的名字）、費用（附官方出處，srcs 的鍵）、X-Ray 參考搜尋字。改完跑 python3 web/check_ideas.py。",
+  "checked_at": "2026-10-31",
+  "srcs": {
+    "pages": {"name": "GitHub Pages 限制", "url": "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits"},
+    "actions": {"name": "GitHub Actions 計費", "url": "https://docs.github.com/en/billing/concepts/product-billing/github-actions"},
+    "schedule": {"name": "GitHub 排程說明", "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule"},
+    "workers": {"name": "Cloudflare Workers 價格", "url": "https://developers.cloudflare.com/workers/platform/pricing/"},
+    "ai": {"name": "AI 指南（本站）", "url": "ai.html"}
+  },
+  "cats": ["生活", "投資", "內容", "學習", "工具", "AI"],
+  "steps": [
+    {"t": "開新的公開 repo", "d": "到 GitHub 按 New repository，選 Public（公開 repo 的 Actions 不限量、Pages 免費）。", "url": "https://github.com/new"},
+    {"t": "開這個 repo 的 Claude Code", "d": "到 claude.ai/code 選剛建好的 repo，開一個新工作階段。", "url": "https://claude.ai/code"},
+    {"t": "貼「開工指令」", "d": "回這頁挑一個點子，按「📋 複製開工指令」貼給 Claude。它會先用 skl 裝技能、寫 CLAUDE.md，再做第一版。"},
+    {"t": "試用、再加功能", "d": "第一版能用再說下一步要加什麼。做完把 repo 加進 skl 的 .github/apps.json，Repo X-Ray「我的 App」就會每天幫你健檢。"}
+  ],
+  "ideas": [
+    {
+      "id": "expense", "emoji": "💰", "title": "手機記帳", "cat": "生活", "level": "小",
+      "one": "隨手記一筆，月底自動算分類合計和圖表；資料只存在你的手機",
+      "why": "純網頁就做得到、不用後端、不用錢，最適合當第一個練手的 App",
+      "stack": "純前端 PWA（資料存在手機的 IndexedDB）＋ GitHub Pages",
+      "mvp": ["新增一筆：金額、分類、日期、備註", "當月清單與分類合計", "加到主畫面、沒網路也打得開"],
+      "next": ["每月圓餅圖、跟上個月比", "匯出／匯入 CSV（換手機不會掉資料）", "每月預算，超過就提醒"],
+      "notes": ["資料只存在這支手機：一定要做匯出備份", "清除 Safari 網站資料會連記帳一起清掉"],
+      "packs": ["core", "pwa"],
+      "cost": {"text": "免費：GitHub Pages 公開 repo 免費（網站 1GB、每月流量軟上限 100GB）", "src": ["pages"]},
+      "xq": "expense tracker pwa"
+    },
+    {
+      "id": "stock-close", "emoji": "📈", "title": "台股收盤小幫手", "cat": "投資", "level": "中",
+      "one": "每天收盤後自動抓你關注的股票，整理漲跌、成交量，一頁看完",
+      "why": "skl 已經有台股官方資料抓取技能（tw-stock），排程用 GitHub Actions 免費跑",
+      "stack": "GitHub Actions 每天排程 ＋ 證交所／櫃買官方 OpenAPI ＋ GitHub Pages",
+      "mvp": ["自選股清單放在 repo 的設定檔", "每天收盤後抓收盤價、漲跌幅、成交量", "整理成一頁網頁"],
+      "next": ["Telegram 推播（機器人 Token 放 repo Secrets）", "均線、爆量這類條件提醒（先回測再相信）", "每週摘要"],
+      "notes": ["只用官方公開資料", "條件提醒要先回測、扣手續費和證交稅；回測沒用的不要做成買賣訊號", "公開 repo 和網站大家都看得到：不要放持股、金額"],
+      "packs": ["core", "actions", "stock", "python"],
+      "cost": {"text": "免費：公開 repo 的 Actions 標準 runner 不限量、Pages 免費", "src": ["actions", "pages"]},
+      "xq": "twse stock daily report"
+    },
+    {
+      "id": "price-watch", "emoji": "🏷️", "title": "降價提醒", "cat": "生活", "level": "中",
+      "one": "每天看一次你想買的東西，降到你設的價格就通知你",
+      "why": "排程抓網頁、存歷史、畫價格線都是 skl 技能做得到的；一天只抓一次，不會吵到對方網站",
+      "stack": "GitHub Actions 每天排程抓價格 ＋ JSON 歷史 ＋ GitHub Pages 畫價格線",
+      "mvp": ["商品網址和目標價放設定檔", "每天抓一次價格、存成歷史", "價格線圖頁面"],
+      "next": ["降到目標價就通知", "同一個商品多家比價"],
+      "notes": ["先看網站的 robots.txt 和使用條款，不准抓的不要抓", "網站改版會抓不到：要有「抓不到」的提醒，不能默默停", "一天一次就夠，太頻繁會被封鎖"],
+      "packs": ["core", "actions", "python"],
+      "cost": {"text": "免費：Actions 與 Pages 在公開 repo 免費", "src": ["actions", "pages"]},
+      "xq": "price tracker github actions"
+    },
+    {
+      "id": "news-digest", "emoji": "📰", "title": "每日新聞摘要", "cat": "內容", "level": "中",
+      "one": "每天早上把你訂閱的新聞（RSS）整理成一頁，AI 幫你濃縮重點",
+      "why": "先做「標題＋連結」不用錢；要 AI 摘要時用 skl 的 ai-model-router 自動挑便宜的模型",
+      "stack": "GitHub Actions 排程抓 RSS → （可選）AI 摘要 → GitHub Pages",
+      "mvp": ["RSS 清單放設定檔", "每天抓新文章、去掉重複", "標題＋連結整理成一頁（先不用 AI）"],
+      "next": ["每篇三句重點（AI）", "依主題分類", "只留你關心的關鍵字"],
+      "notes": ["AI API 要付費：一定要先設每月預算上限", "金鑰放 repo Secrets、用 HTTP 標頭傳，不放網址", "摘要旁一定附原文連結：AI 講錯才查得到"],
+      "packs": ["core", "actions", "ai", "python"],
+      "cost": {"text": "Actions、Pages 免費；AI 摘要依用量付費（記得設預算上限）", "src": ["actions", "pages", "ai"]},
+      "xq": "rss digest github actions"
+    },
+    {
+      "id": "habit", "emoji": "✅", "title": "習慣打卡", "cat": "生活", "level": "小",
+      "one": "每天點一下打卡，看連續天數和整個月的熱度圖",
+      "why": "畫面簡單、資料小，一個晚上就能做出能用的版本",
+      "stack": "純前端 PWA ＋ GitHub Pages",
+      "mvp": ["新增習慣、每天點一下打卡", "連續天數", "月曆熱度圖"],
+      "next": ["每週統計", "匯出備份"],
+      "notes": ["資料只存在這支手機：做匯出備份"],
+      "packs": ["core", "pwa"],
+      "cost": {"text": "免費：GitHub Pages", "src": ["pages"]},
+      "xq": "habit tracker pwa"
+    },
+    {
+      "id": "flashcards", "emoji": "🎓", "title": "單字卡（間隔複習）", "cat": "學習", "level": "小",
+      "one": "背單字、考照題庫；依你記得多熟，決定下次什麼時候再出",
+      "why": "間隔複習有公開的演算法（例如 SM-2），不用自己發明",
+      "stack": "純前端 PWA ＋ GitHub Pages",
+      "mvp": ["匯入一份 CSV 題庫", "翻卡、按「記得／忘了」", "今天該複習幾張"],
+      "next": ["發音（瀏覽器內建語音）", "答對率、連續天數"],
+      "notes": ["題庫有版權：用自己整理的，或授權允許的"],
+      "packs": ["core", "pwa"],
+      "cost": {"text": "免費：GitHub Pages", "src": ["pages"]},
+      "xq": "spaced repetition flashcards pwa"
+    },
+    {
+      "id": "uptime", "emoji": "🛰️", "title": "網站存活監控", "cat": "工具", "level": "小",
+      "one": "定時檢查你每個 App 的網址有沒有掛，掛了就通知你",
+      "why": "你已經有好幾個上線的 App；掛了自己不會知道",
+      "stack": "GitHub Actions 排程 ＋ 簡單的網址檢查 ＋ 通知",
+      "mvp": ["網址清單（可以直接讀 skl 的 .github/apps.json）", "定時打一次，記回應碼和秒數", "連續兩次失敗才通知，避免誤報"],
+      "next": ["每週可用率報表", "回應變慢也提醒"],
+      "notes": ["排程最短 5 分鐘一次，而且忙的時候會延遲：不能當秒級監控", "通知若用公開 Issue，標題只寫數量"],
+      "packs": ["core", "actions"],
+      "cost": {"text": "免費：公開 repo 的 Actions 標準 runner 不限量", "src": ["actions", "schedule"]},
+      "xq": "uptime monitor github actions"
+    },
+    {
+      "id": "dashboard", "emoji": "📊", "title": "個人儀表板", "cat": "工具", "level": "中",
+      "one": "把各個 App 的重要數字（股票、記帳、網站狀態）放在同一頁",
+      "why": "不用每個 App 一個一個開；每個 App 只要多輸出一份小 JSON",
+      "stack": "GitHub Pages 靜態頁 ＋ 讀各 App 輸出的 JSON",
+      "mvp": ["每個 App 輸出一份小 JSON（只放要顯示的數字）", "一頁卡片", "加到主畫面"],
+      "next": ["趨勢小圖", "異常才標顏色"],
+      "notes": ["公開 repo 的網站大家都看得到：金額、持股這種私人數字不要放"],
+      "packs": ["core", "pwa", "visual"],
+      "cost": {"text": "免費：GitHub Pages", "src": ["pages"]},
+      "xq": "personal dashboard github pages"
+    },
+    {
+      "id": "ai-bot", "emoji": "🤖", "title": "私人 AI 助手機器人", "cat": "AI", "level": "大",
+      "one": "在 Telegram 跟你的 AI 助手聊天，它能查你自己的資料、幫你記事",
+      "why": "金鑰藏在 Cloudflare Workers；skl 的 ai-model-router 會自動挑模型、下架自動換",
+      "stack": "Cloudflare Workers（收訊息、藏金鑰）＋ AI API",
+      "mvp": ["Telegram 機器人 → Workers → AI 回答", "只回應你自己的帳號（白名單）", "每月預算上限"],
+      "next": ["接你自己的資料（記帳、股票 JSON）", "記住對話重點"],
+      "notes": ["一定要做白名單，不然陌生人會用掉你的額度", "金鑰放 Workers 的 Secrets，不放程式碼", "AI API 付費：先設每月預算上限"],
+      "packs": ["core", "ai", "agent", "backend", "security"],
+      "cost": {"text": "Workers 免費方案每天 10 萬次請求；AI API 依用量付費（設預算上限）", "src": ["workers", "ai"]},
+      "xq": "telegram ai bot cloudflare workers"
+    },
+    {
+      "id": "receipt-ocr", "emoji": "🧾", "title": "收據拍照記帳", "cat": "生活", "level": "大",
+      "one": "拍收據，手機上辨識金額和日期，確認後記成一筆",
+      "why": "辨識在手機上跑（Tesseract.js），照片不用上傳到任何地方",
+      "stack": "PWA 相機 ＋ 手機上的文字辨識（Tesseract.js）＋ GitHub Pages",
+      "mvp": ["拍照或選照片", "辨識金額、日期", "確認後存成一筆（可以接 💰 手機記帳）"],
+      "next": ["常去的店自動分類", "辨識錯的手動改、記住你的修正"],
+      "notes": ["照片只在手機處理、不上傳", "辨識一定有錯：存之前一定讓人確認"],
+      "packs": ["core", "pwa"],
+      "cost": {"text": "免費：GitHub Pages；辨識在手機上跑，不用付費 API", "src": ["pages"]},
+      "xq": "receipt ocr tesseract"
+    },
+    {
+      "id": "video-shorts", "emoji": "🎬", "title": "自動剪短影音", "cat": "內容", "level": "小",
+      "one": "丟一支影片，自動去掉空白、剪精華、做直式短影音",
+      "why": "skl 已經有 auto-video-edit 技能和處理流程，裝好就能用",
+      "stack": "GitHub Actions ＋ ffmpeg（skl 的 video 組合）",
+      "mvp": ["裝 video 組合", "影片上傳到草稿 Release", "拿回成品和縮圖"],
+      "next": ["自動上字幕", "一次處理好幾支"],
+      "notes": ["草稿 Release 只有你看得到；發佈出去就公開了"],
+      "packs": ["video", "actions"],
+      "cost": {"text": "免費：公開 repo 的 Actions 標準 runner 不限量", "src": ["actions"]},
+      "xq": "auto video editor ffmpeg"
+    },
+    {
+      "id": "portfolio", "emoji": "✍️", "title": "部落格／作品集", "cat": "內容", "level": "小",
+      "one": "放文章和作品的網站，用 Markdown 寫、推上去就更新",
+      "why": "GitHub Pages 本來就是做這個的；skl 的 writing 組合幫你把文字寫得不像 AI",
+      "stack": "GitHub Pages（Markdown 轉網頁）",
+      "mvp": ["首頁＋文章列表", "文章頁", "手機排版"],
+      "next": ["標籤、搜尋", "RSS"],
+      "notes": ["要被 Google 找到就不能加 noindex（跟你其他 App 的設定相反），想清楚再開放"],
+      "packs": ["core", "writing", "visual"],
+      "cost": {"text": "免費：GitHub Pages", "src": ["pages"]},
+      "xq": "static blog github pages"
+    }
+  ]
+}

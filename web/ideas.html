@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="App 點子">
+<title>App 點子</title>
+<link rel="stylesheet" href="guide/guide.css?v=__APP_VER__">
+<style>
+/* 點子頁自己的樣式：其餘沿用教學頁的 guide.css（顏色、卡片、按鈕、深色模式） */
+.chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex: none; min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font-size: 15px; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.chips button i { font-style: normal; opacity: .7; margin-left: 4px; font-size: 13px; }
+.idea { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin: 0 0 10px; }
+.idea > summary { list-style: none; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+  padding: 12px; cursor: pointer; min-height: 64px; }
+.idea > summary::-webkit-details-marker { display: none; }
+.idea .ie { width: 42px; height: 42px; border-radius: 12px; background: var(--accent-soft); display: grid; place-items: center; font-size: 22px; }
+.idea .it b { display: block; font-size: 16px; }
+.idea .it small { display: block; color: var(--muted); font-size: 13px; line-height: 1.35; }
+.idea .lv { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.idea .body { padding: 0 12px 12px; border-top: 1px solid var(--line); }
+.idea .body ul { margin: 2px 0 0; padding-left: 20px; }
+.idea .body li { margin: 2px 0; }
+.idea .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.idea .row .btn { min-height: 44px; }
+.steps { counter-reset: s; margin: 0; padding: 0; list-style: none; }
+.steps li { counter-increment: s; position: relative; padding: 4px 0 8px 36px; }
+.steps li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-text); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.steps li b { display: block; }
+.steps li span { color: var(--muted); font-size: 14px; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text);
+  color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 50; max-width: 90vw; }
+.toast.on { opacity: 1; }
+#copyfb { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: flex-end; z-index: 60; }
+#copyfb.on { display: flex; }
+#copyfb .box { background: var(--card); width: 100%; padding: 14px; border-radius: 14px 14px 0 0; }
+#copyfb textarea { width: 100%; height: 40vh; font-size: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <h1>App 點子</h1>
+  <p class="sub">不知道要做什麼的時候看這裡：每個點子都寫了第一版做什麼、之後加什麼、要注意什麼、會不會花錢，按一下就能複製「開工指令」給 Claude。</p>
+  <p class="sub">費用查證日：<b id="checked">—</b>，每一項附官方出處；會變動，以官方頁面為準。</p>
+  <p class="sub"><a href="index.html">← 回技能庫</a>　<a href="dev-guide.html">App 開發全流程 →</a></p>
+</header>
+
+<main>
+<details class="card" id="how">
+  <summary><b>怎麼開工？每個點子都照這 4 步</b></summary>
+  <ol class="steps" id="steps"></ol>
+</details>
+
+<div class="chips" id="cats" role="group" aria-label="類別"></div>
+<div class="chips" id="levels" role="group" aria-label="難度"></div>
+<div id="list"><p class="hint">載入中…</p></div>
+<p class="hint" id="empty" hidden>沒有符合的點子，換個類別或難度。</p>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="copyfb" role="dialog" aria-label="手動複製">
+  <div class="box">
+    <p class="hint">這支手機不讓網頁直接複製：長按下面的文字 → 全選 → 拷貝。</p>
+    <textarea id="copytxt" readonly></textarea>
+    <div class="row" style="display:flex;margin-top:8px"><button class="btn" id="copyclose">關閉</button></div>
+  </div>
+</div>
+
+<script>
+const SKL = "https://github.com/xin7355-collab/skl";
+const TOOL = "/tmp/skl/xin-toolkit/skills/app-bootstrap/scripts/bootstrap_app.py";
+const FETCH_CMD = `(git -C /tmp/skl pull -q 2>/dev/null || git clone -q --depth 1 ${SKL} /tmp/skl)`;   // 跟技能庫首頁同一行
+const LEVELS = ["小", "中", "大"];
+const LEVEL_TXT = { "小": "難度 小：幾個晚上", "中": "難度 中：要排程或後端", "大": "難度 大：好幾個服務串起來" };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let D = null, cat = "全部", level = "全部";
+
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 2200); }
+/* iPhone 只准在點擊當下寫剪貼簿；失敗就開手動複製面板（同 X-Ray 的做法） */
+async function copyText(t, ok) {
+  try { await navigator.clipboard.writeText(t); toast(ok); return true; }
+  catch (e) { $("copytxt").value = t; $("copyfb").classList.add("on"); return false; }
+}
+
+/* 開工指令：貼到新 repo 的 Claude Code。技能組合用 app-bootstrap 安裝（跟技能庫「組合安裝」同一套） */
+function startPrompt(it) {
+  const packs = it.packs.join(",");
+  const li = (a) => a.map((x) => "   - " + x).join("\n");
+  return `我要在這個新 repo 做一個 App：「${it.title}」——${it.one}。\n` +
+    `我用 iPhone、沒有電腦，回覆用繁體中文（台灣用語）。\n\n` +
+    `1. 先從 ${SKL} 用 app-bootstrap 安裝技能組合：${packs}\n` +
+    `   （${FETCH_CMD} && python3 ${TOOL} install --target . --packs ${packs}；先 --dry-run 再正式裝），並寫好 CLAUDE.md。\n` +
+    `2. 技術：${it.stack}\n` +
+    `3. 第一版只做這些，做完先給我網址試用：\n${li(it.mvp)}\n` +
+    `4. 第一版穩了之後再加：\n${li(it.next)}\n` +
+    `5. 要注意：\n${li(it.notes)}\n` +
+    `6. 網頁加 <meta name="robots" content="noindex, nofollow">（除非這個 App 本來就要被搜尋到）。\n` +
+    `7. 做完回報：哪些驗過、哪些沒驗到；有付費服務就提醒我先設預算上限。`;
+}
+
+function srcLinks(keys) {
+  return keys.map((k) => D.srcs[k]).filter(Boolean)
+    .map((s) => ` <a class="src" href="${esc(s.url)}"${/^https?:/.test(s.url) ? ' target="_blank" rel="noopener"' : ""}>${esc(s.name)}</a>`).join("");
+}
+function card(it) {
+  const xr = "xray.html?q=" + encodeURIComponent(it.xq);
+  return `<details class="idea" data-id="${esc(it.id)}">
+  <summary><span class="ie">${esc(it.emoji)}</span><span class="it"><b>${esc(it.title)}</b><small>${esc(it.one)}</small></span><span class="lv">${esc(it.level)}</span></summary>
+  <div class="body">
+    <p class="lbl">為什麼值得做</p><p style="margin:0">${esc(it.why)}</p>
+    <p class="lbl">用什麼做</p><p style="margin:0">${esc(it.stack)}</p>
+    <p class="lbl">第一版只做</p><ul>${it.mvp.map((x) => "<li>" + esc(x) + "</li>").join("")}</ul>
+    <p class="lbl">之後再加</p><ul>${it.next.map((x) => "<li>" + esc(x) + "</li>").join("")}</ul>
+    <p class="lbl">要注意</p><ul>${it.notes.map((x) => "<li>" + esc(x) + "</li>").join("")}</ul>
+    <p class="lbl">會裝的 skl 技能組合</p><p style="margin:0">${it.packs.map((p) => '<span class="chip">' + esc(p) + "</span>").join(" ")}</p>
+    <p class="lbl">費用</p><p style="margin:0" data-cost>${esc(it.cost.text)}${srcLinks(it.cost.src)}</p>
+    <p class="hint" style="margin:6px 0 0">${esc(LEVEL_TXT[it.level] || "")}</p>
+    <div class="row">
+      <button class="btn" data-copy="${esc(it.id)}">📋 複製開工指令</button>
+      <a class="btn ghost" href="${esc(xr)}" data-xray>🔍 找參考專案</a>
+    </div>
+  </div>
+</details>`;
+}
+function chipRow(el, all, cur, counts, attr, label) {
+  el.innerHTML = all.map((c) => `<button ${attr}="${esc(c)}" aria-pressed="${c === cur}">${esc(label ? label(c) : c)}<i>${counts[c] || 0}</i></button>`).join("");
+}
+function render() {
+  const items = D.ideas;
+  const inCat = (it) => cat === "全部" || it.cat === cat, inLv = (it) => level === "全部" || it.level === level;
+  const cc = { "全部": items.filter(inLv).length }, lc = { "全部": items.filter(inCat).length };
+  D.cats.forEach((c) => { cc[c] = items.filter((it) => it.cat === c && inLv(it)).length; });
+  LEVELS.forEach((l) => { lc[l] = items.filter((it) => it.level === l && inCat(it)).length; });
+  chipRow($("cats"), ["全部"].concat(D.cats.filter((c) => items.some((it) => it.cat === c))), cat, cc, "data-cat");
+  chipRow($("levels"), ["全部"].concat(LEVELS), level, lc, "data-level", (c) => c === "全部" ? "全部難度" : "難度 " + c);
+  const shown = items.filter((it) => inCat(it) && inLv(it));
+  $("list").innerHTML = shown.map(card).join("");
+  $("empty").hidden = shown.length > 0;
+}
+
+document.addEventListener("click", (e) => {
+  const c = e.target.closest("[data-cat]"); if (c) { cat = c.dataset.cat; save(); render(); return; }
+  const l = e.target.closest("[data-level]"); if (l) { level = l.dataset.level; save(); render(); return; }
+  const b = e.target.closest("[data-copy]");
+  if (b) { const it = D.ideas.find((x) => x.id === b.dataset.copy); if (it) copyText(startPrompt(it), "已複製 ✓ 到新 repo 的 Claude Code 貼上"); return; }
+  if (e.target.id === "copyclose") $("copyfb").classList.remove("on");
+});
+function save() { try { localStorage.setItem("ideas-ui-v1", JSON.stringify({ cat, level })); } catch (e) {} }
+
+(async () => {
+  try { const u = JSON.parse(localStorage.getItem("ideas-ui-v1") || "{}"); if (u.cat) cat = u.cat; if (u.level) level = u.level; } catch (e) {}
+  try {
+    const r = await fetch("ideas.json?v=__APP_VER__");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    D = await r.json();
+  } catch (e) {
+    $("list").innerHTML = `<p class="note">點子清單載入失敗（${esc(e.message)}）。重新整理再試；一直失敗就是部署少了 ideas.json。</p>`;
+    return;
+  }
+  if (cat !== "全部" && !D.cats.includes(cat)) cat = "全部";
+  if (level !== "全部" && !LEVELS.includes(level)) level = "全部";
+  $("checked").textContent = D.checked_at || "—";
+  $("steps").innerHTML = D.steps.map((s) => `<li><b>${esc(s.t)}</b><span>${esc(s.d)}</span>` +
+    (s.url ? ` <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.replace(/^https:\/\//, ""))} ↗</a>` : "") + "</li>").join("");
+  render();
+})();
+</script>
+</body>
+</html>

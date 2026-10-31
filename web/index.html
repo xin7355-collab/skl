@@ -99,17 +99,32 @@ label.toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; co
 .error { color: var(--warn); }
 [hidden] { display: none !important; }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+/* 工具卡：兩欄、整張可點、至少 64px 高（手機好按） */
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 2px; }
+.tool { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center;
+  min-height: 64px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card);
+  box-shadow: var(--shadow); color: var(--text); text-decoration: none; -webkit-tap-highlight-color: transparent; }
+.tool:active { transform: scale(.98); }
+.tool .ti { grid-row: 1 / span 2; width: 38px; height: 38px; border-radius: 10px; background: var(--accent-soft);
+  display: grid; place-items: center; font-size: 21px; }
+.tool b { font-size: 15px; line-height: 1.25; }
+.tool small { color: var(--muted); font-size: 12px; line-height: 1.3; min-width: 0; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }   /* 最多兩行，不截成「…」 */
 </style>
 </head>
 <body>
 <header>
   <h1>skl 技能庫</h1>
   <p class="sub">挑技能 → 按「複製」→ 貼到其他 App 的 Claude Code 對話</p>
-  <p class="sub"><a href="ai.html" style="color:var(--accent);text-decoration:none">🤖 AI 模型與功能指南（Claude／Codex）→</a></p>
-  <p class="sub"><a href="xray.html" style="color:var(--accent);text-decoration:none">🔬 Repo X-Ray：GitHub 專案透視與搜尋 →</a></p>
-  <p class="sub"><a href="prompts.html" style="color:var(--accent);text-decoration:none">💬 提示詞庫：現成提示詞一鍵送進 ChatGPT／Claude →</a></p>
-  <p class="sub"><a href="dev-guide.html" style="color:var(--accent);text-decoration:none">🧭 App 開發全流程：從想法到上線、費用與注意事項 →</a></p>
-  <p class="sub"><a href="agent.html" style="color:var(--accent);text-decoration:none">🦾 AI Agent 製作流程：讓 AI 自己做事、煞車與費用 →</a></p>
+  <!-- 2026-10-31 使用者：「不想要用這種方式呈現」（一行一行的文字連結）→ 改成兩欄工具卡：圖示、短標題、一行說明，整張都可以點 -->
+  <nav class="tools" aria-label="其他工具">
+    <a class="tool" href="ideas.html"><span class="ti">💡</span><b>App 點子</b><small>可以做什麼、怎麼做</small></a>
+    <a class="tool" href="xray.html"><span class="ti">🔬</span><b>Repo X-Ray</b><small>找 GitHub 專案、看懂它</small></a>
+    <a class="tool" href="prompts.html"><span class="ti">💬</span><b>提示詞庫</b><small>現成提示詞一鍵送 AI</small></a>
+    <a class="tool" href="ai.html"><span class="ti">🤖</span><b>AI 指南</b><small>Claude／Codex 模型與功能</small></a>
+    <a class="tool" href="dev-guide.html"><span class="ti">🧭</span><b>App 開發流程</b><small>從想法到上線、費用</small></a>
+    <a class="tool" href="agent.html"><span class="ti">🦾</span><b>Agent 製作</b><small>讓 AI 自己做事、煞車</small></a>
+  </nav>
 </header>
 
 <nav class="tabs" role="tablist">

@@ -52,3 +52,9 @@ paths:
   中文用 `SIMP_RE` 判簡繁（只有共用字分不出來 → 歸繁中）。
 - 搜尋列：輸入框 16px（iPhone 小於 16px 會自動放大整頁）、「開始」至少 46px 高；`.bar` 有 `scroll-margin-top`，
   加上 `#url` focus 後檢查一次，避免被置頂分頁列 `.tabs` 蓋住（實測以前上緣 4 成被蓋）。
+- 🤖 每天自動健檢：`web/build_fleet.mjs` 在 `Deploy web page`（ubuntu-24.04，因為 Playwright 1.56.1 不支援 26.04）用無頭瀏覽器開
+  `_site/xray.html`、直接呼叫 `analyzeLite`（⛔ 不另寫一份），寫 `fleet.json`。⛔ 只放數量（分數、待補強幾項、建議裝幾個、已裝幾個），
+  公開網站不放問題內容；上一份從線上網站拿來算「比上次多／少幾項」。私人 App 要 `SKL_READ_TOKEN`，沒設定 → skipped（不算失敗）；
+  空 repo（409）→ empty。失敗不擋部署，`fleet-check` 亮紅燈。X-Ray `#autofleet`／`paintAutoFleet`，超過 3 天沒更新要說。
+- 🔔 追蹤搜尋：`xray-watch-v1`（存手機，⛔ 不放公開 repo）。`checkWatches` 打開時查、間隔 `WATCH_EVERY`，查詢加 `created:>=`（上次前一天），
+  新的記 `fresh`；`openWatch` 只列新的並標 🆕、看過歸零。搜尋與追蹤共用 `planFor`。

@@ -62,7 +62,7 @@
   - `xin-toolkit/skills/app-bootstrap/assets/CLAUDE.template.md`：給其他 App 的工作守則範本
     （含 PWA + Actions 章節）。改守則時兩邊都要改。
   - 網頁（GitHub Pages，`pages.yml` 部署）：`web/index.html` 技能挑選、`web/dev-guide.html`＋`web/agent.html` 兩份教學
-    （共用 `web/guide/`）、`web/ai.html` AI 指南、`web/xray.html` Repo X-Ray、`web/prompts.html` 提示詞庫（資料由 `Prompts sync` 工作流每月更新）。各頁的細節規則在 `.claude/rules/`，
+    （共用 `web/guide/`）、`web/ai.html` AI 指南、`web/xray.html` Repo X-Ray、`web/prompts.html` 提示詞庫、`web/ideas.html` App 點子（資料 `web/ideas.json`，改完跑 `python3 web/check_ideas.py`）（資料由 `Prompts sync` 工作流每月更新）。各頁的細節規則在 `.claude/rules/`，
     讀或改到那些檔案時才自動載入。共同規則：費用與規定附官方出處；改 `web/ai/` 的資料後必須跑
     `python3 web/ai/check_ai_data.py`、改教學頁的內嵌資料後跑 `python3 web/check_guides.py`，通過才能推。
   - `ops/weekly_report.py`＋`Weekly maintenance report` 工作流：每週一 08:00 健檢 `.github/apps.json` 列的 App、
