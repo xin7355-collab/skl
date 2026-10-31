@@ -312,7 +312,7 @@ const Guide = (() => {
     paint();
   }
 
-  /* ── 我的 App：部署時把 .github/apps.json 複製成網站的 apps.json ── */
+  /* ── 我的 App：部署時 ops/discover_apps.py 自動找帳號底下的 repo，寫成網站的 apps.json ── */
   async function loadApps() {
     try {
       const r = await fetch("apps.json", { cache: "no-store" });

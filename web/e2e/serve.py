@@ -2,8 +2,8 @@
 """網頁 E2E 測試用的本機伺服器：照 Deploy web page 的方式提供 web/ 底下的網頁。
 
 為什麼不直接 python -m http.server web/：
-- 部署時會把 .github/apps.json 複製成網站根目錄的 apps.json（技能庫網頁與 X-Ray 都讀它），
-  這裡用對應的方式提供，不必先複製檔案、也不會在 web/ 留下多餘檔案。
+- 部署時 ops/discover_apps.py 會自動找帳號底下的 repo，寫成網站根目錄的 apps.json（技能庫網頁與 X-Ray 都讀它）；
+  測試不連網，這裡直接提供手寫的 .github/apps.json（同一個格式），不必先產生檔案、也不會在 web/ 留下多餘檔案。
 - catalog.json 與 zips/ 部署時才產生（不進 git）。每次啟動都重新產生：舊的 catalog.json
   沒有 zip 欄位，留著會讓「下載 ZIP」的測試在本機跟 CI 結果不同。
   ZIP 放在系統暫存資料夾（依 port 固定名稱），結束就刪；就算被強制結束，下次啟動也是覆蓋同一個資料夾，

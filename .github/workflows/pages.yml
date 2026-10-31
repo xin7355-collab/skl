@@ -65,8 +65,13 @@ jobs:
           python3 web/check_advisor_rules.py
           python3 web/check_guides.py selftest
           python3 web/check_guides.py
+          python3 ops/discover_apps.py selftest
 
       - name: Build site
+        env:
+          # 自動找「我的 App」用（只讀公開 repo 清單）；SKL_READ_TOKEN 選用，有它才確認得到私人 repo
+          GITHUB_TOKEN: ${{ github.token }}
+          SKL_READ_TOKEN: ${{ secrets.SKL_READ_TOKEN }}
         run: |
           mkdir -p _site
           python3 web/build_catalog.py
@@ -75,8 +80,9 @@ jobs:
           cp web/index.html web/ai.html web/xray.html web/dev-guide.html web/agent.html web/prompts.html web/ideas.html _site/
           cp web/search.html _site/
           cp web/ideas.json web/catalog.json web/advisor_rules.json _site/
-          # Repo X-Ray「我的 App」清單：apps.json 本來就在公開 repo 裡，不增加曝光
-          cp .github/apps.json _site/apps.json
+          # 「我的 App」清單：自動找帳號底下的 repo（新 repo 隔天就出現），GitHub 查不到就退回手寫的 .github/apps.json；
+          # 自動找到的私人 repo 只算數量、不寫名字（網站是公開的）
+          python3 ops/discover_apps.py --config .github/apps.json --out _site/apps.json
           mkdir -p _site/ai && cp web/ai/models.json web/ai/features.json _site/ai/
           # 兩份教學頁（dev-guide、agent）共用的分頁／進度／精靈程式；網址帶 ?v=版本號，手機才不會拿到舊的快取
           mkdir -p _site/guide && cp web/guide/guide.css web/guide/guide.js _site/guide/

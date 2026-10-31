@@ -4049,7 +4049,7 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
   if(!r&&!q&&!t) try{ history.replaceState({v:p.has("fleet")?"fleet":"home",tab:tab},"",location.search); }catch(e){}
   await loadTrend();
   checkWatches();                                  // 不等它：查完會自己更新「🔔 追蹤」那一列
-  // 我的 App：skl 的 .github/apps.json 部署時複製成 apps.json；點一下就掃描並看 App 顧問
+  // 我的 App：部署時自動找帳號底下的 repo 寫成 apps.json（ops/discover_apps.py）；點一下就掃描並看 App 顧問
   loadStatic("apps.json").then(d=>{
     const apps=(d&&d.apps)||[];
     S.apps=apps;
@@ -4057,6 +4057,12 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
     $("myapps").innerHTML=apps.length?'🧭 我的 App（點了掃描＋顧問建議）：'+apps.map(x=>'<a data-app="'+esc(x.repo)+'">'+
       (x.private?"🔒 ":"")+esc(x.repo.split("/").pop())+'</a>').join("")+
       '<a id="fleet-go" style="border-color:var(--amber);color:var(--amber)">🩺 一鍵健檢全部（約 '+apps.length*2+' 次額度）</a>':"";
+    // 清單每天由 ops/discover_apps.py 自動從 GitHub 帳號找；找失敗要說出來，不然會以為新開的 App 不見了
+    const an=d&&d.error?'<div class="hint" id="appsnote" style="color:var(--amber)">⚠️ '+esc(d.error)+'</div>'
+      :d&&d.source==="auto"?'<div class="hint" id="appsnote">清單每天自動從 GitHub 帳號找（'+esc(String(d.at||"").slice(0,10))+'）'+
+        ((d.new||[]).length?'・新找到：'+d.new.map(r=>esc(String(r).split("/").pop())).join("、"):"")+
+        (d.hidden_private?'・另有 '+(+d.hidden_private)+' 個私人 repo 沒列出（網站是公開的；要掃就寫進 .github/apps.json）':"")+'</div>':"";
+    if(apps.length && an) $("myapps").insertAdjacentHTML("beforeend",an);
     paintFleet();
     loadStatic("fleet.json").then(f=>{ S.autoFleet=f; paintAutoFleet(); });
     if(S.tab==="log") paintLog();        // 「外部專案」篩選要等 apps.json 才分得準

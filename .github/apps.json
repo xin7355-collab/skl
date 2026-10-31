@@ -1,5 +1,7 @@
 {
-  "_說明": "每週維護報告要健檢的 App repo；url 選填：App 的線上網址（Repo X-Ray 會優先顯示）。private 的 repo 需要在 skl 的 Secrets 設 SKL_READ_TOKEN（唯讀權限）才會掃，沒設定就只標示「未設定權限」，不算失敗。",
+  "_說明": "我的 App 清單。每天部署、每週報告都會用 ops/discover_apps.py 自動找 owner 帳號底下的所有 repo（新 repo 隔天自動出現，不用改這裡）。這裡只需要：exclude 放不是 App 的 repo；url 選填 App 的線上網址（Repo X-Ray 優先顯示）；private 的 repo 要在 skl 的 Secrets 設 SKL_READ_TOKEN（唯讀）才找得到、才會掃，沒設定只標示「未設定權限」，不算失敗。下面的 apps 也是 GitHub 查不到時的備用清單。",
+  "owner": "xin7355-collab",
+  "exclude": ["xin7355-collab/skl"],
   "apps": [
     {"repo": "xin7355-collab/GALEPOST"},
     {"repo": "xin7355-collab/tool"},
@@ -15,6 +17,11 @@
     {"repo": "xin7355-collab/Camera"},
     {"repo": "xin7355-collab/argus-pwa"},
     {"repo": "xin7355-collab/Tower-Sight"},
-    {"repo": "xin7355-collab/pro-terminal-v4"}
+    {"repo": "xin7355-collab/pro-terminal-v4"},
+    {"repo": "xin7355-collab/Fruit"},
+    {"repo": "xin7355-collab/k7m2q"},
+    {"repo": "xin7355-collab/NC"},
+    {"repo": "xin7355-collab/shoe"},
+    {"repo": "xin7355-collab/ai-drama"}
   ]
 }

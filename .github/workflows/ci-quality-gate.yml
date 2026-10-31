@@ -114,6 +114,7 @@ jobs:
           python3 community/skills/lit-review/scripts/lit_api.py selftest
           python3 community/skills/huashu-art-motion/scripts/engine/lib/fonts/fetch_fonts.py selftest
           python3 ops/weekly_report.py selftest
+          python3 ops/discover_apps.py selftest
           python3 web/ai/check_ai_data.py selftest
           python3 xin-toolkit/skills/auto-video-edit/scripts/video_auto_edit.py selftest
           python3 xin-toolkit/skills/auto-video-edit/scripts/video_release_runner.py selftest

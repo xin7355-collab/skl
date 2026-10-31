@@ -12,6 +12,7 @@
   python3 ops/weekly_report.py selftest
 
 私人 repo：環境變數 SKL_READ_TOKEN 有值才掃；Token 走 HTTP 標頭，不放進網址。
+App 清單：先用 ops/discover_apps.py 自動找帳號底下的 repo（找不到才退回 .github/apps.json 手寫清單）。
 """
 
 import argparse
@@ -43,9 +44,10 @@ def _git(args, cwd=None, token=None, timeout=300):
                           env={**os.environ, "GIT_TERMINAL_PROMPT": "0"})
 
 
-def scan_apps(cfg_path=APPS_CFG, base_url="https://github.com/", budget_sec=480, token=None):
-    with open(cfg_path, encoding="utf-8") as f:
-        apps = json.load(f)["apps"]
+def scan_apps(cfg_path=APPS_CFG, base_url="https://github.com/", budget_sec=480, token=None, apps=None):
+    if apps is None:
+        with open(cfg_path, encoding="utf-8") as f:
+            apps = json.load(f)["apps"]
     token = token if token is not None else os.environ.get("SKL_READ_TOKEN", "")
     out, start = [], time.time()
     work = tempfile.mkdtemp(prefix="skl-apps-")
@@ -156,6 +158,16 @@ def compose(parts):
         data.update(p)
     lines, action = [], 0
     apps = data.get("apps", [])
+    disc = data.get("discover") or {}
+    if disc.get("error"):
+        # 自動找 App 壞了：這週只掃手寫清單，新開的 App 會漏掉 → 算一項要處理
+        lines += ["## App 清單", "", "- 自動找 App 失敗，這週先用手寫清單（新開的 App 可能沒掃到）。", ""]
+        action += 1
+    elif disc.get("notfound"):
+        lines += ["## App 清單", "",
+                  f"- 手寫清單有 {disc['notfound']} 個 repo 在 GitHub 帳號找不到（可能改名、刪除或改成私人），"
+                  "確認後改 skl 的 .github/apps.json。", ""]
+        action += disc["notfound"]
     if apps:
         ok = [a for a in apps if a["status"] == "ok"]
         errs = sum(a["error"] for a in ok)
@@ -166,6 +178,8 @@ def compose(parts):
         deferred = [a for a in apps if a["status"] == "deferred"]
         lines += ["## App 健檢", "",
                   f"- 掃描 {len(ok)}／{len(apps)} 個 App：必修 {errs} 項（分布在 {with_err} 個 App）、建議修 {warns} 項。"]
+        if disc.get("new"):
+            lines.append(f"- 自動找到 {disc['new']} 個還沒寫進手寫清單的新 App，已一起掃。")
         if failed:
             lines.append(f"- 無法掃描 {len(failed)} 個（clone 或掃描失敗）。")
         if deferred:
@@ -301,12 +315,32 @@ def selftest():
                          {"upstream": {"status": "ok", "added": 0, "modified": 0, "deleted": 0}},
                          {"coverage": {"skills": 3, "missing_zh": 0, "uncategorized": 0, "problems": 0}}])
         check(a0 == 0, "全部正常時需處理項目為 0（工作流會關閉 Issue）")
+        good = {"apps": [{"repo": "me/good", "status": "ok", "error": 0, "warn": 0, "info": 0}]}
+        b1, a1 = compose([{**good, "discover": {"source": "manual", "n": 1, "new": 0, "notfound": 0, "error": True}}])
+        check(a1 == 1 and "自動找 App 失敗" in b1, "自動找 App 壞了 → 算一項要處理，報告說出來")
+        b2, a2 = compose([{**good, "discover": {"source": "auto", "n": 3, "new": 2, "notfound": 1, "error": False}}])
+        check(a2 == 1 and "找不到" in b2 and "新 App" in b2 and "me/gone" not in b2,
+              "找不到的 repo 算要處理、新找到的只寫數量")
 
     cov = scan_coverage()["coverage"]
     check(cov["skills"] > 300, "coverage 能讀取真實技能目錄")
 
     print("\n自我測試" + ("全部通過" if ok else "有失敗"))
     return 0 if ok else 1
+
+
+def scan_discovered(budget_sec):
+    """先自動找帳號底下的 App（找不到退回手寫清單），再逐一掃描；報告只記數量。"""
+    import discover_apps  # 同一個 ops/ 資料夾
+    found = discover_apps.resolve(discover_apps.load_cfg(APPS_CFG),
+                                  token=os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or "",
+                                  read_token=os.environ.get("SKL_READ_TOKEN") or "",
+                                  self_repo=os.environ.get("GITHUB_REPOSITORY") or "")
+    discover_apps.report(found, out=sys.stderr)
+    res = scan_apps(apps=found["apps"], budget_sec=budget_sec)
+    res["discover"] = {"source": found["source"], "n": len(found["apps"]), "new": len(found.get("new") or []),
+                       "notfound": len(found.get("notfound") or []), "error": bool(found.get("error"))}
+    return res
 
 
 def main(argv=None):
@@ -328,7 +362,7 @@ def main(argv=None):
     if args.cmd == "selftest":
         return selftest()
     if args.cmd in ("apps", "upstream", "coverage"):
-        res = {"apps": lambda: scan_apps(budget_sec=args.budget_sec),
+        res = {"apps": lambda: scan_discovered(args.budget_sec),
                "upstream": scan_upstream, "coverage": scan_coverage}[args.cmd]()
         with open(args.out, "w", encoding="utf-8") as f:
             json.dump(res, f, ensure_ascii=False)

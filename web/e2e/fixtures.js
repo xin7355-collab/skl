@@ -237,6 +237,10 @@ async function mockNetwork(context, opts) {
         return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(opts.trendingJson) });
       }
       if (url.pathname === '/apps.json' && opts.appsJson === 'fail') return route.fulfill({ status: 404, body: '' });
+      // 部署時 ops/discover_apps.py 產生的那份（有 source／new／error）：測試用 test.use({ appsJson: {...} }) 給
+      if (url.pathname === '/apps.json' && opts.appsJson && typeof opts.appsJson === 'object') {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(opts.appsJson) });
+      }
       if (url.pathname === '/fleet.json') {
         // 每天自動健檢的結果也只在部署時產生：預設 404；測試用 test.use({ fleetJson }) 給一份假的
         if (!opts.fleetJson) return route.fulfill({ status: 404, body: '' });

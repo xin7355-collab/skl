@@ -394,7 +394,7 @@ function addAppOption(repo) {
   sel.insertBefore(o, sel.querySelector('option[value="__url"]'));
 }
 async function loadMyApps(want) {
-  // 部署時會把 .github/apps.json 複製到網站根目錄（X-Ray 也用同一份）。
+  // 部署時 ops/discover_apps.py 自動找帳號底下的 repo，寫到網站根目錄的 apps.json（X-Ray 也用同一份）。
   // want 要在任何 paintAdvice 之前讀：paintAdvice 會把「目前選項」存回去，先畫會蓋掉上次選的 App
   $("advPrompt").value = advicePrompt("");
   try {

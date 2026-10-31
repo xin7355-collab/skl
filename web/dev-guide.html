@@ -194,7 +194,7 @@
       <div class="sec faq"><div class="h">🆘 卡住怎麼辦</div>
         <details><summary>名稱被用過了</summary><div>同一個帳號底下不能重名，換一個就好（例如加上 -app）。</div></details>
         <details><summary>手機版畫面找不到某個設定</summary><div>Safari 網址列的選單選「要求桌面版網站」，GitHub 會顯示完整選單。</div></details>
-        <details><summary>想讓 skl 每週幫這個 App 健檢</summary><div>到 skl 的 Claude Code 說：「把 你的帳號/名稱 加進 .github/apps.json」。Repo X-Ray 的「我的 App」也會出現它。</div></details>
+        <details><summary>想讓 skl 每週幫這個 App 健檢</summary><div>跟 skl 同一個 GitHub 帳號的公開 repo 會自動加入（隔天出現在 Repo X-Ray 的「我的 App」，每週一健檢）。私人 repo 或別的帳號，才要到 skl 的 Claude Code 說：「把 你的帳號/名稱 加進 .github/apps.json」。</div></details>
       </div>
       <button class="btn donebtn">這一步做完了 ✓</button>
     </div>
@@ -1311,7 +1311,7 @@ function codePrompt(o) {
     o.nAnim && "動畫要短，系統開了「減少動態效果」就關掉動畫。",
     o.qTest && "每個主要畫面寫 Playwright E2E 測試（iPhone 尺寸），接上 CI。",
     o.qSecurity && "上線前跑 security 組合的安全審查和 ship-gate。",
-    o.qWeekly && "做完提醒我把這個 repo 加進 skl 的 .github/apps.json（每週一自動健檢）。",
+    o.qWeekly && "skl 每週一會自動健檢同帳號的公開 repo；如果這個 repo 是私人的或在別的帳號，做完提醒我把它加進 skl 的 .github/apps.json。",
     o.qStats && "使用量統計：先列出不追蹤個人的免費選項給我選，不要裝廣告追蹤碼；隱私說明要寫。",
     o.qDomain && "自訂網域：給我 DNS 要設的紀錄和 GitHub Pages 要勾的 HTTPS 選項（一步一步、手機能做）。",
     o.qMethod && "照 workflow 組合的方法做：先寫計畫、測試先行、完成前驗證。",

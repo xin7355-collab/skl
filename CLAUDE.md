@@ -65,7 +65,7 @@
     （共用 `web/guide/`）、`web/ai.html` AI 指南、`web/xray.html` Repo X-Ray、`web/prompts.html` 提示詞庫、`web/ideas.html` App 點子（資料 `web/ideas.json`，改完跑 `python3 web/check_ideas.py`）、`web/search.html` 超強搜尋（一次搜技能／提示詞／點子／教學／AI 功能）（資料由 `Prompts sync` 工作流每月更新）。各頁的細節規則在 `.claude/rules/`，
     讀或改到那些檔案時才自動載入。共同規則：費用與規定附官方出處；改 `web/ai/` 的資料後必須跑
     `python3 web/ai/check_ai_data.py`、改教學頁的內嵌資料後跑 `python3 web/check_guides.py`，通過才能推。
-  - `ops/weekly_report.py`＋`Weekly maintenance report` 工作流：每週一 08:00 健檢 `.github/apps.json` 列的 App、
+  - `ops/weekly_report.py`＋`Weekly maintenance report` 工作流：每週一 08:00 健檢帳號底下所有 App（`ops/discover_apps.py` 自動找，`.github/apps.json` 只放 owner／exclude／url／private）、
     比對上游（基準在 `.github/upstream-sync.json`）、檢查中文說明覆蓋率 → 只寫數量的 Issue。
     同步上游後要更新 upstream-sync.json 的 commit。
   - `ops/skill_eval.py`：自製技能「有技能／沒技能」對照測試（`run` 用 `claude -p` 跑、會用掉用量，手動執行；`selftest` 在 CI）。

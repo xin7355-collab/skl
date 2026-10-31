@@ -6,6 +6,7 @@ paths:
   - "web/check_advisor_rules.py"
   - "web/e2e/xray.spec.js"
   - ".github/apps.json"
+  - "ops/discover_apps.py"
 ---
 
 # Repo X-Ray（web/xray.html）
@@ -30,7 +31,9 @@ paths:
   翻譯：簡體也送去轉繁體、簡體與英文分批送（混送時英文會原樣傳回）；簡體字表在 xray.html 的 SIMP_RE 與
   build_trending.py 的 SIMP，兩邊要一致。
   「我的 App」＋「App 顧問」：規則在 `web/advisor_rules.json`（推薦技能路徑必須存在，`web/check_advisor_rules.py` 檢查），
-  部署時複製 `.github/apps.json` 成 `apps.json`。新增 App 就加進 apps.json（可填 `url`：線上網址，X-Ray 優先顯示）。
+  部署時 `ops/discover_apps.py` 自動找 owner 帳號底下的 repo 寫成 `apps.json`（新 repo 隔天出現、最近有推的排前面），⛔ 不用再手動加 App；
+  `.github/apps.json` 只放 `exclude`（不是 App 的 repo）、`url`（線上網址，X-Ray 優先顯示）、`private`。自動找到的私人 repo ⛔ 不寫名字只算數量
+  （網站與每週 Issue 都公開）；GitHub 查不到就退回手寫清單並在 `#appsnote` 說原因。
   `.claude/`、`.agents/` 等隱藏資料夾裡的 SKILL.md 是裝進來的技能，不算技能包。
   Token 可勾「記在這支手機」存 localStorage（使用者要求；只建議唯讀 Token，畫面只顯示末 4 碼，只送 api.github.com）。
 - 2026-10 新增（函式名稱）：複製一律用 `copyText`，失敗會開手動複製面板 `#copyfb`，並回傳有沒有成功（要記「複製過」的地方先判斷）。

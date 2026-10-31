@@ -604,6 +604,33 @@ test.describe('搜尋列與模糊搜尋（2026-10-31）', () => {
 });
 
 // ── 2026-10-31：A 每天自動健檢（fleet.json，只有數量）、C 追蹤搜尋（存手機、新專案標 🆕）──
+// ── 2026-10-31：我的 App 清單自動從 GitHub 帳號找（ops/discover_apps.py 部署時產生 apps.json）──
+test.describe('我的 App：清單自動找', () => {
+  test.describe('自動找成功', () => {
+    test.use({ appsJson: { source: 'auto', at: '2026-10-31T22:00:00+00:00', owner: 'xin7355-collab',
+      new: ['xin7355-collab/Fruit'], hidden_private: 1,
+      apps: [{ repo: 'xin7355-collab/Fruit', auto: true }, { repo: 'xin7355-collab/StockAI-DB' }] } });
+    test('新開的 repo 自動出現在我的 App；說明清單會自己更新；自動找到的私人 repo 只寫數量', async ({ page }) => {
+      await page.goto('/xray.html?tab=mine');
+      await expect(page.locator('#myapps a[data-app="xin7355-collab/Fruit"]')).toBeVisible();
+      const note = page.locator('#appsnote');
+      await expect(note).toContainText('每天自動從 GitHub 帳號找（2026-10-31）');
+      await expect(note).toContainText('新找到：Fruit');
+      await expect(note).toContainText('另有 1 個私人 repo 沒列出');
+      await expectNoHorizontalScroll(page);
+    });
+  });
+  test.describe('自動找失敗', () => {
+    test.use({ appsJson: { source: 'manual', error: '自動找 App 失敗：HTTP 403，先用手寫清單',
+      apps: [{ repo: 'xin7355-collab/StockAI-DB' }] } });
+    test('說出失敗原因，照樣列手寫清單（不是一片空白）', async ({ page }) => {
+      await page.goto('/xray.html?tab=mine');
+      await expect(page.locator('#myapps a[data-app="xin7355-collab/StockAI-DB"]')).toBeVisible();
+      await expect(page.locator('#appsnote')).toContainText('⚠️ 自動找 App 失敗：HTTP 403');
+    });
+  });
+});
+
 test.describe('我的 App：每天自動健檢', () => {
   const FLEET = (daysAgo) => ({
     at: new Date(Date.now() - daysAgo * 864e5).toISOString(),
