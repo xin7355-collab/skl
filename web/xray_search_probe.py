@@ -37,6 +37,16 @@ CASES = [
     ("連字號 OR 中文", "novel-downloader OR 小說", None),
     ("六組 OR 上限", "a1 OR b2 OR c3 OR d4 OR e5 OR f6", None),
     ("七組 OR", "novel OR fiction OR ebook OR epub OR manga OR comic OR story", None),
+    # 第 2 輪(2026-10-31):模糊搜尋改成「先全部都要(AND),太少才放寬(OR)」+ 排除改 NOT 之前要確認的寫法
+    ("OR 後面接 NOT", "novel OR fiction NOT manga", "manga"),
+    ("AND 後面接 NOT", "novel downloader NOT manga", "manga"),
+    ("中文 AND", "小說 下載", None),
+    ("英文 AND 三詞", "2026 election vote", None),
+    ("明寫 AND", "2026 AND election", None),
+    ("五個 OR + 一個 NOT", "a1 OR b2 OR c3 OR d4 OR e5 NOT f6", None),
+    ("四個 OR + 一個 NOT", "novel OR fiction OR ebook OR epub NOT manga", "manga"),
+    ("兩個 NOT", "novel NOT manga NOT comic", "manga"),
+    ("-語法條件", "novel -language:python", None),
 ]
 
 
