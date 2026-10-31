@@ -1,8 +1,9 @@
+---
 name: X-Ray search probe
 
 # 手動執行：在 Actions 上實際查 GitHub 搜尋，確認 X-Ray 模糊搜尋的組字規則（OR、排除、括號、連字號）
 # GitHub 會怎麼解讀。只讀、不寫檔、不 commit；結果在 job summary（只有數量與公開專案名）。
-on:
+'on':
   workflow_dispatch:
 
 permissions:

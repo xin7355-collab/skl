@@ -72,7 +72,8 @@ jobs:
           python3 web/build_catalog.py
           # 每個技能一個 ZIP（給 claude.ai 網頁版上傳），並在 catalog.json 寫入下載路徑，所以要在複製 catalog.json 之前跑
           python3 web/build_zips.py --out _site/zips --catalog web/catalog.json
-          cp web/index.html web/ai.html web/xray.html web/dev-guide.html web/agent.html web/prompts.html web/ideas.html web/ideas.json web/catalog.json web/advisor_rules.json _site/
+          cp web/index.html web/ai.html web/xray.html web/dev-guide.html web/agent.html web/prompts.html web/ideas.html _site/
+          cp web/ideas.json web/catalog.json web/advisor_rules.json _site/
           # Repo X-Ray「我的 App」清單：apps.json 本來就在公開 repo 裡，不增加曝光
           cp .github/apps.json _site/apps.json
           mkdir -p _site/ai && cp web/ai/models.json web/ai/features.json _site/ai/
@@ -83,7 +84,8 @@ jobs:
           # 手動重新部署時 commit 不變，版本號加上執行編號，手機才會重載到新版。
           ver="${GITHUB_SHA::7}.${GITHUB_RUN_NUMBER}"
           # APP_VER 換成版本號，前端切回前景時比對 version.json，不同就自動重載。
-          sed -i "s/__APP_VER__/${ver}/" _site/index.html _site/ai.html _site/xray.html _site/dev-guide.html _site/agent.html _site/prompts.html _site/ideas.html
+          sed -i "s/__APP_VER__/${ver}/" _site/index.html _site/ai.html _site/xray.html _site/dev-guide.html \
+            _site/agent.html _site/prompts.html _site/ideas.html
           printf '{"ver":"%s"}\n' "$ver" > _site/version.json
           printf 'User-agent: *\nDisallow: /\n' > _site/robots.txt
           grep -q 'noindex' _site/index.html
