@@ -195,7 +195,9 @@ jobs:
     # 技能庫網頁與 Repo X-Ray 的 Playwright 測試（web/e2e）。對外連線全部是假資料，
     # 不連 GitHub、不花額度；改網頁時改壞了會在這裡變紅燈。
     name: Web pages E2E (Playwright, mocked network)
-    runs-on: ubuntu-latest
+    # 釘 24.04：ubuntu-latest 2026-10 換成 26.04 後，鎖定的 Playwright 1.56.1 裝不了瀏覽器
+    # （"Playwright does not support chromium on ubuntu26.04-x64"）。之後升級 Playwright 再改回 latest。
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     timeout-minutes: 15
