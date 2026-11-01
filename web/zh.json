@@ -500,5 +500,7 @@
  "engineering-team/skills/red-green-proof": "把「懷疑的 bug」變成「證實的 bug」：先對照實際狀況確認原因，寫一個在現有程式會失敗的測試，修好後看它通過，再把修正拿掉確認測試會變紅",
  "finance/skills/passive-deal-screener": "被動投資人（LP）審查私募案（聯合投資、優先股、過橋基金、私人信貸）：壓力測試、計算費用侵蝕、與市場條件比較",
  "marketing-skill/skills/ai-decision-authority": "決定行銷／業務工作哪些能讓 AI 自己做、哪些要人審：依風險高低與能否反悔，分成 AI 主導、協作、人主導",
- "research-ops/skills/interview-mapper": "整理一份訪談逐字稿（客戶、待辦任務 JTBD、專家、易用性、離職）：抽出有原文佐證的重點、核對引言、確認結論重跑也站得住"
+ "research-ops/skills/interview-mapper": "整理一份訪談逐字稿（客戶、待辦任務 JTBD、專家、易用性、離職）：抽出有原文佐證的重點、核對引言、確認結論重跑也站得住",
+ "xin-toolkit/skills/untrusted-content-guard": "App 讓 AI 讀新聞、網頁、Email 等外部內容前，先擋藏在內容裡的「忽略之前的指示」等提示注入（含拼字打亂、編碼、隱形字元、圖片網址偷帶資料），清理後包起來再交給 AI",
+ "xin-toolkit/skills/idea-precheck": "開工前先查有沒有人做過：依序查自己的紀錄、skl 技能、GitHub 與套件庫，列出現成方案的授權與維護狀況，給出「直接用／參考後自己做小的／放心做」的結論"
 }

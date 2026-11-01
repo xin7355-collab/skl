@@ -60,6 +60,8 @@ test.describe('App 點子頁', () => {
     expect(clip).toContain('台股收盤小幫手');
     expect(clip).toContain('--packs ' + it.packs.join(','));     // 用 app-bootstrap 裝組合，跟首頁同一個指令
     expect(clip).toContain('--dry-run');
+    expect(clip).toContain('idea-precheck');                       // core 組合：開工前先查有沒有現成的
+    expect(clip).not.toContain('untrusted-content-guard');         // 這個點子沒有 ai 組合，就不提
     for (const m of it.mvp) expect(clip).toContain(m);
     expect(clip).toContain('繁體中文');
   });

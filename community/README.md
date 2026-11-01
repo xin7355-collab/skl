@@ -34,7 +34,7 @@
 | `sanitize-metadata`、`compress-video`、`slice-video` | https://github.com/chiphoton/MiniMax-H3-Codex-Drama（`plugins/privacy/skills/`） | 4f16b7f | 只收這 3 個與 `LICENSE`（MIT，Copyright (c) 2026 chiphoton）；不收 `agents/openai.yaml`、外掛設定與 README。**修改**：sanitize-metadata 的「Codex chat box」改成「chat」。只呼叫本機 ffmpeg、ffprobe、exiftool、`file`（`--deep` 處理圖片要 ImageMagick 7 的 `magick`），不連網；拒收網址與 stdin、不覆蓋輸入檔、預設不覆蓋輸出檔、錯誤訊息不帶檔案內容。**注意**：雲端工作階段裡檔案已經在容器上，這組技能保證的是 AI 不看內容、不外傳，主要用途是發佈到公開 repo、Pages、Release 前先拿掉 GPS 與裝置資訊。**測試**：上游沒附，skl 自寫 `community/tests/test_privacy_media.py`（用 ffmpeg 做帶 GPS／作者的假照片與假影片，跑完用 exiftool／ffprobe 從外面確認真的清掉、原檔沒動、不覆蓋、拒收網址），由 `Community skill tests` 工作流跑。不放進組合。安全掃描 PASS。 |
 | `codebase-design`、`prototype`、`teach` | https://github.com/mattpocock/skills（`skills/engineering/codebase-design`、`skills/engineering/prototype`、`skills/productivity/teach`） | 5beb35b | 38 個裡只挑這 3 個（skl 沒有同類技能）。各資料夾補上 repo 根目錄的 `LICENSE`（MIT，Copyright (c) 2026 Matt Pocock）；不收 `agents/openai.yaml`（Codex 設定）與 README（推電子報、教用 `npx skills@latest`、自動更新的外掛安裝）。**修改**：prototype、teach 的 SKILL.md 結尾加「Notes (added by skl)」——靜態網站沒有 `NODE_ENV`，版本切換列改用網址參數判斷、發佈的原型頁加 noindex；teach 會把課程與學習紀錄寫進目前資料夾，在公開 repo 會一起公開，手機上改用 Artifact 連結看課程。teach 只能手動叫用。不放組合。安全掃描 PASS。 |
 
-## 評估過但沒有收錄（2026-10-14、10-17、10-21 更新）
+## 評估過但沒有收錄（2026-10-14、10-17、10-21、11-01 更新）
 
 | 專案 | 原因 |
 |---|---|
@@ -76,6 +76,7 @@
 | zenstory-ai/drama-skills 的 `maintainers/short-drama-knowhow` | 給維護者更新技能用的，不是使用者流程。 |
 | wordflowlab/novel-writer | MIT，但是 npm 全域安裝的命令列工具（novel-writer-cn），不是技能格式。 |
 | Stonewuu/ai-fusion-video | Java 影片平台，唯一的 SKILL.md 是測試用假資料。 |
+| 使用者本機「新skills集合」（2026-11-01 上傳 zip，226 個 SKILL.md） | 184 個是 OpenClaw 使用案例的簡中翻譯（每份都寫「來源：awesome-openclaw-zh」，這個中文版沒附授權；只有 36 份對得上英文原版 hesamsheikh/awesome-openclaw-usecases（MIT））。每一份都要 OpenClaw 專屬工具（clawhub、Discord／WhatsApp 閘道、子代理、`~/.openclaw` 設定），在 Claude Code 照做跑不起來；其餘多跟 skl 已有的重疊（安全掃描≈skill-security-auditor、想法驗證≈roast、會議紀錄、新聞摘要、晨報等）。另 42 個「蒸書」（book-skill-distiller＋長篇小說寫作）沒有授權，功能跟 book-to-skill、story 組合重疊。安全掃描沒有惡意內容（2 個 CRITICAL 是防禦手冊引用的攻擊字句、打開本機 html 的誤判）。只取兩個想法、用 skl 自己的寫法重做（沒抄原文）：`xin-toolkit/skills/untrusted-content-guard`（外部內容防提示注入，組合 ai）、`xin-toolkit/skills/idea-precheck`（開工前先查有沒有現成方案，組合 core）。 |
 | Anning01/novelvids、chatfire-AI/huobao-drama | 授權禁止商業使用（CC BY-NC 4.0／CC BY-NC-SA），跟 MIT 技能庫衝突。 |
 | EthanYoQ/AI-Novel-Writer、RhythmicWave/NovelForge、tuxiangxianzhe/NovelWriter_public、Initsnow/NovelParser | GPL／AGPL 的完整 App（桌面程式、網站、Rust 程式），不是技能，copyleft 授權也不能混進 MIT 技能庫。 |
 | ExplosiveCoderflome/AI-Novel-Writing-Assistant | 自訂雙授權（AGPL＋商用要另取得授權）的完整 App。 |

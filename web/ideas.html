@@ -99,6 +99,10 @@ function startPrompt(it) {
     `我用 iPhone、沒有電腦，回覆用繁體中文（台灣用語）。\n\n` +
     `1. 先從 ${SKL} 用 app-bootstrap 安裝技能組合：${packs}\n` +
     `   （${FETCH_CMD} && python3 ${TOOL} install --target . --packs ${packs}；先 --dry-run 再正式裝），並寫好 CLAUDE.md。\n` +
+    // core 組合有 idea-precheck：先查有沒有現成的，免得重寫已經有人做好的東西
+    (it.packs.includes("core") ? `   裝好後先照 idea-precheck 技能查有沒有現成方案，回報「直接用／參考後自己做小的／放心做」再動手。\n` : "") +
+    // ai 組合有 untrusted-content-guard：抓來的內容交給 AI 前先擋提示注入
+    (it.packs.includes("ai") ? `   抓來的新聞、網頁、信件交給 AI 前，一律照 untrusted-content-guard 技能先檢查、包起來。\n` : "") +
     `2. 技術：${it.stack}\n` +
     `3. 第一版只做這些，做完先給我網址試用：\n${li(it.mvp)}\n` +
     `4. 第一版穩了之後再加：\n${li(it.next)}\n` +

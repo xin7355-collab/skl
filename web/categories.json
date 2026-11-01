@@ -296,6 +296,8 @@
   "engineering/skills/interview-system-designer": "leadership",
   "product-team/skills/experiment-designer": "product",
   "xin-toolkit/skills/file-intake": "ai",
+    "xin-toolkit/skills/untrusted-content-guard": "security",
+    "xin-toolkit/skills/idea-precheck": "method",
   "ecc/skills/accessibility": "web",
   "ecc/skills/make-interfaces-feel-better": "web",
   "ecc/skills/dashboard-builder": "web",

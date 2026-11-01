@@ -162,6 +162,14 @@
       ],
       "verdict_at_review": "FAIL",
       "note": "NET-EXFIL 是呼叫付費生成 API：api.openai.com（生圖）、ark.cn-beijing.volces.com（火山引擎 Seedance 影片）、api.minimax.io（配音、配樂、影片）；金鑰只從 OPENAI_API_KEY／ARK_API_KEY／MINIMAX_API_KEY 讀、放 Authorization: Bearer 標頭；可用 *_BASE_URL 環境變數換網址，但必須 https 且不能夾帳密；下載成品只接受 https 網址。每個工作要先 prepare、使用者 confirm（確認綁定工作內容指紋，輸入一改就要重新確認）才會 run。OBFUSCATION 是 fixture_adapter.py 內建 1×1 PNG 測試圖的 base64，以及解開 API 回傳的 base64 圖片與 hex 音訊。FS-ABUSE 只刪自己的暫存檔（2026-10-21）"
+    },
+    "xin-toolkit/skills/untrusted-content-guard": {
+      "sha256": "99dfc45b9537ddf0d66f52c47168d7181f6a11b358965539b5c6124d0d657a1d",
+      "categories": [
+        "OBFUSCATION"
+      ],
+      "verdict_at_review": "FAIL",
+      "note": "skl 自製。content_guard.py 第 114、120 行的 base64／hex 解碼只是把外部內容裡藏的文字解開來比對有沒有注入指令，結果只拿來判斷風險、從不執行；原始碼與測試案例裡的隱形字元都寫成 \\u 跳脫、檔案本身沒有隱形字元（2026-11-01）"
     }
   }
 }

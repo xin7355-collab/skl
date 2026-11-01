@@ -73,6 +73,9 @@
   - `xin-toolkit/skills/file-intake`：使用者上傳檔案要「做出來」時的標準流程。
   - `xin-toolkit/skills/ai-model-router`：App 呼叫 AI 的自動挑模型模組（`scripts/model_router.py`、`assets/model_router.js`，
     兩邊規則要一致；selftest 都在 CI 跑）。組合 `ai`。
+  - `xin-toolkit/skills/untrusted-content-guard`：AI 讀新聞、網頁等外部內容前先擋提示注入（`scripts/content_guard.py`、`assets/content_guard.js`，
+    兩邊規則一致、共用 `assets/guard_cases.json`，selftest 都在 CI；改了要重算 security-reviewed.json 的指紋）。組合 `ai`。
+    `xin-toolkit/skills/idea-precheck`：開工前先查有沒有現成方案（純說明）。組合 `core`。
   - `xin-toolkit/skills/web-to-markdown`：網頁轉 Markdown（firecrawl 的免費替代，純內建模組、robots.txt＋限流、擋內網位址）；
     真實網路驗證用 `Web to markdown smoke test` 工作流（改到技能時自動跑）。組合 `python`。
   - `xin-toolkit/skills/auto-video-edit`：全自動影片剪輯（ffmpeg）；`Video auto edit` 工作流每 30 分鐘處理
