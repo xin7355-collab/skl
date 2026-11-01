@@ -1,6 +1,6 @@
 ---
 title: "/cs-deep-work — Slash Command for AI Coding Agents"
-description: "/cs:deep-work — Plan a deep work day the Cal Newport way: audit the task list deep vs shallow against a budget, build an energy-first time-blocked. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-deep-work — Plan a deep work day the Cal Newport way: audit the task list deep vs shallow against a budget, build an energy-first time-blocked. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-deep-work
@@ -11,9 +11,9 @@ description: "/cs:deep-work — Plan a deep work day the Cal Newport way: audit 
 </div>
 
 
-**Command:** `/cs:deep-work [today's task list]`
+**Command:** `/cs-deep-work [today's task list]`
 
-A calendar full of reactions is not a plan. `/cs:deep-work` runs the full attention-first
+A calendar full of reactions is not a plan. `/cs-deep-work` runs the full attention-first
 workflow: classify every task deep vs shallow, audit the shallow share against a budget, build a
 time-blocked day where deep work owns the earliest hours, and close the loop with a focus-session
 ledger and a shutdown ritual.
@@ -27,9 +27,9 @@ ledger and a shutdown ritual.
 
 ## When NOT to Run
 
-- You need to pick WHAT matters today → run `/cs:andreessen` (3x5 card) first, then come back
+- You need to pick WHAT matters today → run `/cs-andreessen` (3x5 card) first, then come back
 - Team-level capacity or sprint math → `project-management` skills, not personal attention
-- You just want a quick schedule from a ready task list with no audit → `/cs:time-block`
+- You just want a quick schedule from a ready task list with no audit → `/cs-time-block`
 
 ## What You Get
 
@@ -63,19 +63,19 @@ ledger and a shutdown ritual.
 
 ```bash
 # 1. Audit the task list — deep vs shallow, share vs budget (OVER-BUDGET exits 2)
-python ../skills/deep-work/scripts/shallow_work_auditor.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/deep-work/scripts/shallow_work_auditor.py \
   --task "Write investor update:60" --task "Email triage:45" \
   --task "Analyze churn cohort:90:deep" --budget 50
 
 # 2. Build the time-blocked day (deep-cap and overflow refusals exit 2, naming deferrals)
-python ../skills/deep-work/scripts/time_block_planner.py --start 08:30 --end 17:00 --lunch 12:30 \
+python ${CLAUDE_PLUGIN_ROOT}/skills/deep-work/scripts/time_block_planner.py --start 08:30 --end 17:00 --lunch 12:30 \
   --task "Write investor update:90:deep" --task "Analyze churn cohort:90:deep" \
   --task "Email triage:45:shallow"
 
 # 3. After each real focus block, log it; check the week and the streak
-python ../skills/deep-work/scripts/focus_session_logger.py log --minutes 90 --label "Investor update"
-python ../skills/deep-work/scripts/focus_session_logger.py status --target 15
-python ../skills/deep-work/scripts/focus_session_logger.py streak
+python ${CLAUDE_PLUGIN_ROOT}/skills/deep-work/scripts/focus_session_logger.py log --minutes 90 --label "Investor update"
+python ${CLAUDE_PLUGIN_ROOT}/skills/deep-work/scripts/focus_session_logger.py status --target 15
+python ${CLAUDE_PLUGIN_ROOT}/skills/deep-work/scripts/focus_session_logger.py streak
 
 # 4. End of day: walk ../skills/deep-work/assets/shutdown_checklist.md to "shutdown complete"
 ```
@@ -91,8 +91,8 @@ python ../skills/deep-work/scripts/focus_session_logger.py streak
 
 - Agent: [`cs-deep-work`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/deep-work/agents/cs-deep-work.md)
 - Skill: [`deep-work`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/deep-work/skills/deep-work/SKILL.md)
-- Quick variant: [`/cs:time-block`](cs-time-block.md) — schedule only, no audit
-- Siblings: `/cs:andreessen` (picks WHAT today; run before this), `/cs:reflect` (weekly reflection)
+- Quick variant: [`/cs-time-block`](cs-time-block.md) — schedule only, no audit
+- Siblings: `/cs-andreessen` (picks WHAT today; run before this), `/cs-reflect` (weekly reflection)
 
 ---
 

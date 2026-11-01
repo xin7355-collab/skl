@@ -18,7 +18,7 @@ Both are valid; they sit at different points on the visual-premium / conversion-
 
 ## What this skill does
 
-Run via `/cs:landing` or trigger phrases like "create a landing page" / "build a landing page".
+Run via `/cs-landing` or trigger phrases like "create a landing page" / "build a landing page".
 
 The skill walks **3–4 forcing intake questions** (one at a time, dependency-ordered):
 
@@ -42,7 +42,7 @@ marketing/landing/
 ├── .claude-plugin/plugin.json
 ├── README.md
 ├── agents/cs-landing.md             ← landing-generation persona, FOUC-prevention enforcer
-├── commands/cs-landing.md           ← /cs:landing
+├── commands/cs-landing.md           ← /cs-landing
 └── skills/landing/
     ├── SKILL.md                     ← Path-B converted from megaprompt 04
     ├── references/
@@ -56,6 +56,11 @@ marketing/landing/
 ```
 
 ## Quick start
+
+```bash
+/plugin marketplace add alirezarezvani/claude-skills
+/plugin install landing@claude-code-skills
+```
 
 ```bash
 # Validate a brand override before generation
@@ -72,7 +77,7 @@ python skills/landing/scripts/html_validator.py --file ./landing-pages/quill-ai.
 
 ## Source spec
 
-`megaprompts/04-landing-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo) (PR #657). The megaprompt is canonical; this plugin is the working implementation. Drift between the two is a bug — re-grill with `/cs:grill-with-docs` if they diverge.
+`megaprompts/04-landing-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo) (PR #657). The megaprompt is canonical; this plugin is the working implementation. Drift between the two is a bug — re-grill with `/cs-grill-with-docs` if they diverge.
 
 ## License
 

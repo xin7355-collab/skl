@@ -38,7 +38,7 @@ Differentiates clearly:
 
 - **vs cs-grill-master** (plan interrogation): different mode (continuity vs interrogation)
 - **vs cs-skill-author** (skill authoring): different domain (handoff content vs skill files)
-- **vs `/cs:decide`** (decision logging): different artifact (handoff is forward-looking; decide is backward-looking)
+- **vs `/c-level-agents:decide`** (decision logging): different artifact (handoff is forward-looking; decide is backward-looking)
 
 **Hard rule:** never duplicate content already in another artifact. References only.
 
@@ -50,17 +50,17 @@ Differentiates clearly:
 
 1. **Template Generator**
    - Path: [`scripts/handoff_template_generator.py`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/skills/handoff/scripts/handoff_template_generator.py)
-   - Usage: `python handoff_template_generator.py --next-focus "ship PR" --mktemp`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/handoff_template_generator.py --next-focus "ship PR" --mktemp`
    - Generates scaffold tailored to next-session emphasis (deployment / review / debug / design / test / default)
 
 2. **Artifact Deduplicator**
    - Path: [`scripts/artifact_deduplicator.py`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/skills/handoff/scripts/artifact_deduplicator.py)
-   - Usage: `python artifact_deduplicator.py path/to/handoff-draft.md`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/artifact_deduplicator.py path/to/handoff-draft.md`
    - Detects PRD/ADR/issue/commit/long-code-block content; suggests reference replacements
 
 3. **Skill Recommender**
    - Path: [`scripts/skill_recommender.py`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/skills/handoff/scripts/skill_recommender.py)
-   - Usage: `python skill_recommender.py path/to/handoff.md`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/skill_recommender.py path/to/handoff.md`
    - Matches handoff content to 14 skill signals; ranked recommendations
 
 ### Knowledge Bases
@@ -76,7 +76,7 @@ Differentiates clearly:
 
 ```bash
 # 1. Generate template tailored to next-session focus
-python ../skills/handoff/scripts/handoff_template_generator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/handoff_template_generator.py \
   --next-focus "ship PR to dev" \
   --mktemp \
   > handoff_path.txt
@@ -89,11 +89,11 @@ python ../skills/handoff/scripts/handoff_template_generator.py \
 #    - Artifacts: paths/URLs ONLY
 
 # 3. Pre-commit dedup check
-python ../skills/handoff/scripts/artifact_deduplicator.py "$(cat handoff_path.txt)"
+python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/artifact_deduplicator.py "$(cat handoff_path.txt)"
 # Verdict must be CLEAN or WARN with justified findings.
 
 # 4. Pre-commit skill recommendations
-python ../skills/handoff/scripts/skill_recommender.py "$(cat handoff_path.txt)"
+python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/skill_recommender.py "$(cat handoff_path.txt)"
 # Update "Skills to use" section with top matches.
 
 # 5. Hand off — share the file path with next session/user.
@@ -102,7 +102,7 @@ python ../skills/handoff/scripts/skill_recommender.py "$(cat handoff_path.txt)"
 ### Workflow 2: Audit an existing handoff for duplication
 
 ```bash
-python ../skills/handoff/scripts/artifact_deduplicator.py path/to/existing-handoff.md
+python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/artifact_deduplicator.py path/to/existing-handoff.md
 # Triage findings:
 #   CLEAN: ship as-is
 #   WARN: review the 1-3 findings, decide if intentional
@@ -171,7 +171,7 @@ Length target: 50-100 lines. Anything longer suggests duplication.
 
 - Skill: [../skills/handoff/SKILL.md](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/skills/handoff/SKILL.md)
 - Companion tooling: [../skills/handoff/references/companion_tooling.md](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/skills/handoff/references/companion_tooling.md)
-- Sibling command: [`/cs:handoff`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/commands/cs-handoff.md)
+- Sibling command: [`/cs-handoff`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/commands/cs-handoff.md)
 
 ---
 

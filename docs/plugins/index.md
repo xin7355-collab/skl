@@ -67,7 +67,7 @@ description: "78 installable agent plugins for Claude Code, Codex CLI, Gemini CL
     ```bash
     git clone https://github.com/alirezarezvani/claude-skills.git
     cd claude-skills
-    ./scripts/codex-install.sh
+    ./scripts/codex-install.sh --category engineering   # no arguments lists the categories
     ```
 
 === "Gemini CLI"
@@ -215,7 +215,7 @@ Every plugin follows the same minimal schema for maximum portability:
 | **OpenClaw** | :material-check: | :material-check: | :material-close: | :material-close: |
 
 !!! tip "Full feature support"
-    Slash commands (like `/cs:research`, `/pw:generate`) and agent spawning (like `cs-research`) are Claude Code features. On other platforms the underlying skills and Python tools work — just without the command/agent wrappers.
+    Slash commands (like `/cs-research`, `/pw:generate`) and agent spawning (like `cs-research`) are Claude Code features. On other platforms the underlying skills and Python tools work — just without the command/agent wrappers.
 
 ---
 
@@ -246,7 +246,7 @@ Every plugin follows the same minimal schema for maximum portability:
 | `behuman` | Standalone | development | `./engineering/behuman` |
 | `caveman` | Standalone | development | `./engineering/caveman` |
 | `chaos-engineering` | Standalone | development | `./engineering/chaos-engineering` |
-| `claude-coach` | Standalone | development | `./engineering/claude-coach` |
+| `power-user-coach` | Standalone | development | `./engineering/claude-coach` |
 | `code-tour` | Standalone | development | `./engineering/code-tour` |
 | `data-quality-auditor` | Standalone | development | `./engineering/data-quality-auditor` |
 | `demo-video` | Standalone | development | `./engineering/demo-video` |

@@ -1,6 +1,6 @@
 ---
 title: "/cs-pulse — Slash Command for AI Coding Agents"
-description: "/cs:pulse <topic> — Multi-source recency research. Grill-me intake (topic / angle / window / scope), then parallel Reddit + HN + Web (1 q/sec per. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-pulse <topic> — Multi-source recency research. Grill-me intake (topic / angle / window / scope), then parallel Reddit + HN + Web (1 q/sec per. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-pulse
@@ -11,7 +11,7 @@ description: "/cs:pulse <topic> — Multi-source recency research. Grill-me inta
 </div>
 
 
-**Command:** `/cs:pulse <topic>`
+**Command:** `/cs-pulse <topic>`
 
 The `cs-pulse` persona takes the pulse of a topic across Reddit, Hacker News, the open web, and (optionally) X/Twitter — within a configurable recent window — and synthesizes a single coherent briefing.
 
@@ -22,7 +22,7 @@ The `cs-pulse` persona takes the pulse of a topic across Reddit, Hacker News, th
 - Trend discovery / tool comparisons / audience sentiment
 - Pre-content-creation reconnaissance
 
-The skill ALSO triggers automatically without `/cs:pulse` when you use trigger phrases:
+The skill ALSO triggers automatically without `/cs-pulse` when you use trigger phrases:
 - "pulse on [topic]"
 - "what's happening with [topic]"
 - "what are people saying about [topic]"
@@ -31,7 +31,7 @@ The skill ALSO triggers automatically without `/cs:pulse` when you use trigger p
 - "trending: [topic]"
 - "find me info on [topic]"
 
-`/cs:pulse` is the explicit form.
+`/cs-pulse` is the explicit form.
 
 ## Forcing Intake (2–4 Questions, One at a Time)
 
@@ -81,27 +81,30 @@ Saved to `${RESEARCH_DIR}/pulse/<topic-slug>-<YYYY-MM-DD>.md` AND pasted in chat
 - **Source discipline** — cite only session-call results. `[Background]` for training knowledge, excluded from cited count.
 - **Three-count tracking** — sent / received / cited in audit log.
 - **Retry once after 3s** — then log. 3 consecutive failures across sources → stop.
-- **Graceful degradation** — single source failure → continue with rest. Never fail the whole run on one source.
+- **Graceful degradation** — prefer a supplied X export. Skip only when no export or live interface exists.
 
 ## Workflow
 
 ```bash
 # A. Pre-flight (post-intake)
-python ../skills/pulse/scripts/time_window_calculator.py --window 30d
-python ../skills/pulse/scripts/topic_slug_generator.py --topic "<topic>" --date $(date +%Y-%m-%d)
-python ../skills/pulse/scripts/citation_tracker.py --action start --session NAME
+python ${CLAUDE_PLUGIN_ROOT}/skills/pulse/scripts/time_window_calculator.py --window 30d
+python ${CLAUDE_PLUGIN_ROOT}/skills/pulse/scripts/topic_slug_generator.py --topic "<topic>" --date $(date +%Y-%m-%d)
+python ${CLAUDE_PLUGIN_ROOT}/skills/pulse/scripts/citation_tracker.py --action start --session NAME
 
 # B. Phases 1–3 (parallel, 1 q/sec per platform)
 #    Reddit: search.json sort=top&t=month + sort=new&t=month + top thread comments
 #    HN: Algolia stories + comments with timestamp filter
 #    Web: 2–3 targeted queries
 
-# C. Phase 4 (optional, sequential): X/Twitter via Grok / X API / browser automation
+# C. Phase 4 (optional, sequential): normalize a supplied export first
+python ${CLAUDE_PLUGIN_ROOT}/skills/pulse/scripts/citation_tracker.py --action import_sources \
+  --session NAME --input /path/to/x-search.json --platform x
+#    If no export exists, try Grok / X API / browser automation.
 
 # D. Synthesis: cross-platform pattern detection
 
 # E. Output: file + chat + audit summary
-python ../skills/pulse/scripts/citation_tracker.py --action close --session NAME
+python ${CLAUDE_PLUGIN_ROOT}/skills/pulse/scripts/citation_tracker.py --action close --session NAME
 ```
 
 ## Stop Conditions
@@ -115,8 +118,9 @@ python ../skills/pulse/scripts/citation_tracker.py --action close --session NAME
 - Starting any search before Q1 (topic specificity) commits
 - Batching intake questions
 - Hardcoded URLs that won't survive API changes (note format, explain may evolve)
-- Specific person/brand references
+- Irrelevant person or brand references
 - Tight coupling to one X/Twitter interface
+- Treating duplicate Tweet IDs or repeated citation URLs as separate sources
 - Missing fallback behavior
 - "Just use [specific tool]" without explaining what the tool does
 - Citing training knowledge as session results
@@ -127,7 +131,7 @@ python ../skills/pulse/scripts/citation_tracker.py --action close --session NAME
 - Agent: [`cs-pulse`](https://github.com/alirezarezvani/claude-skills/tree/main/research/pulse/agents/cs-pulse.md)
 - Skill: [`pulse`](https://github.com/alirezarezvani/claude-skills/tree/main/research/pulse/skills/pulse/SKILL.md)
 - Source spec: `megaprompts/01-pulse-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)
-- Sibling research skills (after build): `/cs:litreview`, `/cs:grants`, `/cs:syllabus`, `/cs:patent`, `/cs:dossier`, `/cs:research` (router)
+- Sibling research skills (after build): `/cs-litreview`, `/cs-grants`, `/cs-syllabus`, `/cs-patent`, `/cs-dossier`, `/cs-research` (router)
 
 ---
 

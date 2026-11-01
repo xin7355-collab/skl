@@ -1,6 +1,6 @@
 ---
 title: "/cs-research — Slash Command for AI Coding Agents"
-description: "/cs:research <question> — Default research entry point. Hybrid router: classifies question deterministically and either delegates to specialist. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-research <question> — Default research entry point. Hybrid router: classifies question deterministically and either delegates to specialist. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-research
@@ -11,14 +11,14 @@ description: "/cs:research <question> — Default research entry point. Hybrid r
 </div>
 
 
-**Command:** `/cs:research <research question>`
+**Command:** `/cs-research <research question>`
 
 The `cs-research` persona is the **default entry point for any research request**. Routes to a specialist or runs fallback. Always transparent about the routing decision.
 
 ## Distinct from `engineering/autoresearch-agent`
 
 These share the word "research" but serve **different use cases**:
-- **`/cs:research`** (this command) — research-query routing + fallback workflow
+- **`/cs-research`** (this command) — research-query routing + fallback workflow
 - **`engineering/autoresearch-agent`** — autonomous file-optimization experiment loop (Karpathy pattern)
 
 No overlap. Don't confuse them.
@@ -32,7 +32,7 @@ No overlap. Don't confuse them.
 
 ## When NOT to Run
 
-- You already know which specialist applies — invoke it directly (`/cs:litreview`, `/cs:grants`, etc.) and skip the routing step
+- You already know which specialist applies — invoke it directly (`/cs-litreview`, `/cs-grants`, etc.) and skip the routing step
 - You want file-optimization experiments — use `engineering/autoresearch-agent`
 
 ## The 6 Routing Targets
@@ -115,16 +115,16 @@ DOCX version uses same structure with research-pack styling.
 # Phase 1 intake (Q1 + Q2 minimum)
 
 # Phase 2 classification
-python ../skills/research/scripts/classifier.py --question "<Q1>"
+python ${CLAUDE_PLUGIN_ROOT}/skills/research/scripts/classifier.py --question "<Q1>"
 # Returns: {route_to: "litreview", confidence: "high (2 signals)", matched: [...]}
 
 # Phase 3a delegation (if specialist matched at ≥2 signals)
-python ../skills/research/scripts/routing_transparency_logger.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/research/scripts/routing_transparency_logger.py \
   --action record_delegation --session NAME --target litreview --signals "..."
-# Pass question to /cs:litreview verbatim; let it run its own intake
+# Pass question to /cs-litreview verbatim; let it run its own intake
 
 # Phase 3b fallback (if no specialist matched)
-python ../skills/research/scripts/fallback_decomposer.py --question "<Q1>"
+python ${CLAUDE_PLUGIN_ROOT}/skills/research/scripts/fallback_decomposer.py --question "<Q1>"
 # Returns 3-5 sub-questions
 # Run 8-step fallback workflow: source-select → search → read+extract → synthesize → cross-cut → output → audit
 ```
@@ -166,8 +166,8 @@ python ../skills/research/scripts/fallback_decomposer.py --question "<Q1>"
 - Agent: [`cs-research`](https://github.com/alirezarezvani/claude-skills/tree/main/research/research/agents/cs-research.md)
 - Skill: [`research`](https://github.com/alirezarezvani/claude-skills/tree/main/research/research/skills/research/SKILL.md)
 - Source spec: `megaprompts/13-research-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)
-- Routing targets: `/cs:pulse`, `/cs:litreview`, `/cs:grants`, `/cs:dossier`, `/cs:patent`, `/cs:syllabus`
-- Adjacent (NOT a routing target): `/cs:notebooklm` (different mode), `engineering/autoresearch-agent` (different use case)
+- Routing targets: `/cs-pulse`, `/cs-litreview`, `/cs-grants`, `/cs-dossier`, `/cs-patent`, `/cs-syllabus`
+- Adjacent (NOT a routing target): `/cs-notebooklm` (different mode), `engineering/autoresearch-agent` (different use case)
 
 ---
 

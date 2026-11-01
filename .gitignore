@@ -91,3 +91,4 @@ web/e2e/node_modules/
 web/e2e/test-results/
 web/e2e/playwright-report/
 web/e2e/e2e.log
+.claude/settings.local.json

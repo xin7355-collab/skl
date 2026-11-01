@@ -1,6 +1,6 @@
 ---
 title: "/cs-andreessen — Slash Command for AI Coding Agents"
-description: "/cs:andreessen — Marc Andreessen-mode verdict on a venture, idea, feature, or career bet. Market-first, no hedging, no disclaimers, explicit. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-andreessen — Marc Andreessen-mode verdict on a venture, idea, feature, or career bet. Market-first, no hedging, no disclaimers, explicit. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-andreessen
@@ -11,7 +11,7 @@ description: "/cs:andreessen — Marc Andreessen-mode verdict on a venture, idea
 </div>
 
 
-**Command:** `/cs:andreessen`
+**Command:** `/cs-andreessen`
 
 The `cs-andreessen` persona pressure-tests a bet through Andreessen's frameworks and issues a hard
 verdict in a fixed anti-sycophancy voice. It does not balance, hedge, or reassure.
@@ -67,18 +67,18 @@ the Anti-Todo accomplishment log.
 
 ```bash
 # Venture evaluation
-python ../skills/andreessen/scripts/market_first_evaluator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/andreessen/scripts/market_first_evaluator.py \
   --size 8 --growth 7 --timing 9 --pull 8 --team 6 --product 5
 
 # Product/market fit check
-python ../skills/andreessen/scripts/pmf_signal_scorer.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/andreessen/scripts/pmf_signal_scorer.py \
   --ellis-pct 45 --retention 8 --organic 7 --demand 8 --frequency 7
 
 # Daily 3x5 card + Anti-Todo
-python ../skills/andreessen/scripts/anti_todo_card.py --new \
+python ${CLAUDE_PLUGIN_ROOT}/skills/andreessen/scripts/anti_todo_card.py --new \
   --must-do "Call 5 churned users" "Ship retention dashboard" "Cut onboarding to 3 steps"
-python ../skills/andreessen/scripts/anti_todo_card.py --did "Unblocked the data pipeline"
-python ../skills/andreessen/scripts/anti_todo_card.py --summary
+python ${CLAUDE_PLUGIN_ROOT}/skills/andreessen/scripts/anti_todo_card.py --did "Unblocked the data pipeline"
+python ${CLAUDE_PLUGIN_ROOT}/skills/andreessen/scripts/anti_todo_card.py --summary
 ```
 
 ## Stop Conditions
@@ -91,8 +91,8 @@ python ../skills/andreessen/scripts/anti_todo_card.py --summary
 
 - Agent: [`cs-andreessen`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/andreessen/agents/cs-andreessen.md)
 - Skill: [`andreessen`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/andreessen/skills/andreessen/SKILL.md)
-- Companion command: [`/cs:pmf-check`](./cs-pmf-check.md)
-- Siblings: `/cs:reflect`, `/cs:capture` (productivity)
+- Companion command: [`/cs-pmf-check`](./cs-pmf-check.md)
+- Siblings: `/cs-reflect`, `/cs-capture` (productivity)
 
 ---
 

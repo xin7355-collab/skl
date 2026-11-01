@@ -1,6 +1,6 @@
 ---
 title: "/cs-meeting-prep — Slash Command for AI Coding Agents"
-description: "/cs:meeting-prep — Gate a meeting before it exists: price it in real dollars (attendees x minutes x rate + optional 23-minute refocus overhead). Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-meeting-prep — Gate a meeting before it exists: price it in real dollars (attendees x minutes x rate + optional 23-minute refocus overhead). Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-meeting-prep
@@ -11,7 +11,7 @@ description: "/cs:meeting-prep — Gate a meeting before it exists: price it in 
 </div>
 
 
-**Command:** `/cs:meeting-prep [the meeting]`
+**Command:** `/cs-meeting-prep [the meeting]`
 
 Most meetings should be an email. This command makes that a testable claim: it prices the meeting,
 runs the decision/agenda/owner gate, and only if the meeting survives does it build the timeboxed
@@ -26,7 +26,7 @@ agenda. An ASYNC verdict is a win — draft the memo instead.
 
 ## When NOT to Run
 
-- After the meeting, with notes in hand → use `/cs:meeting-actions`
+- After the meeting, with notes in hand → use `/cs-meeting-actions`
 - Sprint ceremonies, standups, and Jira delivery cadence → `project-management/` owns those
 - Designing an org-wide comms program → `business-operations/internal-comms`
 
@@ -59,7 +59,7 @@ agenda. An ASYNC verdict is a win — draft the memo instead.
 
 ```bash
 # 1. Price + gate the meeting
-python ../skills/meetings/scripts/meeting_cost_calculator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/meetings/scripts/meeting_cost_calculator.py \
   --attendees 6 --minutes 60 --avg-rate 90 --include-refocus \
   --has-decision --has-agenda --has-owner
 
@@ -67,7 +67,7 @@ python ../skills/meetings/scripts/meeting_cost_calculator.py \
 # 2b. NOT-READY (exit 3) → get the missing agenda/owner, re-run the gate.
 
 # 3. MEET (exit 0) → build the timeboxed, decision-first agenda
-python ../skills/meetings/scripts/agenda_builder.py --length 45 \
+python ${CLAUDE_PLUGIN_ROOT}/skills/meetings/scripts/agenda_builder.py --length 45 \
   --topic "Q3 pricing:Decide usage-based vs seat-based:15:maria" \
   --topic "Launch risks:Discuss open launch blockers:15:sam" \
   --topic "Metrics:Inform team of activation trend:5:alex"
@@ -84,7 +84,7 @@ python ../skills/meetings/scripts/agenda_builder.py --length 45 \
 
 - Agent: [`cs-meeting-discipline`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/meetings/agents/cs-meeting-discipline.md)
 - Skill: [`meetings`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/meetings/skills/meetings/SKILL.md)
-- Sibling command: [`/cs:meeting-actions`](cs-meeting-actions.md) (post-meeting extraction)
+- Sibling command: [`/cs-meeting-actions`](cs-meeting-actions.md) (post-meeting extraction)
 
 ---
 

@@ -26,21 +26,26 @@ A productivity-shaped handoff skill. Configurable save location (no project clut
 
 ## Install
 
-This plugin lives at `productivity/handoff/`. Enable through your plugin manager. On first invocation of `/cs:handoff`, the skill will prompt:
+```bash
+/plugin marketplace add alirezarezvani/claude-skills
+/plugin install handoff-productivity@claude-code-skills
+```
+
+This plugin lives at `productivity/handoff/`. Enable through your plugin manager. On first invocation of `/cs-handoff`, the skill will prompt:
 
 > Run setup now? (Y/n)
 
 - **Y** — walks 5 questions and writes `~/.config/handoff/config.json`.
 - **N** — uses defaults this run and never re-prompts (sentinel at `~/.config/handoff/.setup-declined`).
 
-Re-configure any time with `/cs:handoff-setup`.
+Re-configure any time with `/cs-handoff-setup`.
 
 ## Slash commands
 
 | Command | Use |
 |---|---|
-| `/cs:handoff [goal]` | Generate the handoff doc. |
-| `/cs:handoff-setup [--project]` | Configure (or reconfigure) save location, retention, redaction. |
+| `/cs-handoff [goal]` | Generate the handoff doc. |
+| `/cs-handoff-setup [--project]` | Configure (or reconfigure) save location, retention, redaction. |
 
 ## Tooling
 
@@ -81,6 +86,10 @@ Stdlib-only Python. No external deps.
 | Retention cleanup | Yes (mtime-guarded) | No |
 
 Both exist deliberately. The engineering version stays optimized for code/PR contexts. This one is for the broader daily routine.
+
+### Renamed in 2.14.1: `handoff` → `session-handoff`
+
+Both plugins used to ship a skill named `handoff`. Claude Code namespaces them, but Codex, Gemini CLI, Mistral Vibe and Hermes key skills by name alone and silently kept only one. This skill is now `session-handoff` (`productivity/handoff/skills/session-handoff/`), so it is invoked as `handoff-productivity:session-handoff`. The `/cs-handoff` and `/cs-handoff-setup` commands, the hooks, and your saved configuration in `~/.config/handoff/` are unchanged. If you installed the skill folder by hand on another harness, reinstall it under the new name and delete the old `handoff-productivity` or `productivity-handoff` copy.
 
 ## Inspired by
 

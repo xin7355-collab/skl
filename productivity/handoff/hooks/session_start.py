@@ -23,7 +23,7 @@ from pathlib import Path
 
 # Reuse the skill's config loader.
 SKILL_SCRIPTS = (
-    Path(__file__).resolve().parent.parent / "skills" / "handoff" / "scripts"
+    Path(__file__).resolve().parent.parent / "skills" / "session-handoff" / "scripts"
 )
 sys.path.insert(0, str(SKILL_SCRIPTS))
 
@@ -68,7 +68,7 @@ def _find_latest(config: dict) -> Path | None:
     # retention 0 = forever; -1 = manual; both mean "no cutoff for surfacing"
     cutoff = None
     if retention > 0:
-        cutoff = dt.datetime.utcnow() - dt.timedelta(days=retention)
+        cutoff = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None) - dt.timedelta(days=retention)
     latest: tuple[float, Path] | None = None
     for d in _candidate_dirs(config):
         try:

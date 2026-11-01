@@ -1,13 +1,13 @@
 ---
 title: "AI Coding Agents — Agent-Native Orchestrators & Codex Skills"
-description: "98 agent-native orchestrators for Claude Code, Codex CLI, and Gemini CLI — multi-skill AI agents across engineering, product, marketing, and more."
+description: "110 agent-native orchestrators for Claude Code, Codex CLI, and Gemini CLI — multi-skill AI agents across engineering, product, marketing, and more."
 ---
 
 <div class="domain-header" markdown>
 
 # :material-robot: Agents
 
-<p class="domain-count">98 agents that orchestrate skills across domains</p>
+<p class="domain-count">110 agents that orchestrate skills across domains</p>
 
 </div>
 
@@ -259,6 +259,12 @@ description: "98 agent-native orchestrators for Claude Code, Codex CLI, and Gemi
 
     Engineering - POWERFUL
 
+-   :material-rocket-launch:{ .lg .middle } **[Eval Gatekeeper](cs-eval-gatekeeper.md)**
+
+    ---
+
+    Engineering - POWERFUL
+
 -   :material-rocket-launch:{ .lg .middle } **[Hub Coordinator Agent](hub-coordinator.md)**
 
     ---
@@ -284,6 +290,24 @@ description: "98 agent-native orchestrators for Claude Code, Codex CLI, and Gemi
     Engineering - POWERFUL
 
 -   :material-rocket-launch:{ .lg .middle } **[cs-claude-coach — Power-User Coach Persona](cs-claude-coach.md)**
+
+    ---
+
+    Engineering - POWERFUL
+
+-   :material-rocket-launch:{ .lg .middle } **[Claude Code Rollout](cs-claude-code-rollout.md)**
+
+    ---
+
+    Engineering - POWERFUL
+
+-   :material-rocket-launch:{ .lg .middle } **[Commit Craft](cs-commit-craft.md)**
+
+    ---
+
+    Engineering - POWERFUL
+
+-   :material-rocket-launch:{ .lg .middle } **[Deep Learning Tutor](cs-deep-learning-tutor.md)**
 
     ---
 
@@ -343,7 +367,13 @@ description: "98 agent-native orchestrators for Claude Code, Codex CLI, and Gemi
 
     Engineering - POWERFUL
 
--   :material-rocket-launch:{ .lg .middle } **[Skill Doctor](cs-skill-doctor.md)**
+-   :material-rocket-launch:{ .lg .middle } **[Skill Retro](cs-skill-retro.md)**
+
+    ---
+
+    Engineering - POWERFUL
+
+-   :material-rocket-launch:{ .lg .middle } **[Spinning Up in Deep RL — Knowledge Agent](cs-spinning-up-deep-rl.md)**
 
     ---
 
@@ -373,6 +403,12 @@ description: "98 agent-native orchestrators for Claude Code, Codex CLI, and Gemi
 
     Product
 
+-   :material-lightbulb-outline:{ .lg .middle } **[Design Qa](cs-design-qa.md)**
+
+    ---
+
+    Product
+
 -   :material-clipboard-check-outline:{ .lg .middle } **[PM Orchestrator](cs-pm-orchestrator.md)**
 
     ---
@@ -390,6 +426,24 @@ description: "98 agent-native orchestrators for Claude Code, Codex CLI, and Gemi
     ---
 
     C-Level Advisory
+
+-   :material-shield-check-outline:{ .lg .middle } **[Access Reviewer](cs-access-reviewer.md)**
+
+    ---
+
+    Regulatory & Quality
+
+-   :material-shield-check-outline:{ .lg .middle } **[Cmmc Assessor](cs-cmmc-assessor.md)**
+
+    ---
+
+    Regulatory & Quality
+
+-   :material-calculator-variant:{ .lg .middle } **[Close Controller](cs-close-controller.md)**
+
+    ---
+
+    Finance
 
 -   :material-account:{ .lg .middle } **[Andreessen Agent](cs-andreessen.md)**
 
@@ -446,6 +500,18 @@ description: "98 agent-native orchestrators for Claude Code, Codex CLI, and Gemi
     Productivity
 
 -   :material-bullhorn-outline:{ .lg .middle } **[Landing Agent](cs-landing.md)**
+
+    ---
+
+    Marketing
+
+-   :material-bullhorn-outline:{ .lg .middle } **[LinkedIn Editor Agent](cs-linkedin-editor.md)**
+
+    ---
+
+    Marketing
+
+-   :material-bullhorn-outline:{ .lg .middle } **[LinkedIn Orchestrator Agent](cs-linkedin-orchestrator.md)**
 
     ---
 
@@ -516,6 +582,12 @@ description: "98 agent-native orchestrators for Claude Code, Codex CLI, and Gemi
     ---
 
     Commercial
+
+-   :material-account:{ .lg .middle } **[cs-interview-mapper — Transcript-level interview analyst](cs-interview-mapper.md)**
+
+    ---
+
+    Research Ops
 
 -   :material-account:{ .lg .middle } **[cs-research-ops-orchestrator — Evidence-first R&D operations lead](cs-research-ops-orchestrator.md)**
 

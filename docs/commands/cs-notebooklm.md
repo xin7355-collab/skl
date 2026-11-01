@@ -1,6 +1,6 @@
 ---
 title: "/cs-notebooklm — Slash Command for AI Coding Agents"
-description: "/cs:notebooklm — NotebookLM browser automation. Action-routing intake (Q1: read / add source / Studio output / create new) + per-action Q2-Q4. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-notebooklm — NotebookLM browser automation. Action-routing intake (Q1: read / add source / Studio output / create new) + per-action Q2-Q4. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-notebooklm
@@ -11,7 +11,7 @@ description: "/cs:notebooklm — NotebookLM browser automation. Action-routing i
 </div>
 
 
-**Command:** `/cs:notebooklm`
+**Command:** `/cs-notebooklm`
 
 The `cs-notebooklm` persona controls Google NotebookLM via browser automation across 4 core actions.
 
@@ -112,15 +112,15 @@ Examples per output type:
 # Step 0: environment check (silent if available; halt if not)
 
 # Phase 0 intake (Q1 + Q2 minimum; Q3-Q4 branch per action)
-python ../skills/notebooklm/scripts/action_router.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/notebooklm/scripts/action_router.py \
   --action read_extract --notebook "Q3 prep" --question "what are the latest trends?"
 
 # Studio output flow includes custom prompt generation:
-python ../skills/notebooklm/scripts/custom_prompt_template_generator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/notebooklm/scripts/custom_prompt_template_generator.py \
   --output-type infographic --audience executive --length compact
 
 # Async classification (for "should I wait or fire-and-notify?")
-python ../skills/notebooklm/scripts/async_action_classifier.py --action audio_overview
+python ${CLAUDE_PLUGIN_ROOT}/skills/notebooklm/scripts/async_action_classifier.py --action audio_overview
 # Returns: FIRE_AND_NOTIFY (5-10 min generation)
 
 # Execute action via browser automation (screenshot → find → click → verify)
@@ -150,7 +150,7 @@ python ../skills/notebooklm/scripts/async_action_classifier.py --action audio_ov
 - Agent: [`cs-notebooklm`](https://github.com/alirezarezvani/claude-skills/tree/main/research/notebooklm/agents/cs-notebooklm.md)
 - Skill: [`notebooklm`](https://github.com/alirezarezvani/claude-skills/tree/main/research/notebooklm/skills/notebooklm/SKILL.md)
 - Source spec: `megaprompts/03-notebooklm-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)
-- Research-domain siblings (different shape): `/cs:pulse`, `/cs:litreview`, `/cs:grants`, `/cs:dossier`, `/cs:patent`, `/cs:syllabus`
+- Research-domain siblings (different shape): `/cs-pulse`, `/cs-litreview`, `/cs-grants`, `/cs-dossier`, `/cs-patent`, `/cs-syllabus`
 
 ---
 

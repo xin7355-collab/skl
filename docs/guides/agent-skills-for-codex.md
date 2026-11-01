@@ -16,8 +16,9 @@ Use 345 production-ready agent skills with OpenAI Codex CLI. Every skill in this
 git clone https://github.com/alirezarezvani/claude-skills.git
 cd claude-skills
 
-# Option 1: Install all skills for Codex
-./scripts/codex-install.sh
+# Option 1: Install the categories you use (no arguments lists them).
+# Avoid --all: with the full library Codex drops every skill description.
+./scripts/codex-install.sh --category engineering,product
 
 # Option 2: Convert specific skills
 ./scripts/convert.sh --skill frontend-design --tool codex
@@ -37,23 +38,23 @@ Codex reads agent skills from `.codex/skills/<skill-name>/SKILL.md` in your proj
 
 ### Engineering
 
-| Skill | Codex Command | What It Does |
+| Skill | Example request | What It Does |
 |-------|--------------|-------------|
-| **autoresearch-agent** | `/ar:run` | Autonomous experiment loop — edit, evaluate, keep or revert. Karpathy-inspired. |
-| **pr-review-expert** | `/review:full` | Multi-pass code review catching logic bugs, security issues, missing tests. |
-| **frontend-design** | `/design:component` | Production-grade React/Tailwind UI with high design quality. |
-| **tdd-guide** | `/tdd:start` | Red-green-refactor TDD workflow with coverage tracking. |
-| **senior-devops** | `/devops:deploy` | IaC, CI/CD, monitoring, and incident response playbooks. |
-| **docker-development** | `/docker:optimize` | Dockerfile optimization, multi-stage builds, container security. |
+| **autoresearch-agent** | "Make this benchmark faster" | Autonomous experiment loop — edit, evaluate, keep or revert. Karpathy-inspired. |
+| **pr-review-expert** | "Review this PR" | Multi-pass code review catching logic bugs, security issues, missing tests. |
+| **frontend-design** | "Build a pricing card" | Production-grade React/Tailwind UI with high design quality. |
+| **tdd-guide** | "Write this TDD-first" | Red-green-refactor TDD workflow with coverage tracking. |
+| **senior-devops** | "Set up CI/CD" | IaC, CI/CD, monitoring, and incident response playbooks. |
+| **docker-development** | "Shrink this Dockerfile" | Dockerfile optimization, multi-stage builds, container security. |
 
 ### Beyond Engineering
 
-| Skill | Codex Command | What It Does |
+| Skill | Example request | What It Does |
 |-------|--------------|-------------|
-| **content-creator** | `/content:write` | SEO-optimized content with brand voice analysis. |
-| **cto-advisor** | `/cto:assess` | Tech debt scoring, team scaling, architecture decisions. |
-| **agile-product-owner** | `/po:story` | User stories, acceptance criteria, sprint planning. |
-| **research-summarizer** | `/research:summarize` | Structured research → summary → citations workflow. |
+| **content-creator** | "Write a blog post on X" | SEO-optimized content with brand voice analysis. |
+| **cto-advisor** | "Score our tech debt" | Tech debt scoring, team scaling, architecture decisions. |
+| **agile-product-owner** | "Write user stories for X" | User stories, acceptance criteria, sprint planning. |
+| **research-summarizer** | "Summarize these papers" | Structured research → summary → citations workflow. |
 
 ---
 

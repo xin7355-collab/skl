@@ -23,6 +23,11 @@ landed fatal flaw / broken logic caps a GO), names the real tension, and resolve
 ## Quick start
 
 ```bash
+/plugin marketplace add alirezarezvani/claude-skills
+/plugin install roast@claude-code-skills
+```
+
+```bash
 # 1. Assemble the shared brief
 python skills/roast/scripts/brief_builder.py --sample
 
@@ -35,20 +40,20 @@ python skills/roast/scripts/verdict_synthesizer.py --sample
 python skills/roast/scripts/cheapest_test_designer.py --risk price --price 99
 ```
 
-Or just say **"roast this idea: …"** or run `/cs:roast`.
+Or just say **"roast this idea: …"** or run `/cs-roast`.
 
 ## What's in the box
 
 - **Skill:** [`skills/roast/SKILL.md`](skills/roast/SKILL.md)
 - **Agent:** [`agents/cs-roast-judge.md`](agents/cs-roast-judge.md)
-- **Command:** [`commands/cs-roast.md`](commands/cs-roast.md) — `/cs:roast`
+- **Command:** [`commands/cs-roast.md`](commands/cs-roast.md) — `/cs-roast`
 - **3 stdlib tools:** `brief_builder.py`, `verdict_synthesizer.py`, `cheapest_test_designer.py`
 - **3 references** (5-7 sources each), **2 assets** (brief worksheet + worked example)
 
 ## Not the same as
 
 - **`productivity/andreessen`** — a single market-first operator. Roast is five lenses → a judge.
-- **`c-level-advisor` `/cs:boardroom`** — an enterprise C-suite pipeline needing onboarding. Roast is
+- **`c-level-advisor` `/c-level-agents:boardroom`** — an enterprise C-suite pipeline needing onboarding. Roast is
   a zero-setup, solo-founder gut check.
 - **`engineering/grill-me`** — interrogates to clarify a plan; issues no verdict. Roast judges.
 

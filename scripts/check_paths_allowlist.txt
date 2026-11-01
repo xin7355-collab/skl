@@ -62,3 +62,6 @@ superpowers/skills/writing-skills/SKILL.md :: ../some-skill
 # lit-review：SKILL.md 提到的是原作者給維護者跑的迴歸測試，收錄時刻意沒帶 evals/（見 community/README.md）
 community/skills/lit-review/SKILL.md :: evals/test_regression.py
 community/skills/lit-review/SKILL.md :: evals/mutation_check.py
+# cs-book-to-plugin step for maintainers adding the emitted plugin to *this* repo
+# (it runs from a clone of claude-skills by design).
+engineering/book-to-skill/commands/cs-book-to-plugin.md :: scripts/derive_counters.py

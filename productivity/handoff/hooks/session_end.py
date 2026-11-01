@@ -21,7 +21,7 @@ import tempfile
 from pathlib import Path
 
 SKILL_SCRIPTS = (
-    Path(__file__).resolve().parent.parent / "skills" / "handoff" / "scripts"
+    Path(__file__).resolve().parent.parent / "skills" / "session-handoff" / "scripts"
 )
 sys.path.insert(0, str(SKILL_SCRIPTS))
 
@@ -84,7 +84,7 @@ def _remind() -> None:
     print("Session ending — no recent handoff detected.")
     print()
     print("Want to capture state for next time? In a future session, run:")
-    print("  /cs:handoff \"<what the next session should do>\"")
+    print("  /cs-handoff \"<what the next session should do>\"")
     print()
     print("Disable this reminder: HANDOFF_SESSIONEND=0")
     print("=" * 60)
@@ -101,7 +101,7 @@ def main() -> int:
         latest = _latest_mtime(config)
     except Exception:
         return 0
-    now = dt.datetime.utcnow()
+    now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     stale_cutoff = now - dt.timedelta(minutes=STALE_AFTER_MINUTES)
     if latest is None or latest < stale_cutoff:
         try:

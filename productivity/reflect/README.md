@@ -2,6 +2,13 @@
 
 Mid-conversation reflection skill. Pauses execution and **zooms out from detail-mode** to honestly reassess direction, assumptions, and bias.
 
+## Install
+
+```bash
+/plugin marketplace add alirezarezvani/claude-skills
+/plugin install reflect-skill@claude-code-skills
+```
+
 ## What this skill does
 
 When invoked mid-conversation (explicitly or via implicit signals like 10+ turns deep on details without strategic check-in), the skill:
@@ -35,7 +42,7 @@ productivity/reflect/
 ├── .claude-plugin/plugin.json
 ├── README.md
 ├── agents/cs-reflect.md             ← reflection persona, honest-output enforcer
-├── commands/cs-reflect.md           ← /cs:reflect (or auto-triggers on phrases)
+├── commands/cs-reflect.md           ← /cs-reflect (or auto-triggers on phrases)
 └── skills/reflect/
     ├── SKILL.md
     ├── references/

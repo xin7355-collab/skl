@@ -1,6 +1,6 @@
 ---
 title: "/cs-roast — Slash Command for AI Coding Agents"
-description: "/cs:roast — Convene a 5-angle adversarial panel (Critic, Champion, Analyst, Investigator, Customer) on an idea, then a Judge delivers one GO /. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-roast — Convene a 5-angle adversarial panel (Critic, Champion, Analyst, Investigator, Customer) on an idea, then a Judge delivers one GO /. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-roast
@@ -11,7 +11,7 @@ description: "/cs:roast — Convene a 5-angle adversarial panel (Critic, Champio
 </div>
 
 
-**Command:** `/cs:roast [the idea]`
+**Command:** `/cs-roast [the idea]`
 
 Claude's default is to agree with you. `/roast` is the opposite. It convenes five independent
 reviewers who tear an idea apart and build it up from every angle, then acts as the Judge to deliver
@@ -27,7 +27,7 @@ one honest verdict. Run it before you sink time and money into building the wron
 ## When NOT to Run
 
 - You want encouragement or gentle brainstorming. This exists to tell you the idea is dead when it is.
-- A cross-functional enterprise decision needing the full C-suite → use `/cs:boardroom`.
+- A cross-functional enterprise decision needing the full C-suite → use `/c-level-agents:boardroom`.
 - A purely factual lookup with no decision attached.
 
 ## What You Get
@@ -59,18 +59,18 @@ one honest verdict. Run it before you sink time and money into building the wron
 
 ```bash
 # 1. Assemble the shared brief
-python ../skills/roast/scripts/brief_builder.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/roast/scripts/brief_builder.py \
   --idea "..." --who "..." --money "..." --edge "..." --constraints "..."
 
 # 2. Fire all five reviewers in parallel (one Task each, subagent_type: general-purpose),
 #    pasting the same brief into each. Collect five 1-10 scores.
 
 # 3. Synthesize the call (weighting + veto gates + tension, NOT an average)
-python ../skills/roast/scripts/verdict_synthesizer.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/roast/scripts/verdict_synthesizer.py \
   --critic 4 --champion 8 --analyst 7 --investigator 5 --customer 6
 
 # 4. Design the cheapest test from the riskiest assumption
-python ../skills/roast/scripts/cheapest_test_designer.py --risk price --price 99
+python ${CLAUDE_PLUGIN_ROOT}/skills/roast/scripts/cheapest_test_designer.py --risk price --price 99
 ```
 
 ## Stop Conditions
@@ -83,7 +83,7 @@ python ../skills/roast/scripts/cheapest_test_designer.py --risk price --price 99
 
 - Agent: [`cs-roast-judge`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/roast/agents/cs-roast-judge.md)
 - Skill: [`roast`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/roast/skills/roast/SKILL.md)
-- Siblings: `/cs:andreessen` (single market-first lens), `/cs:boardroom` (enterprise C-suite)
+- Siblings: `/cs-andreessen` (single market-first lens), `/c-level-agents:boardroom` (enterprise C-suite)
 
 ---
 

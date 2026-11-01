@@ -25,7 +25,7 @@ description: "Premium HTML landing page generator persona. Walks 3-4 forcing int
 **FOUC reminder (internal discipline):**
 > "Generating with `gsap.set()` initial states on every animated element. No flash of unstyled content."
 
-**Closing:** "Generated: `${OUTPUT_DIR}/<product-kebab>.html`. Single file, all CSS+JS inline, only externals are Google Fonts + GSAP CDN. Open in browser to preview. Re-run /cs:landing if you want a variant."
+**Closing:** "Generated: `${OUTPUT_DIR}/<product-kebab>.html`. Single file, all CSS+JS inline, only externals are Google Fonts + GSAP CDN. Open in browser to preview. Re-run /cs-landing if you want a variant."
 
 Visual-premium-focused, motion-aware, brand-respecting. Refuses to ship a generic page.
 
@@ -64,17 +64,17 @@ Differentiates clearly:
 
 1. **Brand Palette Validator**
    - Path: [`scripts/brand_palette_validator.py`](https://github.com/alirezarezvani/claude-skills/tree/main/marketing/landing/skills/landing/scripts/brand_palette_validator.py)
-   - Usage: `python brand_palette_validator.py --primary "#FF6B35" --accent "#2EC4B6" --bg "#011627"`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/brand_palette_validator.py --primary "#FF6B35" --accent "#2EC4B6" --bg "#011627"`
    - Validates HEX format, checks WCAG AA contrast (4.5:1 minimum) between text and bg, generates the full derived palette (--*-glow, --*-mid variants from primary).
 
 2. **Kebab Slug Generator**
    - Path: [`scripts/kebab_slug_generator.py`](https://github.com/alirezarezvani/claude-skills/tree/main/marketing/landing/skills/landing/scripts/kebab_slug_generator.py)
-   - Usage: `python kebab_slug_generator.py --product "Quill AI" --output-dir ./landing-pages`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/kebab_slug_generator.py --product "Quill AI" --output-dir ./landing-pages`
    - Produces `quill-ai.html` filename. Detects duplicates at output path; suggests timestamp suffix if collision.
 
 3. **HTML Validator**
    - Path: [`scripts/html_validator.py`](https://github.com/alirezarezvani/claude-skills/tree/main/marketing/landing/skills/landing/scripts/html_validator.py)
-   - Usage: `python html_validator.py --file ./landing-pages/quill-ai.html`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/html_validator.py --file ./landing-pages/quill-ai.html`
    - Post-generation structural check: 3 required sections (hero, features, closing-cta), CDN deps present, `gsap.set()` initial states, responsive breakpoints, no external CSS/JS file references.
 
 ### Knowledge Bases
@@ -92,13 +92,13 @@ Differentiates clearly:
 # 2. Skip brand_palette_validator (default palette used)
 
 # 3. Generate slug
-python ../skills/landing/scripts/kebab_slug_generator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/kebab_slug_generator.py \
   --product "<Q1 product name>" --output-dir ./landing-pages
 
 # 4. Write the .html file in one pass.
 
 # 5. Validate
-python ../skills/landing/scripts/html_validator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/html_validator.py \
   --file ./landing-pages/<slug>.html
 
 # 6. Deliver: file path (CLI) or artifact (web)
@@ -108,7 +108,7 @@ python ../skills/landing/scripts/html_validator.py \
 
 ```bash
 # Q3 returned: primary #FF6B35, accent #2EC4B6, bg #011627
-python ../skills/landing/scripts/brand_palette_validator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/brand_palette_validator.py \
   --primary "#FF6B35" --accent "#2EC4B6" --bg "#011627" --output json
 # Returns: validated palette + WCAG contrast verdict + derived secondary vars
 
@@ -173,7 +173,7 @@ Instead of writing to ./landing-pages/<slug>.html:
 
 - Skill: [../skills/landing/SKILL.md](https://github.com/alirezarezvani/claude-skills/tree/main/marketing/landing/skills/landing/SKILL.md)
 - Source spec: `megaprompts/04-landing-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)
-- Sibling command: [`/cs:landing`](https://github.com/alirezarezvani/claude-skills/tree/main/marketing/landing/commands/cs-landing.md)
+- Sibling command: [`/cs-landing`](https://github.com/alirezarezvani/claude-skills/tree/main/marketing/landing/commands/cs-landing.md)
 
 ---
 

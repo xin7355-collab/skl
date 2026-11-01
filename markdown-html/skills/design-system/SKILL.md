@@ -1,11 +1,12 @@
 ---
 name: design-system
-description: Captures the user's brand identity once via a 10-question onboarding wizard (primary/accent HEX + heading + body Google Fonts + design style editorial/technical/minimal/playful + default output directory + syntax theme + TOC behavior + optional logo/company), validates body-text and link contrast against WCAG 2.2 AA, derives 12 CSS custom properties in HSL space, and stores the result for every markdown-html converter to consume. Use before any markdown-html conversion. Triggers on first-run onboarding ("set up the brand", "configure markdown-html", "run onboarding"), on explicit reset ("reset the design system", "re-onboard"), and is checked by every converter via config_loader.py before rendering. Refuses to save if body-text contrast fails AA 4.5:1 or the output dir isn't writable. Precedence is project (./.markdown-html/) > global (~/.config/markdown-html/) > built-in defaults; MARKDOWN_HTML_NO_CONFIG=1 bypasses.
-version: 2.10.0
-author: Alireza Rezvani
+description: "Use when setting up brand settings before the first markdown-to-HTML conversion, or changing them. Runs a 10-question onboarding with onboard.py (colors, fonts, style, TOC) and refuses palettes that fail WCAG AA via brand_palette_validator.py."
 license: MIT
-tags: [design-system, brand-palette, wcag, onboarding, customization, markdown-html, css-variables, typography]
-compatible_tools: [claude-code, codex-cli, cursor, antigravity, opencode, gemini-cli]
+metadata:
+  version: 2.10.0
+  author: Alireza Rezvani
+  tags: [design-system, brand-palette, wcag, onboarding, customization, markdown-html, css-variables, typography]
+  compatible_tools: [claude-code, codex-cli, cursor, antigravity, opencode, gemini-cli]
 ---
 
 # Design System — Onboarding + Shared Brand Tokens
@@ -154,3 +155,11 @@ python3 .../brand_palette_validator.py --primary "#FF6B35" --accent "#00D4AA"
 - Nielsen-Norman — *Table of Contents Best Practices* (2023)
 - research-ops onboarding pattern: `research-ops/CLAUDE.md` §8
 - Brand palette math source: `marketing/landing/skills/landing/scripts/brand_palette_validator.py`
+
+## More in this skill
+
+Load these only when the task needs them.
+
+- [references/design_token_canon.md](references/design_token_canon.md) — Design Token Canon
+- [references/typography_pairing.md](references/typography_pairing.md) — Typography Pairing
+- [references/wcag_accessibility.md](references/wcag_accessibility.md) — WCAG Accessibility Floor

@@ -39,47 +39,47 @@ Differentiates clearly:
 
 ## Skill Integration
 
-**Skill Location:** [`skills/fda-consultant-specialist`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist)
+**Skill Location:** `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/`
 
 ### Python Tools
 
 1. **QSR Compliance Checker**
-   - Path: [`scripts/qsr_compliance_checker.py`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/scripts/qsr_compliance_checker.py)
-   - Usage: `python qsr_compliance_checker.py compliance_state.json`
+   - Path: `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/scripts/qsr_compliance_checker.py`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/scripts/qsr_compliance_checker.py compliance_state.json`
    - Returns: compliance posture across 21 CFR 820 sections; post-Feb 2026 substantially harmonized with ISO 13485
 
 2. **FDA Submission Tracker**
-   - Path: [`scripts/fda_submission_tracker.py`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/scripts/fda_submission_tracker.py)
-   - Usage: `python fda_submission_tracker.py submissions.json`
+   - Path: `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/scripts/fda_submission_tracker.py`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/scripts/fda_submission_tracker.py submissions.json`
    - Returns: 510(k) / PMA / IDE submission status with FDA review timelines
 
 3. **HIPAA Risk Assessment**
-   - Path: [`scripts/hipaa_risk_assessment.py`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/scripts/hipaa_risk_assessment.py)
-   - Usage: `python hipaa_risk_assessment.py phi_inventory.json`
+   - Path: `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/scripts/hipaa_risk_assessment.py`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/scripts/hipaa_risk_assessment.py phi_inventory.json`
    - Returns: HIPAA Security Rule + Privacy Rule risk assessment (overlap with FDA cybersecurity expectations for devices)
 
 ### Knowledge Bases
 
-- [`references/fda_submission_guide.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/references/fda_submission_guide.md)
-- [`references/qsr_compliance_requirements.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/references/qsr_compliance_requirements.md)
-- [`references/hipaa_compliance_framework.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/references/hipaa_compliance_framework.md)
-- [`references/device_cybersecurity_guidance.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/references/device_cybersecurity_guidance.md)
-- [`references/fda_capa_requirements.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/references/fda_capa_requirements.md)
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/references/fda_submission_guide.md`
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/references/qsr_compliance_requirements.md`
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/references/hipaa_compliance_framework.md`
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/references/device_cybersecurity_guidance.md`
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/references/fda_capa_requirements.md`
 
 ### Adjacent Skills
 
-- [`skills/quality-manager-qms-iso13485`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/quality-manager-qms-iso13485) — ISO 13485 implementation (substantially harmonized)
-- [`skills/qms-audit-expert`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/qms-audit-expert) — ISO 13485 audit (paired with cs-cqm-iso13485)
-- [`skills/mdr-745-specialist`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/mdr-745-specialist) — EU MDR (parallel regulatory regime)
-- [`skills/capa-officer`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/capa-officer) — CAPA system (21 CFR 820.100 = ISO 13485 8.5.2)
-- [`skills/risk-management-specialist`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/risk-management-specialist) — ISO 14971 + FDA cybersecurity expectations
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/quality-manager-qms-iso13485/` — ISO 13485 implementation (substantially harmonized)
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/qms-audit-expert/` — ISO 13485 audit (paired with cs-cqm-iso13485)
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/mdr-745-specialist/` — EU MDR (parallel regulatory regime)
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/capa-officer/` — CAPA system (21 CFR 820.100 = ISO 13485 8.5.2)
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/risk-management-specialist/` — ISO 14971 + FDA cybersecurity expectations
 
 ## Workflows
 
 ### Workflow 1: Annual QSR Internal Audit (5-10 days)
 
 ```bash
-python qsr_compliance_checker.py compliance_state.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/scripts/qsr_compliance_checker.py compliance_state.json
 # Phase 4 fieldwork:
 #   - 820.30 Design controls: sample DHRs
 #   - 820.50 Purchasing: sample supplier qualifications + audits
@@ -102,7 +102,7 @@ python qsr_compliance_checker.py compliance_state.json
 #   - DHRs for products distributed in last 2 years
 #   - Process validation status
 # Mock inspection with audit_simulator.py
-python ../../compliance-os/skills/compliance-os/scripts/audit_simulator.py fda_qsr_scope.json
+python ${CLAUDE_PLUGIN_ROOT}/skills/compliance-os/scripts/audit_simulator.py fda_qsr_scope.json
 # Close findings before FDA inspector arrives
 ```
 
@@ -159,8 +159,8 @@ python ../../compliance-os/skills/compliance-os/scripts/audit_simulator.py fda_q
 
 ## References
 
-- Skill: [../../ra-qm-team/skills/fda-consultant-specialist/SKILL.md](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/fda-consultant-specialist/SKILL.md)
-- Sibling command: [`/cs:fda-qsr-audit-prep`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/fda-qsr-audit-prep/SKILL.md)
+- Skill: [${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/SKILL.md](${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/fda-consultant-specialist/SKILL.md)
+- Sibling command: [`/compliance-os:fda-qsr-audit-prep`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/fda-qsr-audit-prep/SKILL.md)
 
 ---
 

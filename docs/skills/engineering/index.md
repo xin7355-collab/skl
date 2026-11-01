@@ -1,13 +1,13 @@
 ---
 title: "Engineering - POWERFUL Skills — Agent Skills & Codex Plugins"
-description: "86 engineering - powerful skills — advanced agent-native skill and Claude Code plugin for AI agent design, infrastructure, and automation. Works with Claude Code, Codex CLI, Gemini CLI, and OpenClaw."
+description: "92 engineering - powerful skills — advanced agent-native skill and Claude Code plugin for AI agent design, infrastructure, and automation. Works with Claude Code, Codex CLI, Gemini CLI, and OpenClaw."
 ---
 
 <div class="domain-header" markdown>
 
 # :material-rocket-launch: Engineering - POWERFUL
 
-<p class="domain-count">86 skills in this domain</p>
+<p class="domain-count">92 skills in this domain</p>
 
 </div>
 
@@ -22,6 +22,12 @@ description: "86 engineering - powerful skills — advanced agent-native skill a
     ---
 
     Design, schema-generate, and evaluate multi-agent systems with three deterministic tools. The scripts are the workflo...
+
+-   **[Agent Regression Evals — prove the change did not make it worse](agent-regression-evals.md)**
+
+    ---
+
+    > Portability: 3 stdlib scripts, no APIs, no LLM calls. You run the agent; these grade, count and gate.
 
 -   **[Agent Workflow Designer](agent-workflow-designer.md)**
 
@@ -76,6 +82,18 @@ description: "86 engineering - powerful skills — advanced agent-native skill a
     ---
 
     Tier: POWERFUL
+
+-   **[Claude Code Team Rollout](coding-agent-rollout.md)**
+
+    ---
+
+    > Portability: 4 stdlib scripts, no network, no LLM calls. They read config and counts; they change nothing.
+
+-   **[Commit Craft](commit-craft.md)**
+
+    ---
+
+    > Portability: 3 stdlib Python scripts that call git read-only. No network.
 
 -   **[Database Designer - POWERFUL Tier Skill](database-designer.md)**
 
@@ -148,6 +166,12 @@ description: "86 engineering - powerful skills — advanced agent-native skill a
     ---
 
     Build operators that reconcile correctly. Most operator bugs are not Kubernetes bugs — they are reconcile-loop bugs: ...
+
+-   **[MCP OAuth Triage](mcp-oauth-triage.md)**
+
+    ---
+
+    Tier: POWERFUL · Category: Engineering · Domain: AI / Auth / Connectors
 
 -   **[MCP Server Builder](mcp-server-builder.md)**
 

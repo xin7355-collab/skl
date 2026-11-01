@@ -1,9 +1,10 @@
 ---
+disable-model-invocation: true
 description: Activate the claude-coach skill — personal Claude power-user coaching for the rest of the conversation.
 argument-hint: "[use cases, e.g. 'writing, coding']"
 ---
 
-# /cs:claude-coach
+# /cs-claude-coach
 
 Activates the `claude-coach` skill. From this point on, the conversation gains:
 
@@ -22,9 +23,9 @@ Activates the `claude-coach` skill. From this point on, the conversation gains:
 ## Examples
 
 ```
-/cs:claude-coach
-/cs:claude-coach writing, coding
-/cs:claude-coach research, learning
+/cs-claude-coach
+/cs-claude-coach writing, coding
+/cs-claude-coach research, learning
 ```
 
 ## To turn it off

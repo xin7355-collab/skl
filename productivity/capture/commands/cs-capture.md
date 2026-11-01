@@ -1,11 +1,12 @@
 ---
+disable-model-invocation: true
 name: "cs-capture"
-description: "/cs:capture <dump-text-or-path> — Explicit invocation of the brain-dump organizer. Captures an unstructured stream of thoughts/tasks/ideas and returns a 4-section actionable system (Projects/Ideas, Tasks, Connections, How I Can Help). Compressed format for small dumps. Max 1 clarifying question. No fabricated connections. No corporate-ifying."
+description: "/cs-capture <dump-text-or-path> — Explicit invocation of the brain-dump organizer. Captures an unstructured stream of thoughts/tasks/ideas and returns a 4-section actionable system (Projects/Ideas, Tasks, Connections, How I Can Help). Compressed format for small dumps. Max 1 clarifying question. No fabricated connections. No corporate-ifying."
 ---
 
-# /cs:capture — Brain-Dump Organizer
+# /cs-capture — Brain-Dump Organizer
 
-**Command:** `/cs:capture <dump-text-or-path>`
+**Command:** `/cs-capture <dump-text-or-path>`
 
 The `cs-capture` persona organizes a dump into 4 actionable sections with zero information loss.
 
@@ -15,11 +16,11 @@ The `cs-capture` persona organizes a dump into 4 actionable sections with zero i
 - You need workspace connections surfaced (Glob+Grep verified)
 - You want concrete next-action offers, not generic "consider X" suggestions
 
-The skill ALSO triggers automatically without `/cs:capture` when you:
+The skill ALSO triggers automatically without `/cs-capture` when you:
 - Use trigger phrases like "brain dump", "let me dump some ideas", "here's everything on my mind", "I need to organize my thoughts"
 - Paste a long unstructured block of mixed ideas (implicit trigger)
 
-`/cs:capture` is the explicit form — useful when your dump doesn't include the trigger phrasing but you still want the organize behavior.
+`/cs-capture` is the explicit form — useful when your dump doesn't include the trigger phrasing but you still want the organize behavior.
 
 ## What You Get
 
@@ -66,13 +67,13 @@ Which should I tackle?
 
 ```bash
 # 1. (Optional) Pre-classify the dump as a heuristic seed
-python ../skills/capture/scripts/dump_classifier.py path/to/dump.txt
+python ${CLAUDE_PLUGIN_ROOT}/skills/capture/scripts/dump_classifier.py path/to/dump.txt
 
 # 2. (Optional) Recommend output format
-python ../skills/capture/scripts/complexity_estimator.py path/to/dump.txt
+python ${CLAUDE_PLUGIN_ROOT}/skills/capture/scripts/complexity_estimator.py path/to/dump.txt
 
 # 3. Inventory the workspace for Section 3 candidates
-python ../skills/capture/scripts/workspace_inventory.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/capture/scripts/workspace_inventory.py \
   --root . --keywords "<extracted-keywords-from-dump>"
 
 # 4. Persona organizes + delivers four (or compressed) sections.
@@ -100,7 +101,7 @@ python ../skills/capture/scripts/workspace_inventory.py \
 - Agent: [`cs-capture`](../agents/cs-capture.md)
 - Skill: [`capture`](../skills/capture/SKILL.md)
 - Source spec: `megaprompts/05-capture-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)
-- Adjacent commands: `/cs:grill-me` (slow deliberate plan grill), `/cs:grill-with-docs` (docs-anchored grill), `/cs:handoff` (session continuation)
+- Adjacent commands: `/cs-grill-me` (slow deliberate plan grill), `/cs-grill-with-docs` (docs-anchored grill), `/cs-handoff` (session continuation)
 
 ---
 

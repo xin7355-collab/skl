@@ -1,6 +1,6 @@
 ---
 title: "Handoff — Agent Skill for Codex & OpenClaw"
-description: "Compact the current conversation into a handoff document for another agent to pick up. References existing artifacts (PRDs, plans, ADRs, issues. Agent skill for Claude Code, Codex CLI, Gemini CLI, OpenClaw."
+description: "Compact the current conversation into a handoff document for another agent to pick up, referencing existing artifacts (PRDs, plans, ADRs, issues. Agent skill for Claude Code, Codex CLI, Gemini CLI, OpenClaw."
 ---
 
 # Handoff
@@ -36,7 +36,7 @@ If the user passed arguments, treat them as a description of what the next sessi
 
 ## Tooling
 
-See [references/companion_tooling.md](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/skills/handoff/references/companion_tooling.md). Tools: template + dedup + recommender. Agent: `cs-handoff-author`. Command: `/cs:handoff`.
+See [references/companion_tooling.md](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/skills/handoff/references/companion_tooling.md). Tools: template + dedup + recommender. Agent: `cs-handoff-author`. Command: `/cs-handoff`.
 
 ---
 

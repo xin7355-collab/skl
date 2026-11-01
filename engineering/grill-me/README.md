@@ -13,13 +13,18 @@ Relentless plan-and-design interrogator. Walks the decision tree one branch at a
 | **3 stdlib Python tools** | `skills/grill-me/scripts/` | Extract decision branches from a plan doc, generate forcing questions, track session state across turns |
 | **3 in-depth references** (5+ sources each) | `skills/grill-me/references/` | Forcing-question patterns · Decision-tree completeness · When to stop grilling |
 | **cs-grill-master persona agent** | `agents/cs-grill-master.md` | One-question-at-a-time enforcer with state tracking |
-| **`/cs:grill-me` slash command** | `commands/cs-grill-me.md` | Activation + session start |
+| **`/cs-grill-me` slash command** | `commands/cs-grill-me.md` | Activation + session start |
 
 ## Matt's original (preserved)
 
 > "Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer. Ask the questions one at a time. If a question can be answered by exploring the codebase, explore the codebase instead."
 
 ## Quick start
+
+```bash
+/plugin marketplace add alirezarezvani/claude-skills
+/plugin install grill-me@claude-code-skills
+```
 
 ```bash
 # Extract decision branches from a plan

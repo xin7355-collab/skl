@@ -75,11 +75,11 @@ Answers are saved to `~/.config/research-ops/clinical-research.json` (global) or
 This skill ships an **isolated, opt-in** bridge to `engineering/autoresearch-agent`. Only when you ask to "optimize" / "run a loop" does an autoresearch experiment iteratively improve a study plan against this skill's own feasibility score. `scripts/ar_evaluator.py` is the ground-truth evaluator; it prints `feasibility_composite: <0-100>` (higher is better).
 
 ```bash
-/ar:setup --domain custom --name trial-feasibility \
+/autoresearch-agent:setup --domain custom --name trial-feasibility \
   --target study.json \
   --eval "python3 ar_evaluator.py --target study.json" \
   --metric feasibility_composite --direction higher
-/ar:loop custom/trial-feasibility
+/ar-loop custom/trial-feasibility
 ```
 
 Isolated: no hard dependency — autoresearch runs only on demand, and the loop edits `study.json`, never the evaluator (locked ground truth).
@@ -127,7 +127,7 @@ The sample correctly flags an unvalidated serum-cytokine surrogate (cannot be pr
 
 ## Forcing-question library (Matt Pocock grill discipline)
 
-Walked one at a time by `/cs:grill-research-ops` or the orchestrator. Recommended answer + canon citation per question. Never bundled.
+Walked one at a time by `/cs-grill-research-ops` or the orchestrator. Recommended answer + canon citation per question. Never bundled.
 
 1. **"Is your primary endpoint a clinical outcome or a surrogate — and if surrogate, is it on FDA's validated table?"**
    Recommended: clinical outcome unless the surrogate is validated for this indication.

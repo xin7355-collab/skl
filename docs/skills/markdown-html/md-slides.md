@@ -1,6 +1,6 @@
 ---
 title: "md-slides — Markdown deck → single-file HTML presentation — Agent Skill for HTML Output"
-description: "Converts a markdown deck (slides separated by `---` HR boundaries or by `# ` H1 headings, with optional `<!-- notes: ... -->` presenter notes blocks). Agent skill for Claude Code, Codex CLI, Gemini CLI, OpenClaw."
+description: "Converts a markdown deck (slides separated by horizontal-rule boundaries or by `# ` H1 headings, with optional HTML-comment `notes:` presenter-notes. Agent skill for Claude Code, Codex CLI, Gemini CLI, OpenClaw."
 ---
 
 # md-slides — Markdown deck → single-file HTML presentation
@@ -32,7 +32,7 @@ slide_splitter.py  →  presenter_notes_parser.py  →  deck_html_renderer.py
 | Symptom | Action |
 |---|---|
 | `markdown-html-orchestrator` routes input as SLIDES | Invoke this skill |
-| User runs `/cs:md-slides <path>.md` directly | Invoke this skill |
+| User runs `/cs-md-slides <path>.md` directly | Invoke this skill |
 | Input has 3+ `---` HR lines OR 5+ H1 headings with short bodies | Invoke this skill |
 | Input is a long-form spec | Route to `md-document` instead |
 | Input is a code review | Route to `md-review` instead |

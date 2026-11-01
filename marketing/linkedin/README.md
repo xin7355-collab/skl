@@ -12,14 +12,14 @@ asset that took months to build. So the refusals are in code, at the front of ev
 and each one names a compliant substitute.
 
 ```
-/cs:linkedin                # gate + route
-/cs:grill-linkedin          # five forcing questions before the work starts
-/cs:linkedin-profile        # headline, About, whole-profile audit
-/cs:linkedin-plan           # brief, pillars, cadence, newsletter
-/cs:linkedin-post           # format, draft, lint
-/cs:linkedin-repurpose      # article/talk -> posts, with a reuse ledger
-/cs:linkedin-outreach       # comment roster + one message at a time
-/cs:linkedin-analyze        # your own export, analysed honestly
+/cs-linkedin                # gate + route
+/cs-grill-linkedin          # five forcing questions before the work starts
+/cs-linkedin-profile        # headline, About, whole-profile audit
+/cs-linkedin-plan           # brief, pillars, cadence, newsletter
+/cs-linkedin-post           # format, draft, lint
+/cs-linkedin-repurpose      # article/talk -> posts, with a reuse ledger
+/cs-linkedin-outreach       # comment roster + one message at a time
+/cs-linkedin-analyze        # your own export, analysed honestly
 ```
 
 ---
@@ -71,6 +71,11 @@ exceeds the budget is refused before the promise is made. An experiment that nee
 than a quarter allows is reported as infeasible rather than quietly re-sized.
 
 ## Quick start
+
+```bash
+/plugin marketplace add alirezarezvani/claude-skills
+/plugin install linkedin@claude-code-skills
+```
 
 ```bash
 # See every tool run with zero configuration

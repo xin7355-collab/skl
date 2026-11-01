@@ -1,11 +1,12 @@
 ---
+disable-model-invocation: true
 name: "cs-litreview"
-description: "/cs:litreview <research-question> — Academic literature orientation. Grill-me intake (question + framework + depth), free-lane recon (PubMed E-utilities + OpenAlex, keyless; Consensus MCP added only when connected), framework checkpoint, sequential budget-allocated searches (5/10/20), 8-section .docx research guide output. Sibling of /cs:pulse (research pack)."
+description: "/cs-litreview <research-question> — Academic literature orientation. Grill-me intake (question + framework + depth), free-lane recon (PubMed E-utilities + OpenAlex, keyless; Consensus MCP added only when connected), framework checkpoint, sequential budget-allocated searches (5/10/20), 8-section .docx research guide output. Sibling of /cs-pulse (research pack)."
 ---
 
-# /cs:litreview — Academic Literature Orientation
+# /cs-litreview — Academic Literature Orientation
 
-**Command:** `/cs:litreview <research question>`
+**Command:** `/cs-litreview <research question>`
 
 The `cs-litreview` persona produces a strategically planned mini literature review as an 8-section `.docx` research guide.
 
@@ -87,11 +88,11 @@ This is the **last cheap moment** to correct course before search budget is cons
 
 ```bash
 # Phase 0 intake (Q1-Q3 one at a time)
-python ../skills/litreview/scripts/citation_tracker.py --action start --session NAME
-python ../skills/litreview/scripts/framework_recommender.py --question "<Q1>"
+python ${CLAUDE_PLUGIN_ROOT}/skills/litreview/scripts/citation_tracker.py --action start --session NAME
+python ${CLAUDE_PLUGIN_ROOT}/skills/litreview/scripts/framework_recommender.py --question "<Q1>"
 
 # Phase 1 recon (1 free-lane search; record sent + received; add Consensus if connected)
-python ../skills/litreview/scripts/free_search.py --query "<broad Q1>" --source both --max 20
+python ${CLAUDE_PLUGIN_ROOT}/skills/litreview/scripts/free_search.py --query "<broad Q1>" --source both --max 20
 # Phase 2 framework + sub-area generation
 # CHECKPOINT — wait for user
 
@@ -99,11 +100,11 @@ python ../skills/litreview/scripts/free_search.py --query "<broad Q1>" --source 
 #   5/10/20 searches across sub-areas + review + era-gated + follow-up
 
 # Phase 4 cross-search aggregation + DOCX
-python ../skills/litreview/scripts/cross_search_aggregator.py --session NAME
+python ${CLAUDE_PLUGIN_ROOT}/skills/litreview/scripts/cross_search_aggregator.py --results-file results.json  # Phase 3 search results; format in the script docstring
 # Generate DOCX via Node.js docx library
 python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).testzip()" output.docx  # zip-integrity check; then confirm required sections present
 
-python ../skills/litreview/scripts/citation_tracker.py --action close --session NAME
+python ${CLAUDE_PLUGIN_ROOT}/skills/litreview/scripts/citation_tracker.py --action close --session NAME
 ```
 
 ## Trigger Phrases (auto-invoke without /cs:)
@@ -136,8 +137,8 @@ python ../skills/litreview/scripts/citation_tracker.py --action close --session 
 - Agent: [`cs-litreview`](../agents/cs-litreview.md)
 - Skill: [`litreview`](../skills/litreview/SKILL.md)
 - Source spec: `megaprompts/09-litreview-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)
-- Sibling: `/cs:pulse` (research pack)
-- Future siblings: `/cs:grants`, `/cs:patent`, `/cs:dossier`, `/cs:syllabus`
+- Sibling: `/cs-pulse` (research pack)
+- Future siblings: `/cs-grants`, `/cs-patent`, `/cs-dossier`, `/cs-syllabus`
 
 ---
 

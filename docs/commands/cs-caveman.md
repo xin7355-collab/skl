@@ -1,6 +1,6 @@
 ---
 title: "/cs-caveman — Slash Command for AI Coding Agents"
-description: "/cs:caveman — Activate persistent caveman-mode. Ultra-compressed responses with technical substance preserved. Auto-clarity exception for warnings +. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-caveman — Activate persistent caveman-mode. Ultra-compressed responses with technical substance preserved. Auto-clarity exception for warnings +. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-caveman
@@ -11,7 +11,7 @@ description: "/cs:caveman — Activate persistent caveman-mode. Ultra-compressed
 </div>
 
 
-**Command:** `/cs:caveman`
+**Command:** `/cs-caveman`
 
 Activate caveman mode. Stays active until explicit deactivation.
 
@@ -53,20 +53,20 @@ User types: "stop caveman" / "normal mode" → resume normal prose.
 
 ```bash
 # Compress text
-python ../skills/caveman/scripts/caveman_compressor.py "text"
+python ${CLAUDE_PLUGIN_ROOT}/skills/caveman/scripts/caveman_compressor.py "text"
 
 # Estimate token savings at price
-python ../skills/caveman/scripts/token_savings_estimator.py "text" --price-per-mtok 3.00
+python ${CLAUDE_PLUGIN_ROOT}/skills/caveman/scripts/token_savings_estimator.py "text" --price-per-mtok 3.00
 
 # Verify response follows caveman rules
-python ../skills/caveman/scripts/caveman_lint.py "response"
+python ${CLAUDE_PLUGIN_ROOT}/skills/caveman/scripts/caveman_lint.py "response"
 ```
 
 ## Related
 
 - Agent: [`cs-caveman-mode`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/caveman/agents/cs-caveman-mode.md)
 - Skill: [`caveman`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/caveman/skills/caveman/SKILL.md)
-- Adjacent: `/cs:grill-me`, `/cs:handoff` (other Pocock-derived skills)
+- Adjacent: `/cs-grill-me`, `/cs-handoff` (other Pocock-derived skills)
 
 ---
 

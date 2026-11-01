@@ -1,22 +1,24 @@
 {
   "_說明": "技能組合。路徑都相對於 skl repo 根目錄。app-guardrails-audit 一律會裝，不用列。",
   "core": {
-    "desc": "每個 App 都該有：架構審查、程式碼審查、精準修 bug、上線前檢查、套件漏洞",
+    "desc": "每個 App 都該有：架構審查、程式碼審查、精準修 bug、上線前檢查、套件漏洞、commit 前擋金鑰與 .env",
     "skills": [
       "engineering-team/skills/senior-architect",
       "engineering-team/skills/code-reviewer",
       "engineering/skills/focused-fix",
       "engineering/skills/ship-gate",
-      "engineering/skills/dependency-auditor"
+      "engineering/skills/dependency-auditor",
+      "engineering/skills/commit-craft"
     ]
   },
   "pwa": {
-    "desc": "手機網頁／PWA：前端、Playwright 瀏覽器自動化、效能分析與「先量再改」的效能優化",
+    "desc": "手機網頁／PWA：前端、Playwright 瀏覽器自動化、效能分析與「先量再改」的效能優化、上線前在真的瀏覽器檢查畫面（沒反應的按鈕、空白／錯誤狀態、對比、觸控大小、320px 版面）",
     "skills": [
       "engineering-team/skills/senior-frontend",
       "engineering/skills/browser-automation",
       "engineering/skills/performance-profiler",
-      "community/skills/performance-optimization"
+      "community/skills/performance-optimization",
+      "product-team/skills/design-qa"
     ]
   },
   "actions": {
@@ -60,13 +62,14 @@
     ]
   },
   "workflow": {
-    "desc": "開發方法論（superpowers）：先腦力激盪與寫計畫、系統化除錯、測試先行、完成前必驗證、請求程式審查；防止 AI 偷降標準過關、用官方文件查證",
+    "desc": "開發方法論（superpowers）：先腦力激盪與寫計畫、系統化除錯、測試先行、修 bug 要證明測試先紅後綠、完成前必驗證、請求程式審查；防止 AI 偷降標準過關、用官方文件查證",
     "skills": [
       "superpowers/skills/brainstorming",
       "superpowers/skills/writing-plans",
       "superpowers/skills/executing-plans",
       "superpowers/skills/systematic-debugging",
       "superpowers/skills/test-driven-development",
+      "engineering-team/skills/red-green-proof",
       "superpowers/skills/verification-before-completion",
       "superpowers/skills/requesting-code-review",
       "community/skills/constraint-driven-development",

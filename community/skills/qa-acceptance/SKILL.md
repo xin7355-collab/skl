@@ -6,11 +6,12 @@ recommendedForRoles:
   - qa
   - engineer
   - product
-tags:
-  - qa
-  - acceptance
-  - validation
-  - testing
+metadata:
+  tags:
+    - qa
+    - acceptance
+    - validation
+    - testing
 ---
 
 # QA Acceptance

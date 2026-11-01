@@ -13,13 +13,18 @@ Conversation-handoff document generator. Saves the current state of a conversati
 | **3 stdlib Python tools** | `skills/handoff/scripts/` | Template generator (tailored to next-session focus), artifact deduplicator (find references that should replace inline content), skill recommender (which skills next session needs) |
 | **3 in-depth references** (5+ sources each) | `skills/handoff/references/` | Handoff structure · Deduplication discipline · Skill matching for next session |
 | **cs-handoff-author persona agent** | `agents/cs-handoff-author.md` | Continuity-focused handoff author with hard rule against duplication |
-| **`/cs:handoff` slash command** | `commands/cs-handoff.md` | One-shot handoff generation with argument hint |
+| **`/cs-handoff` slash command** | `commands/cs-handoff.md` | One-shot handoff generation with argument hint |
 
 ## Matt's original (preserved)
 
 > "Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save it to a path produced by `mktemp -t handoff-XXXXXX.md` (read the file before you write to it). Suggest the skills to be used, if any, by the next session. Do not duplicate content already captured in other artifacts (PRDs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead. If the user passed arguments, treat them as a description of what the next session will focus on and tailor the doc accordingly."
 
 ## Quick start
+
+```bash
+/plugin marketplace add alirezarezvani/claude-skills
+/plugin install handoff-engineering@claude-code-skills
+```
 
 ```bash
 # Generate a handoff template scaffold tailored to next-session focus

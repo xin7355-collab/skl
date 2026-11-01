@@ -39,7 +39,8 @@ Choose your platform and follow the steps:
 
     ```bash
     git clone https://github.com/alirezarezvani/claude-skills.git
-    ./scripts/codex-install.sh
+    cd claude-skills
+    ./scripts/codex-install.sh --category engineering   # no arguments lists the categories
     ```
 
 === "Gemini CLI"
@@ -215,7 +216,7 @@ Productivity and research skills ship as standalone plugins (for example `captur
 /pw:fix          Fix flaky test failures
 /si:review       Review auto-memory health
 /si:promote      Graduate a learning to CLAUDE.md
-/cs:board        Trigger a C-suite board meeting
+/board-meeting        Trigger a C-suite board meeting
 ```
 
 ### Contextual Prompts

@@ -1,6 +1,6 @@
 ---
 title: "/cs-landing — Slash Command for AI Coding Agents"
-description: "/cs:landing <product-or-brief> — Generate a premium single-file HTML landing page with GSAP 3D animations, scroll-triggered reveals, and. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-landing <product-or-brief> — Generate a premium single-file HTML landing page with GSAP 3D animations, scroll-triggered reveals, and. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-landing
@@ -11,7 +11,7 @@ description: "/cs:landing <product-or-brief> — Generate a premium single-file 
 </div>
 
 
-**Command:** `/cs:landing <product-or-brief>`
+**Command:** `/cs-landing <product-or-brief>`
 
 The `cs-landing` persona generates one polished, self-contained `.html` landing page with GSAP animations, mouse parallax, and 3D CSS effects.
 
@@ -27,7 +27,7 @@ If you need **conversion-optimized lead-gen** with copy frameworks (PAS / AIDA /
 
 | Need | Skill |
 |---|---|
-| Visual premium one-pager | **`/cs:landing`** (this command) |
+| Visual premium one-pager | **`/cs-landing`** (this command) |
 | Conversion-optimized lead-gen | `landing-page-generator` |
 
 ## Trigger Phrases (auto-invoke without /cs:)
@@ -81,17 +81,17 @@ All CSS inline. All JS inline. Externals: Google Fonts (Inter) + GSAP via CDN on
 # 1. Intake (Q1-Q4 one at a time)
 
 # 2. If brand override provided, validate:
-python ../skills/landing/scripts/brand_palette_validator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/brand_palette_validator.py \
   --primary "#FF6B35" --accent "#2EC4B6" --bg "#011627"
 
 # 3. Generate output filename
-python ../skills/landing/scripts/kebab_slug_generator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/kebab_slug_generator.py \
   --product "<product name from Q1>" --output-dir ./landing-pages
 
 # 4. Write the .html file in one pass (Hero + Features + Closing CTA + GSAP + mouse parallax + ScrollTrigger + CSS floats)
 
 # 5. Validate structure
-python ../skills/landing/scripts/html_validator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/landing/scripts/html_validator.py \
   --file ./landing-pages/<slug>.html
 
 # 6. Deliver:
@@ -122,7 +122,7 @@ python ../skills/landing/scripts/html_validator.py \
 - Skill: [`landing`](https://github.com/alirezarezvani/claude-skills/tree/main/marketing/landing/skills/landing/SKILL.md)
 - Source spec: `megaprompts/04-landing-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)
 - Sibling (different optimization): `product-team/skills/landing-page-generator/`
-- Adjacent v2 commands: `/cs:capture`, `/cs:pulse`, `/cs:inbox-setup`, `/cs:inbox-triage`
+- Adjacent v2 commands: `/cs-capture`, `/cs-pulse`, `/cs-inbox-setup`, `/cs-inbox-triage`
 
 ---
 

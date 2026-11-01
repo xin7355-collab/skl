@@ -1,6 +1,6 @@
 ---
 title: "/cs-inbox-setup — Slash Command for AI Coding Agents"
-description: "/cs:inbox-setup — Interactive 8-section interview that builds a personalized 7-file email-triage knowledge base. ~25-31 grill-me questions, one at a. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-inbox-setup — Interactive 8-section interview that builds a personalized 7-file email-triage knowledge base. ~25-31 grill-me questions, one at a. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-inbox-setup
@@ -11,7 +11,7 @@ description: "/cs:inbox-setup — Interactive 8-section interview that builds a 
 </div>
 
 
-**Command:** `/cs:inbox-setup`
+**Command:** `/cs-inbox-setup`
 
 The `cs-inbox-setup` persona walks an 8-section interview to build your personalized email triage knowledge base in `${WORKSPACE}/Email/`.
 
@@ -28,8 +28,8 @@ Do NOT run if your existing KB still represents reality. Re-running is expensive
 
 This is one half of a pair:
 
-- `/cs:inbox-setup` (this command) — **writes** the KB (run once)
-- `/cs:inbox-triage` — **reads + appends** the KB (run recurringly)
+- `/cs-inbox-setup` (this command) — **writes** the KB (run once)
+- `/cs-inbox-triage` — **reads + appends** the KB (run recurringly)
 
 Both share a strict 7-file contract. See [`kb_file_contract.md`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/email/skills/inbox-setup/references/kb_file_contract.md) for the spec.
 
@@ -67,7 +67,7 @@ After ~25-31 questions across 8 sections (about 15-20 min), the skill produces t
 5. **Blocklist & Patterns** — skip-senders, decline-patterns, time-wasters (3 Q) → writes `blocklist.md`
 6. **Current State** — active threads, overdue replies, deadlines (3 Q) → writes `tracker.md` + creates `triage-log/`
 7. **Report Preferences** — delivery format, detail level, top-of-report priorities (3 Q) → appends to `email-taxonomy.md`
-8. **Confirmation & Handoff** — file inventory + handoff message → directs you to `/cs:inbox-triage`
+8. **Confirmation & Handoff** — file inventory + handoff message → directs you to `/cs-inbox-triage`
 
 **Stop condition:** ~25-31 questions total (S4 skip drops ~6). Hard ceiling 35. Never re-open after S8 — re-run the skill to change preferences.
 
@@ -90,21 +90,21 @@ ls ${WORKSPACE}/Email/
 
 # 2. If exists → re-run mode (per-file replace/merge/skip).
 #    If fresh → start session:
-python ../skills/inbox-setup/scripts/section_progress_tracker.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/inbox-setup/scripts/section_progress_tracker.py \
   --action start --session "inbox-setup-$(date +%Y%m%d)" --user "<who>"
 
 # 3. Walk S1 → S2 → ... → S8 (one Q per turn).
 
 # 4. At S3.SAMPLES, analyze pasted emails:
-python ../skills/inbox-setup/scripts/voice_sample_analyzer.py --samples-file /tmp/samples.txt
+python ${CLAUDE_PLUGIN_ROOT}/skills/inbox-setup/scripts/voice_sample_analyzer.py --samples-file /tmp/samples.txt
 
 # 5. At end of each section, write its file(s) + record:
-python ../skills/inbox-setup/scripts/section_progress_tracker.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/inbox-setup/scripts/section_progress_tracker.py \
   --action record_section_done --session NAME --section N --files "..."
 
 # 6. At S8, validate final state + close session:
-python ../skills/inbox-setup/scripts/kb_validator.py --workspace ${WORKSPACE}
-python ../skills/inbox-setup/scripts/section_progress_tracker.py --action close --session NAME
+python ${CLAUDE_PLUGIN_ROOT}/skills/inbox-setup/scripts/kb_validator.py --workspace ${WORKSPACE}
+python ${CLAUDE_PLUGIN_ROOT}/skills/inbox-setup/scripts/section_progress_tracker.py --action close --session NAME
 ```
 
 ## Stop Conditions
@@ -126,7 +126,7 @@ python ../skills/inbox-setup/scripts/section_progress_tracker.py --action close 
 
 ## Related
 
-- Companion: [`/cs:inbox-triage`](./cs-inbox-triage.md) — runs after setup is complete
+- Companion: [`/cs-inbox-triage`](./cs-inbox-triage.md) — runs after setup is complete
 - Agent: [`cs-inbox-setup`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/email/agents/cs-inbox-setup.md)
 - Skill: [`inbox-setup`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/email/skills/inbox-setup/SKILL.md)
 - Source spec: `megaprompts/06-inbox-setup-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)

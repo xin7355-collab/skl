@@ -39,47 +39,47 @@ Differentiates clearly:
 
 ## Skill Integration
 
-**Skill Location:** [`skills/eu-ai-act-specialist`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist)
+**Skill Location:** `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/`
 
 ### Python Tools
 
 1. **AI System Risk Classifier**
-   - Path: [`scripts/ai_system_risk_classifier.py`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist/scripts/ai_system_risk_classifier.py)
-   - Usage: `python ai_system_risk_classifier.py systems.json`
+   - Path: `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/ai_system_risk_classifier.py`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/ai_system_risk_classifier.py systems.json`
    - Returns: tier (prohibited / high_risk / limited_risk / minimal_risk) with citing Article + Annex; Article 6(3) carve-out logic; Article 51 systemic-risk GPAI detection (10^25 FLOPs threshold)
 
 2. **Conformity Assessment Planner**
-   - Path: [`scripts/conformity_assessment_planner.py`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist/scripts/conformity_assessment_planner.py)
-   - Usage: `python conformity_assessment_planner.py system.json`
+   - Path: `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/conformity_assessment_planner.py`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/conformity_assessment_planner.py system.json`
    - Returns: Module A (Annex VI internal control) vs Module H (Annex VII full QMS + notified body) routing per Article 43; 8-item Annex IV technical documentation checklist with ISO 42001/27001 reuse map
 
 3. **AI Act Obligation Tracker**
-   - Path: [`scripts/ai_act_obligation_tracker.py`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist/scripts/ai_act_obligation_tracker.py)
-   - Usage: `python ai_act_obligation_tracker.py roles.json`
+   - Path: `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/ai_act_obligation_tracker.py`
+   - Usage: `python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/ai_act_obligation_tracker.py roles.json`
    - Returns: deadline-sorted obligation matrix per Article 113 phasing; per-role (provider / deployer / importer / distributor / authorized representative); GPAI Articles 51-55
 
 ### Knowledge Bases
 
-- [`references/eu_ai_act_titles.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist/references/eu_ai_act_titles.md) — Titles I-XII walkthrough with Article-level requirements
-- [`references/high_risk_systems_annex_iii.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist/references/high_risk_systems_annex_iii.md) — 8 high-risk categories + Article 6(2)-(3) decision tree + carve-out test
-- [`references/gpai_obligations.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist/references/gpai_obligations.md) — Articles 51-55 + Annex XI-XIII + Code of Practice + systemic-risk threshold
-- [`references/cross_framework_mapping_ai_act.md`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist/references/cross_framework_mapping_ai_act.md) — AI Act ↔ ISO 42001 ↔ NIST AI RMF ↔ GDPR cross-walk with Article 17(1) item-by-item mapping
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/references/eu_ai_act_titles.md` — Titles I-XII walkthrough with Article-level requirements
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/references/high_risk_systems_annex_iii.md` — 8 high-risk categories + Article 6(2)-(3) decision tree + carve-out test
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/references/gpai_obligations.md` — Articles 51-55 + Annex XI-XIII + Code of Practice + systemic-risk threshold
+- `${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/references/cross_framework_mapping_ai_act.md` — AI Act ↔ ISO 42001 ↔ NIST AI RMF ↔ GDPR cross-walk with Article 17(1) item-by-item mapping
 
 ## Workflows
 
 ### Workflow 1: AI System Intake Review (per system, ~2 hours)
 ```bash
-python ai_system_risk_classifier.py systems.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/ai_system_risk_classifier.py systems.json
 # If high-risk:
-python conformity_assessment_planner.py system.json
-python ai_act_obligation_tracker.py roles.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/conformity_assessment_planner.py system.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/ai_act_obligation_tracker.py roles.json
 # Cross-check with cs-dpo-gdpr if personal data
 # Cross-check with cs-aims-iso42001 for ISO 42001 reuse
 ```
 
 ### Workflow 2: Annex IV Technical Documentation (per high-risk system, 2-4 weeks)
 ```bash
-python conformity_assessment_planner.py system.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/scripts/conformity_assessment_planner.py system.json
 # Assemble Annex IV pack
 # Reuse ISO 42001 evidence where applicable
 # Sign EU declaration of conformity (Article 47) AFTER passing assessment
@@ -131,8 +131,8 @@ python conformity_assessment_planner.py system.json
 
 ## References
 
-- Skill: [../../ra-qm-team/skills/eu-ai-act-specialist/SKILL.md](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/eu-ai-act-specialist/SKILL.md)
-- Sibling command: [`/cs:ai-act-readiness`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/ai-act-readiness/SKILL.md)
+- Skill: [${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/SKILL.md](${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/eu-ai-act-specialist/SKILL.md)
+- Sibling command: [`/compliance-os:ai-act-readiness`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/ai-act-readiness/SKILL.md)
 
 ---
 

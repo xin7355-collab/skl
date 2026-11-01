@@ -1,9 +1,9 @@
 ---
-title: "/cs:iso13485-audit-prep — ISO 13485 QMS Forcing Questions — Claude Code Plugin & Agent Skill"
-description: "/cs:iso13485-audit-prep <scope> — ISO 13485 QMS audit 6-question forcing interrogation. Design controls + CAPA + post-market focused. Use before. Agent skill for Claude Code, Codex CLI, Gemini CLI, OpenClaw."
+title: "/compliance-os:iso13485-audit-prep — ISO 13485 QMS Forcing Questions — Claude Code Plugin & Agent Skill"
+description: "/compliance-os:iso13485-audit-prep [scope] — ISO 13485 QMS audit 6-question forcing interrogation. Design controls + CAPA + post-market focused. Use. Agent skill for Claude Code, Codex CLI, Gemini CLI, OpenClaw."
 ---
 
-# /cs:iso13485-audit-prep — ISO 13485 QMS Forcing Questions
+# /compliance-os:iso13485-audit-prep — ISO 13485 QMS Forcing Questions
 
 <div class="page-meta" markdown>
 <span class="meta-badge">:material-shield-lock-outline: Compliance OS</span>
@@ -16,7 +16,7 @@ description: "/cs:iso13485-audit-prep <scope> — ISO 13485 QMS audit 6-question
 </div>
 
 
-**Command:** `/cs:iso13485-audit-prep <scope>`
+**Command:** `/compliance-os:iso13485-audit-prep <scope>`
 
 The ISO 13485 QMS auditor pressure-tests any medical-device QMS work. Six traceability-obsessed questions before any internal audit, MDR / FDA QSR review, or product launch.
 
@@ -80,16 +80,16 @@ The ISO 13485 QMS auditor pressure-tests any medical-device QMS work. Six tracea
 
 ```bash
 # 1. Audit programme optimization
-python ra-qm-team/skills/qms-audit-expert/scripts/audit_schedule_optimizer.py audit_scope.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/qms-audit-expert/scripts/audit_schedule_optimizer.py audit_scope.json
 
 # 2. Mock audit for readiness check
 python ../../skills/compliance-os/scripts/audit_simulator.py iso13485_scope.json
 
 # 3. CAPA system review
-# Route to ra-qm-team/skills/capa-officer/ tools
+# Route to ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/capa-officer/ tools
 
 # 4. Risk management file review
-# Route to ra-qm-team/skills/risk-management-specialist/ tools
+# Route to ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/risk-management-specialist/ tools
 ```
 
 ## Output Format
@@ -149,18 +149,18 @@ python ../../skills/compliance-os/scripts/audit_simulator.py iso13485_scope.json
 
 ## Routing
 
-- `/cs:compliance-readiness` — for multi-framework view
-- `/cs:fda-qsr-audit-prep` — for FDA-specific overlay
-- `/cs:aims-audit` — for AI-enabled medical device ISO 42001 layer
-- `/cs:gdpr-audit-prep` — for personal-data overlap (clinical data, customer data)
-- `/cs:cpo-review` — for executive product strategy decisions
-- `/cs:decide` — to log the verdict
+- `/compliance-os:compliance-readiness` — for multi-framework view
+- `/compliance-os:fda-qsr-audit-prep` — for FDA-specific overlay
+- `/compliance-os:aims-audit` — for AI-enabled medical device ISO 42001 layer
+- `/compliance-os:gdpr-audit-prep` — for personal-data overlap (clinical data, customer data)
+- `/c-level-agents:cpo-review` — for executive product strategy decisions
+- `/c-level-agents:decide` — to log the verdict
 
 ## Related
 
 - Agent: [`cs-cqm-iso13485`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/agents/cs-cqm-iso13485.md)
-- Skill: [`qms-audit-expert`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/qms-audit-expert/SKILL.md)
-- Playbook: [iso13485_audit_playbook.md](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/qms-audit-expert/references/iso13485_audit_playbook.md)
+- Skill: [`qms-audit-expert`](${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/qms-audit-expert/SKILL.md)
+- Playbook: [iso13485_audit_playbook.md](${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/qms-audit-expert/references/iso13485_audit_playbook.md)
 - Adjacent: [`skills/fda-qsr-audit-prep`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/fda-qsr-audit-prep), [`skills/aims-audit`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/aims-audit), [`skills/compliance-readiness`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/compliance-readiness)
 
 ---

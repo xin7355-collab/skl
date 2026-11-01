@@ -1,6 +1,6 @@
 ---
 title: "/cs-handoff — Slash Command for AI Coding Agents"
-description: "/cs:handoff <next-session-focus> — Compact the current conversation into a handoff document for a fresh agent. Tailored to next-session focus. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-handoff <next-session-focus> — Compact the current conversation into a handoff document for a fresh agent. Tailored to next-session focus. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-handoff
@@ -11,7 +11,7 @@ description: "/cs:handoff <next-session-focus> — Compact the current conversat
 </div>
 
 
-**Command:** `/cs:handoff <next-session-focus>`
+**Command:** `/cs-handoff <next-session-focus>`
 
 Hand off the current conversation to a fresh agent. Tailored to the focus argument.
 
@@ -40,19 +40,19 @@ The `artifact_deduplicator.py` enforces this — FAIL verdict blocks the handoff
 
 ```bash
 # 1. Generate template tailored to focus
-python ../skills/handoff/scripts/handoff_template_generator.py \
+python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/handoff_template_generator.py \
   --next-focus "<focus from command argument>" \
   --mktemp
 
 # 2. Fill in the 5 sections from current conversation state
 
 # 3. Pre-flight: dedup check
-python ../skills/handoff/scripts/artifact_deduplicator.py path/to/draft.md
+python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/artifact_deduplicator.py path/to/draft.md
 #   CLEAN or WARN (with justified findings) → proceed
 #   FAIL → refactor; replace duplicated content with refs
 
 # 4. Populate skills section
-python ../skills/handoff/scripts/skill_recommender.py path/to/draft.md
+python ${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/skill_recommender.py path/to/draft.md
 #   Use top recommendations for "Skills to use"
 
 # 5. Share the file path. Next agent reads + acts.
@@ -77,7 +77,7 @@ python ../skills/handoff/scripts/skill_recommender.py path/to/draft.md
 
 - Agent: [`cs-handoff-author`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/agents/cs-handoff-author.md)
 - Skill: [`handoff`](https://github.com/alirezarezvani/claude-skills/tree/main/engineering/handoff/skills/handoff/SKILL.md)
-- Adjacent: `/cs:caveman`, `/cs:grill-me`, `/cs:write-a-skill`
+- Adjacent: `/cs-caveman`, `/cs-grill-me`, `/cs-write-a-skill`
 
 ---
 

@@ -6,12 +6,13 @@ recommendedForRoles:
   - designer
   - product
   - engineer
-tags:
-  - design
-  - wireframe
-  - ux
-  - prototyping
-  - svg
+metadata:
+  tags:
+    - design
+    - wireframe
+    - ux
+    - prototyping
+    - svg
 ---
 
 # Wireframe

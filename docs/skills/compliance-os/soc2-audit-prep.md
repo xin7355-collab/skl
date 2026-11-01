@@ -1,9 +1,9 @@
 ---
-title: "/cs:soc2-audit-prep — SOC 2 Type II Forcing Questions — Claude Code Plugin & Agent Skill"
-description: "/cs:soc2-audit-prep <scope> — SOC 2 Type II readiness 6-question forcing interrogation. Observation-period focused. Use before Type II observation. Agent skill for Claude Code, Codex CLI, Gemini CLI, OpenClaw."
+title: "/compliance-os:soc2-audit-prep — SOC 2 Type II Forcing Questions — Claude Code Plugin & Agent Skill"
+description: "/compliance-os:soc2-audit-prep [scope] — SOC 2 Type II readiness 6-question forcing interrogation. Observation-period focused. Use before Type II. Agent skill for Claude Code, Codex CLI, Gemini CLI, OpenClaw."
 ---
 
-# /cs:soc2-audit-prep — SOC 2 Type II Forcing Questions
+# /compliance-os:soc2-audit-prep — SOC 2 Type II Forcing Questions
 
 <div class="page-meta" markdown>
 <span class="meta-badge">:material-shield-lock-outline: Compliance OS</span>
@@ -16,7 +16,7 @@ description: "/cs:soc2-audit-prep <scope> — SOC 2 Type II readiness 6-question
 </div>
 
 
-**Command:** `/cs:soc2-audit-prep <scope>`
+**Command:** `/compliance-os:soc2-audit-prep <scope>`
 
 The SOC 2 Type II auditor pressure-tests any SOC 2 work. Six observation-period-disciplined questions before any Type II cycle.
 
@@ -79,13 +79,13 @@ The SOC 2 Type II auditor pressure-tests any SOC 2 work. Six observation-period-
 
 ```bash
 # 1. Scoping + gap analysis (pre-observation)
-python ra-qm-team/skills/soc2-compliance/scripts/gap_analyzer.py current_state.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/soc2-compliance/scripts/gap_analyzer.py current_state.json
 
 # 2. Control matrix with ISO 27001 cross-walk
-python ra-qm-team/skills/soc2-compliance/scripts/control_matrix_builder.py program.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/soc2-compliance/scripts/control_matrix_builder.py program.json
 
 # 3. Continuous evidence tracking (during observation)
-python ra-qm-team/skills/soc2-compliance/scripts/evidence_tracker.py evidence_log.json
+python ${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/soc2-compliance/scripts/evidence_tracker.py evidence_log.json
 
 # 4. Mock audit (pre-field-test month 10)
 python ../../skills/compliance-os/scripts/audit_simulator.py soc2_scope.json
@@ -146,16 +146,16 @@ python ../../skills/compliance-os/scripts/audit_simulator.py soc2_scope.json
 
 ## Routing
 
-- `/cs:compliance-readiness` — for multi-framework view
-- `/cs:iso27001-audit-prep` — for ISO 27001 cross-walk pair (75% overlap)
-- `/cs:gdpr-audit-prep` — for Privacy TSC overlap
-- `/cs:ciso-review` — for executive cybersecurity strategy
+- `/compliance-os:compliance-readiness` — for multi-framework view
+- `/compliance-os:iso27001-audit-prep` — for ISO 27001 cross-walk pair (75% overlap)
+- `/compliance-os:gdpr-audit-prep` — for Privacy TSC overlap
+- `/c-level-agents:ciso-review` — for executive cybersecurity strategy
 
 ## Related
 
 - Agent: [`cs-soc2-auditor`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/agents/cs-soc2-auditor.md)
-- Skill: [`soc2-compliance`](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/soc2-compliance/SKILL.md)
-- Playbook: [soc2_audit_playbook.md](https://github.com/alirezarezvani/claude-skills/tree/main/ra-qm-team/skills/soc2-compliance/references/soc2_audit_playbook.md)
+- Skill: [`soc2-compliance`](${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/soc2-compliance/SKILL.md)
+- Playbook: [soc2_audit_playbook.md](${CLAUDE_PLUGIN_ROOT}/vendor/ra-qm-team/soc2-compliance/references/soc2_audit_playbook.md)
 - Adjacent: [`skills/iso27001-audit-prep`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/iso27001-audit-prep), [`skills/gdpr-audit-prep`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/gdpr-audit-prep), [`skills/compliance-readiness`](https://github.com/alirezarezvani/claude-skills/tree/main/compliance-os/skills/compliance-readiness)
 
 ---

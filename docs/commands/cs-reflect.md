@@ -1,6 +1,6 @@
 ---
 title: "/cs-reflect — Slash Command for AI Coding Agents"
-description: "/cs:reflect — Mid-conversation reflection: halts current thread, re-reads full conversation from original goal forward, runs 5-dimension analysis. Slash command for Claude Code, Codex CLI, Gemini CLI."
+description: "/cs-reflect — Mid-conversation reflection: halts current thread, re-reads full conversation from original goal forward, runs 5-dimension analysis. Slash command for Claude Code, Codex CLI, Gemini CLI."
 ---
 
 # /cs-reflect
@@ -11,7 +11,7 @@ description: "/cs:reflect — Mid-conversation reflection: halts current thread,
 </div>
 
 
-**Command:** `/cs:reflect`
+**Command:** `/cs-reflect`
 
 The `cs-reflect` persona pauses execution and honestly reassesses where the conversation has been heading.
 
@@ -85,11 +85,11 @@ Closing with **one of three recommendations**:
 # 4. Delivers flowing-prose reassessment
 
 # Optional pre-flight: scan for bias patterns + depth signals
-python ../skills/reflect/scripts/conversation_depth_analyzer.py --conversation /tmp/transcript.txt
-python ../skills/reflect/scripts/bias_pattern_detector.py --conversation /tmp/transcript.txt
+python ${CLAUDE_PLUGIN_ROOT}/skills/reflect/scripts/conversation_depth_analyzer.py --conversation /tmp/transcript.txt
+python ${CLAUDE_PLUGIN_ROOT}/skills/reflect/scripts/bias_pattern_detector.py --conversation /tmp/transcript.txt
 
 # Post-flight: validate output meets discipline
-python ../skills/reflect/scripts/directional_recommendation_validator.py --output /tmp/output.txt
+python ${CLAUDE_PLUGIN_ROOT}/skills/reflect/scripts/directional_recommendation_validator.py --output /tmp/output.txt
 ```
 
 ## Stop Conditions
@@ -112,8 +112,8 @@ python ../skills/reflect/scripts/directional_recommendation_validator.py --outpu
 - Agent: [`cs-reflect`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/reflect/agents/cs-reflect.md)
 - Skill: [`reflect`](https://github.com/alirezarezvani/claude-skills/tree/main/productivity/reflect/skills/reflect/SKILL.md)
 - Source spec: `megaprompts/02-reflect-megaprompt.md` (maintainer-local draft spec — gitignored, not in the public repo)
-- Sibling: `/cs:capture` (productivity, brain-dump organizer)
-- Adjacent (different shape): `/cs:grill-me`, `/cs:grill-with-docs`
+- Sibling: `/cs-capture` (productivity, brain-dump organizer)
+- Adjacent (different shape): `/cs-grill-me`, `/cs-grill-with-docs`
 
 ---
 

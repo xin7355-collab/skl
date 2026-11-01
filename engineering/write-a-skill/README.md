@@ -13,7 +13,7 @@ Skill-author skill: create new agent skills with proper structure, progressive d
 | **3 stdlib Python validation tools** | `skills/write-a-skill/scripts/` | Operationalize Matt's review checklist (description validator, structure validator, review-checklist runner). Catches the common mistakes Matt names. |
 | **3 in-depth references** (5+ sources each) | `skills/write-a-skill/references/` | Progressive disclosure principles · Description design patterns · Quality gates for skills. Cites Anthropic skill docs + community precedent + research. |
 | **cs-skill-author persona agent** | `agents/cs-skill-author.md` | Surface skill-authoring as a forcing-question interrogation matching our cs-* persona pattern. |
-| **`/cs:write-a-skill` slash command** | `commands/cs-write-a-skill.md` | 6-question forcing interrogation that runs Matt's review checklist programmatically. |
+| **`/cs-write-a-skill` slash command** | `commands/cs-write-a-skill.md` | 6-question forcing interrogation that runs Matt's review checklist programmatically. |
 
 ## What Matt's original brings (preserved)
 
@@ -25,6 +25,11 @@ Skill-author skill: create new agent skills with proper structure, progressive d
 - Matt's directness — no fluff, concrete patterns
 
 ## Quick start
+
+```bash
+/plugin marketplace add alirezarezvani/claude-skills
+/plugin install write-a-skill@claude-code-skills
+```
 
 ```bash
 # Run Matt's review checklist on an existing skill

@@ -75,11 +75,11 @@ Answers are saved to `~/.config/research-ops/product-research.json` (global) or 
 This skill ships an **isolated, opt-in** bridge to `engineering/autoresearch-agent`. Only when you ask to "optimize the synthesis" / "run a loop" does an autoresearch experiment iteratively refine the coding/clustering of a fixed evidence set so more cross-participant patterns surface. `scripts/ar_evaluator.py` is the ground-truth evaluator; it prints `validated_insights: <int>` (higher is better). It optimizes the **coding**, never fabricates evidence.
 
 ```bash
-/ar:setup --domain custom --name insight-synthesis \
+/autoresearch-agent:setup --domain custom --name insight-synthesis \
   --target observations.json \
   --eval "python3 ar_evaluator.py --target observations.json" \
   --metric validated_insights --direction higher
-/ar:loop custom/insight-synthesis
+/ar-loop custom/insight-synthesis
 ```
 
 Isolated: no hard dependency — autoresearch runs only on demand, and the loop edits `observations.json`, never the evaluator.
@@ -113,6 +113,7 @@ Isolated: no hard dependency — autoresearch runs only on demand, and the loop 
 | `product-team/product-discovery` | Opportunity validation, discovery-sprint planning | That plans **discovery sprints**; this designs and synthesizes the **research** |
 | `product-team/experiment-designer` | Live product A/B hypothesis + sample size | That runs **live experiments**; this runs **qualitative/evaluative research** |
 | `market-research` (sibling) | Market sizing, surveys, segmentation | That studies **the market**; this studies **users** |
+| [`interview-mapper`](https://github.com/alirezarezvani/claude-skills/tree/main/research-ops/skills/interview-mapper/SKILL.md) (sibling) | Transcript-level coding: verbatim quote verification, per-lens coding, cross-run consensus | That codes the **transcript itself**; this synthesizes **already-coded observations** into insights — never touches the raw transcript |
 
 ## Quick examples
 
@@ -126,7 +127,7 @@ The synthesizer sample correctly promotes "import-confusion" (3 independent part
 
 ## Forcing-question library (Matt Pocock grill discipline)
 
-Walked one at a time by `/cs:grill-research-ops` or the orchestrator. Recommended answer + canon citation per question. Never bundled.
+Walked one at a time by `/cs-grill-research-ops` or the orchestrator. Recommended answer + canon citation per question. Never bundled.
 
 1. **"Is this study generative (discover problems) or evaluative (test a solution)?"**
    Recommended: name it first — the method follows from the goal.

@@ -1,12 +1,13 @@
 ---
 name: markdown-html-orchestrator
-description: Use when a user wants to convert any markdown file in their Claude project into a single-file, lightly-interactive HTML — long-form documents (specs, plans, RFCs, reports, explainers), code reviews with diffs and severity-tagged annotations, or slide decks. Triggers on "convert this markdown to HTML", "make this an HTML file", "turn this into an interactive document", "render this report as HTML", "PR writeup as HTML", "slides from this markdown". Forks context to route to one of three converter sub-skills (md-document, md-review, md-slides) based on a deterministic doctype classifier, after the user has run the design-system onboarding once. Refuses if input is under 100 lines (per Shihipar — markdown still wins below the threshold) or design-system isn't onboarded. Distinct from Anthropic's official Playground plugin (which is interactive prompt-tuning controls with sliders/knobs/prompt-copy-back) and from marketing/landing/ (which is a landing-page generator).
+description: "Use when the user wants a markdown file turned into a single-file interactive HTML page (document, code review or slide deck). Classifies it with doctype_classifier.py and routes to md-document, md-review or md-slides."
 context: fork
-version: 2.10.3
-author: Alireza Rezvani
 license: MIT
-tags: [markdown, html, converter, orchestrator, documentation, code-review, slides, design-system]
-compatible_tools: [claude-code, codex-cli, cursor, antigravity, opencode, gemini-cli]
+metadata:
+  version: 2.10.3
+  author: Alireza Rezvani
+  tags: [markdown, html, converter, orchestrator, documentation, code-review, slides, design-system]
+  compatible_tools: [claude-code, codex-cli, cursor, antigravity, opencode, gemini-cli]
 ---
 
 # Markdown → HTML — Domain Orchestrator
@@ -88,7 +89,7 @@ The routed converter sub-skill's renderer (`md-document/scripts/`, `md-review/sc
 
 ## Forcing-question library (Matt Pocock grill-with-docs pattern)
 
-Walk these one at a time, with a recommended answer per question, citing the canon. Lift this list into `/cs:grill-markdown-html` for plan-stage interrogation.
+Walk these one at a time, with a recommended answer per question, citing the canon. Lift this list into `/cs-grill-markdown-html` for plan-stage interrogation.
 
 1. **What decision does this HTML drive — is the reader skimming, deciding, or presenting?**
    Recommended: name it first; density follows from purpose. Canon: Shihipar — "match output format to consumption context"; Tufte — *Visual Display of Quantitative Information*, ch. 1.
@@ -148,3 +149,11 @@ Never run a sub-skill before the lane is locked.
 - Customization pattern: `research-ops/skills/clinical-research/scripts/` (`onboard.py`, `config_loader.py`)
 - Brand palette math: `marketing/landing/skills/landing/scripts/brand_palette_validator.py` (WCAG + HSL derive)
 - Information-density canon: Tufte; Shihipar's `thariqs.github.io/html-effectiveness/` gallery; Wattenberger interactive essays; Maggie Appleton digital gardens
+
+## More in this skill
+
+Load these only when the task needs them.
+
+- [references/information_density_canon.md](references/information_density_canon.md) — Information Density Canon
+- [references/orchestrator_routing_patterns.md](references/orchestrator_routing_patterns.md) — Orchestrator Routing Patterns
+- [references/single_file_html_discipline.md](references/single_file_html_discipline.md) — Single-File HTML Discipline
