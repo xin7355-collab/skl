@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-26",
+ "checked_at": "2026-11-02",
  "products": [
   {
    "product": "Claude Code",
@@ -129,7 +129,7 @@
     {
      "name": "Routines（排程任務）",
      "icon": "⏰",
-     "zh": "設定固定時間自動做事，例如每週一早上健檢所有 App、每週更新 AI 模型資料。上一次沒有開始跑時，routine 頁面會顯示原因（例如雲端工作階段數量到上限）。",
+     "zh": "設定固定時間自動做事，例如每週一早上健檢所有 App、每週更新 AI 模型資料。上一次沒有開始跑時，routine 頁面會顯示原因（例如雲端工作階段數量到上限）。2026-10-27 起（2.1.312）在雲端跑的排程可以選思考強度（effort）。",
      "how": "直接說「每週一早上 9 點幫我做 X」。",
      "when": "重複性的檢查、報告、更新",
      "level": "入門",
@@ -173,12 +173,12 @@
     {
      "name": "/code-review、/security-review",
      "icon": "🔍",
-     "zh": "自動審查程式的 bug 與資安問題，列出嚴重程度。",
+     "zh": "自動審查程式的 bug 與資安問題，列出嚴重程度。在網頁版或手機 App 的 Code 分頁執行時，結果會整理成一張卡片（2.1.316，2026-10-31）。",
      "how": "輸入 /code-review 或說「幫我審查這次修改有沒有 bug」。想看更多或更少問題，可加 --max-findings 數字（或 all），2026-10-02 起支援。",
      "when": "推上去之前、合併之前",
      "level": "入門",
      "mobile": true,
-     "new": false,
+     "new": true,
      "url": "https://code.claude.com/docs/en/commands"
     },
     {
@@ -206,7 +206,7 @@
     {
      "name": "Fast mode（快速模式）",
      "icon": "🏎️",
-     "zh": "用同一個模型但回得更快（最多約 2.5 倍），費用較高；Opus 5.5 的快速模式 2026-10-15 起在 API 正式提供，Claude Code 裡仍標研究預覽。",
+     "zh": "用同一個模型但回得更快（最多約 2.5 倍），費用較高；Opus 5.5 的快速模式 2026-10-15 起在 API 正式提供，Claude Code 裡仍標研究預覽。Opus 4.8 的快速模式 2026-10-30 起停用、11-30 移除，之後要快速模式請改用 Opus 5.5（官方 changelog 2.1.316）。",
      "how": "電腦版輸入 /fast 切換。",
      "when": "趕時間、互動很多的時候",
      "level": "進階",
@@ -264,6 +264,17 @@
      "zh": "安裝外掛時直接指定來源市集，沒加過的市集會自動加入再安裝，一樣經過權限檢查。",
      "how": "請 Claude：「用 claude plugin install --marketplace 幫我裝 某某外掛」，或在 /plugin 介面裡安裝。",
      "when": "別人給你一個外掛名稱和市集網址時",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/changelog"
+    },
+    {
+     "name": "雲端表單卡片（服務要你補資料）",
+     "icon": "📝",
+     "zh": "連接的外部服務（MCP）需要你補資料或確認時，雲端工作階段會跳出表單卡片讓你填或拒絕；以前這種要求會直接被取消、你也看不到（2.1.316，2026-10-31）。",
+     "how": "在 claude.ai/code 或手機 App 看到表單卡片時，直接填好送出，或按拒絕。",
+     "when": "用連接器做事、服務需要你提供設定或確認時",
      "level": "進階",
      "mobile": true,
      "new": true,
@@ -432,7 +443,7 @@
     {
      "name": "Reasoning effort",
      "icon": "🧠",
-     "zh": "設定 AI「想多久」：low、medium、high、xhigh 等。想越久越仔細，但越慢、越耗額度。這是設定值，不是另一個模型。",
+     "zh": "設定 AI「想多久」：low、medium、high、xhigh 等。想越久越仔細，但越慢、越耗額度。這是設定值，不是另一個模型。Codex CLI 0.165.0（2026-10-27）起，支援的模型在對話進行中也能改思考強度（預設開啟）。",
      "how": "CLI 用 /model 選模型時一併選思考強度，或在 config.toml 設 model_reasoning_effort。",
      "when": "難解的 bug 用 high；簡單修改用 low 省額度。",
      "level": "進階",
@@ -571,6 +582,39 @@
      "mobile": false,
      "new": true,
      "url": "https://github.com/openai/codex/releases/tag/rust-v0.164.0"
+    },
+    {
+     "name": "GPT-6.1 Terra（新模型）",
+     "icon": "🌍",
+     "zh": "OpenAI 2026-10-26 推出的中階模型，主打電腦操作、看懂畫面、寫作；價格約 GPT-6.1 Sol 一半，OpenAI 稱完成任務快 3 倍以上。最難的寫程式仍建議用 GPT-6.1 Sol 或 GPT-6 Astra。",
+     "how": "在 Codex 的模型選單選 GPT-6.1 Terra（手機 App 在對話中切換模型）；電腦上的 Codex CLI 要更新到 0.165.0 以上才看得到。",
+     "when": "要快、要省額度的日常工作與電腦操作",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://github.com/openai/codex/releases/tag/rust-v0.165.0"
+    },
+    {
+     "name": "記憶 v2（預設開啟）",
+     "icon": "🗂️",
+     "zh": "Codex CLI 0.165.0（2026-10-27）起，新的設定檔預設開啟第二版記憶，也能匯入其他 AI 代理的記憶。",
+     "how": "電腦上的 Codex CLI 功能，手機上沒有；更新到 0.165.0 以上後，新的設定檔會自動開啟。",
+     "when": "希望 Codex 記得你的習慣與專案慣例時",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://github.com/openai/codex/releases/tag/rust-v0.165.0"
+    },
+    {
+     "name": "對話紀錄鍵盤選取與搜尋",
+     "icon": "⌨️",
+     "zh": "Codex CLI 0.166.0（2026-10-29）：用鍵盤選取對話紀錄的字、行、頁，內建搜尋、快捷鍵可自訂；另外多了 codex doctor --network-only，一次檢查設定與連線。",
+     "how": "電腦終端機（Codex CLI）的功能，手機上沒有；更新到 0.166.0 以上。",
+     "when": "要從很長的對話裡複製內容，或連線出問題時",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://github.com/openai/codex/releases/tag/rust-v0.166.0"
     }
    ]
   },
@@ -640,8 +684,8 @@
     {
      "name": "排程任務",
      "icon": "⏰",
-     "zh": "讓 Claude 定時自動做同一件事，例如每週一早上整理新聞做成簡報；在雲端跑，不用開著任何裝置。",
-     "how": "在 Cowork 直接說「每週一早上 7 點幫我…」，或在排程任務設定裡建立。",
+     "zh": "讓 Claude 定時自動做同一件事，例如每週一早上整理新聞做成簡報；在雲端跑，不用開著任何裝置。排程任務要抓網頁時（沒開自動核准的話），網址要寫在任務裡，或由搜尋、先前抓過的網頁找到（2026-10-27）。",
+     "how": "在 Cowork 直接說「每週一早上 7 點幫我…」，或在排程任務設定裡建立。（/schedule 指令 2026-10-22 起從選單移除，打 /schedule 會改成填好一段排程請求，跟 Schedule 按鈕一樣）",
      "when": "每週固定的整理、報表、追蹤",
      "level": "進階",
      "mobile": true,
@@ -695,7 +739,7 @@
     {
      "name": "排程任務自動核准",
      "icon": "🔁",
-     "zh": "Claude 幫你建立的排程任務，預設在組織允許的範圍內自動核准工具使用，只有看起來不安全時才暫停問你；排程失敗也會推播通知。",
+     "zh": "Claude 幫你建立的排程任務，預設在組織允許的範圍內自動核准工具使用，只有看起來不安全時才暫停問你；排程失敗也會推播通知。組織帳號的「全部略過核准」2026-10-27 起改跟著組織的 Cowork 設定，不再跟 Claude Code 的設定。",
      "how": "在 Cowork 說「每週一早上幫我整理上週重點」→ Claude 建好排程；要改成每次都問，到排程任務的設定把核准方式改掉。",
      "when": "想讓每週固定工作在你沒盯著時也能跑完",
      "level": "入門",
@@ -713,6 +757,17 @@
      "mobile": false,
      "new": true,
      "url": "https://claude.com/resources/articles/claude-duet"
+    },
+    {
+     "name": "設計交給 Claude Code",
+     "icon": "🎨",
+     "zh": "Claude 電腦版 2026-10-20 起：在設計名稱下方的選單選「Hand off to Claude Code」，會打開 Claude Code 並帶好「把這個設計做進程式」的提示詞，也可以只複製提示詞。",
+     "how": "電腦版 Claude App 的功能；手機上可以先在 Cowork 做好設計，回到電腦再交給 Claude Code。",
+     "when": "在 Cowork 做好畫面設計，想直接做成網頁或 App 時",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://claude.com/docs/cowork/changelog"
     }
    ],
    "examples": [

@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-26",
+ "checked_at": "2026-11-02",
  "vendors": [
   {
    "vendor": "Anthropic",
@@ -373,7 +373,8 @@
       "大量、簡單的處理工作"
      ],
      "strengths": [
-      "官方已列為 Legacy（仍可用），建議改用 Haiku 5.5；退役承諾日期不早於 2026-10-15"
+      "官方已列為 Legacy（仍可用），建議改用 Haiku 5.5；退役承諾日期不早於 2026-10-15",
+      "2026-10-29 起從 claude.ai（Free／Pro／Max）的模型選單移除，舊對話改由 Haiku 5.5 回答；Claude Code、Team／Enterprise 與 API 不受影響（官方說明）"
      ],
      "benchmarks": [
       {
@@ -489,6 +490,34 @@
       "ChatGPT Work 與 Codex 可用，一般聊天尚未提供"
      ],
      "benchmarks": []
+    },
+    {
+     "name": "GPT-6.1 Terra",
+     "id": "gpt-6.1-terra",
+     "released": "2026-10-26",
+     "context": "API：1M tokens 以上（Vercel AI Gateway 整理，第三方）；Codex 內建目錄：500K / 最大 872K",
+     "price": "$1 / $5 每百萬 tokens；cached input $0.05（媒體轉述 OpenAI 公告；約 GPT-6.1 Sol 的一半）",
+     "tier": "balanced",
+     "legacy": false,
+     "best_for": [
+      "電腦操作：看懂畫面、跨 App 操作（OpenAI 定位）",
+      "量大、要快的日常工作與寫作",
+      "Codex 裡想快一點、省一點額度的工作"
+     ],
+     "strengths": [
+      "OpenAI 稱完成任務平均比 GPT-6 Astra、GPT-6.1 Sol 快 3 倍以上（官方說法，媒體轉述）",
+      "價格約 GPT-6.1 Sol 的一半",
+      "ChatGPT Work（Plus、Pro、Enterprise、Edu）與 Codex 可用；Codex CLI 0.165.0 起加入模型清單",
+      "OpenAI 仍建議最複雜的寫程式任務用 GPT-6.1 Sol 或 GPT-6 Astra（媒體轉述）"
+     ],
+     "benchmarks": [
+      {
+       "name": "Terminal-Bench 4.0",
+       "score": "50.3%（max effort，OpenAI 公布）",
+       "source": "https://interestingengineering.com/ai-robotics/openai-gpt-6-1-terra-50-percent-cheaper",
+       "kind": "第三方"
+      }
+     ]
     },
     {
      "name": "GPT-6 Sol（舊款，已由 GPT-6.1 Sol 取代）",
@@ -659,8 +688,8 @@
    "need": "速度和能力平衡",
    "icon": "⚖️",
    "claude": "Claude Sonnet 5.5",
-   "codex": "GPT-6.1 Sol",
-   "why": "比旗艦便宜很多、速度快；Sonnet 5.5 多數基準接近 Opus 5.5"
+   "codex": "GPT-6.1 Terra",
+   "why": "比旗艦便宜很多、速度快；Sonnet 5.5 多數基準接近 Opus 5.5；GPT-6.1 Terra 約 GPT-6.1 Sol 半價、OpenAI 稱快 3 倍以上（最難的寫程式仍用 Sol 或 Astra）"
   }
  ],
  "charts": [
@@ -789,6 +818,7 @@
   "2026-10-10：新增 Claude Haiku 5.5（2026-10-07，官方模型總覽與公告，跑分取自公告表格），Haiku 4.5 改列舊款。公告中 Sonnet 5.5 的 FrontierCode 1.1 為 52.1%（Xhigh），與 Sonnet 5.5 公告的 46.2%（max）設定不同，未合併。Haiku 5.5 的價格是「起價」，長提示較貴；同樣文字的 token 數比 Haiku 4.5 多約 30%。",
   "2026-10-12 週檢：OpenAI 於 2026-09-29（DevDay）推出 GPT-6.1 Sol（$2/$10，cached $0.10），Codex CLI 0.161.0 起預設使用（第三方整理 changelog），GPT-6 Sol 改列舊款；上週漏列，本週補上。GPT-6.1 Sol 的跑分只有第三方轉述且彼此不一致（例如 OSWorld 2.0 有 71.4% 與 69.56% 兩種），原文網站被 egress 擋住無法核對，暫不收錄。Anthropic：Sonnet 5.5 cache read 2026-10-07 起降為 $0.10（官方定價頁與 release notes）；Haiku 5.5 長提示（>10 萬 tokens）價格 $0.50/$2.50。兩家本週都沒有退役公告；Haiku 4.5 官方退役日期仍為不早於 2026-10-15。",
   "2026-10-19 檢查：Anthropic 沒有新模型或退役（官方模型總覽與退役頁），Claude Haiku 4.5 仍為 Active；OpenAI 沒有新模型（Codex 開源模型目錄未變），GPT-5.5 於 2026-10-14 自 ChatGPT 登入的 Codex 退役（第三方報導，OpenAI 網站在本環境連不到，未讀到原文）。",
-  "2026-10-26 週檢：兩家都沒有新模型、退役或價格變動（platform.claude.com 模型總覽、退役頁；openai/codex 的 models.json 自 10-18 起未變）。Anthropic 10-21 推出 API 版本 2026-10-21：temperature、top_p、top_k 改為回 400 錯誤，新版 SDK 改用 Apache 2.0 授權；10-22 推出 Claude Models on Google Cloud（Anthropic 代管，含 Opus 5.5 快速模式）。Claude Sonnet 4.5 退役日 2026-11-30（9-30 公告，本表未列）。"
+  "2026-10-26 週檢：兩家都沒有新模型、退役或價格變動（platform.claude.com 模型總覽、退役頁；openai/codex 的 models.json 自 10-18 起未變）。Anthropic 10-21 推出 API 版本 2026-10-21：temperature、top_p、top_k 改為回 400 錯誤，新版 SDK 改用 Apache 2.0 授權；10-22 推出 Claude Models on Google Cloud（Anthropic 代管，含 Opus 5.5 快速模式）。Claude Sonnet 4.5 退役日 2026-11-30（9-30 公告，本表未列）。",
+  "2026-11-02 週檢：OpenAI 10-26 推出 GPT-6.1 Terra（中階、主打電腦操作，$1/$5，Codex CLI 0.165.0 起加入模型清單；openai/codex 的 models.json 列 500K context），「速度和能力平衡」的 Codex 建議改為 Terra。Terra 的 Terminal-Bench 4.0 50.3% 是 OpenAI 公布、媒體轉述（openai.com 讀不到），測法與 Anthropic 對照表不同，未放進對照圖；OSWorld 2.1 各家說的子集不一致，未收錄。Anthropic 沒有新模型或退役（platform.claude.com 模型總覽、退役頁；Haiku 4.5、Sonnet 5、Opus 4.8 仍列 Active）；Haiku 4.5 10-29 起從 claude.ai Free／Pro／Max 的模型選單移除（Claude Code、Team／Enterprise、API 不受影響，support.claude.com 官方說明）；Claude Code 2.1.316 宣布 Opus 4.8 的快速模式 10-30 起停用、11-30 移除。"
  ]
 }
