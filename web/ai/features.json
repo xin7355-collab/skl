@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-02",
+ "checked_at": "2026-11-09",
  "products": [
   {
    "product": "Claude Code",
@@ -52,7 +52,7 @@
     {
      "name": "Model 選擇",
      "icon": "🎚️",
-     "zh": "切換用哪個 AI 模型：Opus（主力）、Fable（最強最貴）、Sonnet（平衡）、Haiku（最快最省）。",
+     "zh": "切換用哪個 AI 模型：Opus（主力）、Fable（最強最貴）、Sonnet（平衡）、Haiku（最快最省）。2.1.319 起 /model 選單把舊模型收進「More models」那一列，選單變短。",
      "how": "在輸入框旁的模型選單切換；電腦版輸入 /model。",
      "when": "一般用預設；很難的題目換最強的",
      "level": "入門",
@@ -129,7 +129,7 @@
     {
      "name": "Routines（排程任務）",
      "icon": "⏰",
-     "zh": "設定固定時間自動做事，例如每週一早上健檢所有 App、每週更新 AI 模型資料。上一次沒有開始跑時，routine 頁面會顯示原因（例如雲端工作階段數量到上限）。2026-10-27 起（2.1.312）在雲端跑的排程可以選思考強度（effort）。",
+     "zh": "設定固定時間自動做事，例如每週一早上健檢所有 App、每週更新 AI 模型資料。上一次沒有開始跑時，routine 頁面會顯示原因（例如雲端工作階段數量到上限）。2026-10-27 起（2.1.312）在雲端跑的排程可以選思考強度（effort）。2.1.317 起：新建的雲端排程如果被加上你沒要求的連接器，會提醒你、並告訴你怎麼移除。",
      "how": "直接說「每週一早上 9 點幫我做 X」。",
      "when": "重複性的檢查、報告、更新",
      "level": "入門",
@@ -162,7 +162,7 @@
     {
      "name": "/loop（定時重複）",
      "icon": "🔁",
-     "zh": "在同一個對話裡每隔一段時間重做一件事，例如每 10 分鐘檢查部署狀態。",
+     "zh": "在同一個對話裡每隔一段時間重做一件事，例如每 10 分鐘檢查部署狀態。注意：雲端工作階段的 /loop 會跟著那台雲端電腦一起停（2.1.319 起確認訊息會提醒，並提供不會停的做法）；要長期固定做的事改用 Routines。",
      "how": "輸入 /loop 10m 要做的事，或說「每 10 分鐘檢查一次」。",
      "when": "短時間內要持續盯著某件事",
      "level": "進階",
@@ -276,6 +276,28 @@
      "how": "在 claude.ai/code 或手機 App 看到表單卡片時，直接填好送出，或按拒絕。",
      "when": "用連接器做事、服務需要你提供設定或確認時",
      "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/changelog"
+    },
+    {
+     "name": "不選 repo 也能開工作階段",
+     "icon": "🗂️",
+     "zh": "Claude Code 2.1.318 起：在 Anthropic 提供的雲端環境開新工作階段時，可以選「No repository」，不必先挑一個 GitHub repo；適合只想查資料、寫文件或試做一次性的小東西。",
+     "how": "打開 claude.ai/code（或手機 App 的 Code）→ 開新工作階段 → repo 選單選「No repository」→ 直接用中文說要做什麼。",
+     "when": "還沒有 repo、只是想研究或試做時",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/changelog"
+    },
+    {
+     "name": "送出你的 email 前先問",
+     "icon": "✉️",
+     "zh": "Claude Code 2.1.317 起：Claude 用網頁或指令工具要把你的帳號 email 送到網路上之前，會先問你同不同意。",
+     "how": "跳出確認時看清楚要送去哪個網站；不是你要的就按拒絕。",
+     "when": "讓 Claude 上網查資料、填表或呼叫外部服務時",
+     "level": "入門",
      "mobile": true,
      "new": true,
      "url": "https://code.claude.com/docs/en/changelog"
@@ -615,6 +637,17 @@
      "mobile": false,
      "new": true,
      "url": "https://github.com/openai/codex/releases/tag/rust-v0.166.0"
+    },
+    {
+     "name": "代理人總覽（codex agents）",
+     "icon": "🗃️",
+     "zh": "Codex CLI 0.167.0（2026-11-05／06）：輸入 codex agents 一頁列出所有代理人，有新結果的會標出來；切換連線的後端時不會弄丟打到一半的字；本機圖片附件可以直接預覽（第三方整理的發行說明，GitHub 發行頁在本環境讀不到）。",
+     "how": "電腦終端機（Codex CLI）的功能，手機上沒有；更新到 0.167.0 以上後輸入 codex agents。",
+     "when": "同時開好幾個 Codex 代理人做事、想一眼看誰做完時",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://github.com/openai/codex/releases/tag/rust-v0.167.0"
     }
    ]
   },
@@ -764,6 +797,17 @@
      "zh": "Claude 電腦版 2026-10-20 起：在設計名稱下方的選單選「Hand off to Claude Code」，會打開 Claude Code 並帶好「把這個設計做進程式」的提示詞，也可以只複製提示詞。",
      "how": "電腦版 Claude App 的功能；手機上可以先在 Cowork 做好設計，回到電腦再交給 Claude Code。",
      "when": "在 Cowork 做好畫面設計，想直接做成網頁或 App 時",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://claude.com/docs/cowork/changelog"
+    },
+    {
+     "name": "重設 App 資料會刪雲端任務",
+     "icon": "⚠️",
+     "zh": "Claude 電腦版 2026-11-03 起：「Reset App Data（重設 App 資料）」除了清電腦上的資料，也會一併刪掉這個帳號在 Anthropic 伺服器上的 Cowork 任務（確認視窗會寫明）；Help › Troubleshooting 裡的選項改名為「Delete Cowork Data and Restart」。",
+     "how": "電腦版 Claude App 的功能。要重設前，先把 Cowork 任務的成果檔下載或存到雲端硬碟。",
+     "when": "電腦版出問題、想重設 App 時",
      "level": "進階",
      "mobile": false,
      "new": true,
