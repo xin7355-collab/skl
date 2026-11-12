@@ -20,6 +20,11 @@ name: Community skill tests
       - 'community/skills/sanitize-metadata/**'
       - 'community/skills/compress-video/**'
       - 'community/skills/slice-video/**'
+      - 'community/skills/backtest-expert/**'
+      - 'community/skills/residual-edge-analyzer/**'
+      - 'community/skills/edge-strategy-reviewer/**'
+      - 'community/skills/trade-performance-coach/**'
+      - 'community/skills/position-sizer/**'
       - 'community/tests/**'
       - '.github/workflows/community-skill-tests.yml'
 

@@ -502,5 +502,10 @@
  "marketing-skill/skills/ai-decision-authority": "決定行銷／業務工作哪些能讓 AI 自己做、哪些要人審：依風險高低與能否反悔，分成 AI 主導、協作、人主導",
  "research-ops/skills/interview-mapper": "整理一份訪談逐字稿（客戶、待辦任務 JTBD、專家、易用性、離職）：抽出有原文佐證的重點、核對引言、確認結論重跑也站得住",
  "xin-toolkit/skills/untrusted-content-guard": "App 讓 AI 讀新聞、網頁、Email 等外部內容前，先擋藏在內容裡的「忽略之前的指示」等提示注入（含拼字打亂、編碼、隱形字元、圖片網址偷帶資料），清理後包起來再交給 AI",
- "xin-toolkit/skills/idea-precheck": "開工前先查有沒有人做過：依序查自己的紀錄、skl 技能、GitHub 與套件庫，列出現成方案的授權與維護狀況，給出「直接用／參考後自己做小的／放心做」的結論"
+ "xin-toolkit/skills/idea-precheck": "開工前先查有沒有人做過：依序查自己的紀錄、skl 技能、GitHub 與套件庫，列出現成方案的授權與維護狀況，給出「直接用／參考後自己做小的／放心做」的結論",
+ "community/skills/backtest-expert": "替交易策略的回測結果打分：交易筆數不到 30 筆不評、期望值不是正的直接退件、回撤太深擋下、沒算滑價或測不到 5 年要求補驗，並教「先想辦法把點子打死」的回測方法（社群精選，tradermonty）。",
+ "community/skills/residual-edge-analyzer": "檢查策略的報酬是不是只是跟著大盤或基準在漲：用迴歸拆成「跟基準一起動的部分」和「真正多出來的部分」，附 Newey-West 標準誤、滾動穩定度與換基準的敏感度（社群精選，tradermonty）。",
+ "community/skills/edge-strategy-reviewer": "策略草稿上線前的檢查關卡：8 項加權評分（條件太多、門檻太精確會扣分），附偷看未來、存活者偏誤、除權息、成本滑價、參數挑選、樣本外等偏誤清單（社群精選，tradermonty）。",
+ "community/skills/trade-performance-coach": "交易紀錄的流程檢討：有沒有先寫進場理由、停損是不是臨時往外移、部位越買越大、連虧後報復性進場，分成流程、風險、執行、行為給建議，不談選股、不下單（社群精選，tradermonty）。",
+ "community/skills/position-sizer": "依風險算該買多少：固定比例（預設每筆冒 1%）、ATR 倍數停損、半凱利，再套單檔與產業上限取最嚴的那個；台股要自己換算成張並扣手續費與證交稅（社群精選，tradermonty）。"
 }

@@ -114,3 +114,8 @@ community/tests/test_markitdown_scripts.py  # pytest module, run by Community sk
 community/tests/test_polars.py  # pytest module, run by Community skill tests workflow
 community/tests/test_statistical_analysis.py  # pytest module, run by Community skill tests workflow
 community/tests/test_statsmodels.py  # pytest module, run by Community skill tests workflow
+community/tests/trading/backtest-expert/test_evaluate_backtest.py  # upstream pytest module (needs conftest sys.path), run via community/tests/test_trading_skills.py
+community/tests/trading/residual-edge-analyzer/test_analyze_residual_edge.py  # upstream pytest module (needs conftest sys.path), run via community/tests/test_trading_skills.py
+community/tests/trading/edge-strategy-reviewer/test_review_strategy_drafts.py  # upstream pytest module (needs conftest sys.path), run via community/tests/test_trading_skills.py
+community/tests/trading/trade-performance-coach/test_review_trade_performance.py  # upstream pytest module (needs conftest sys.path), run via community/tests/test_trading_skills.py
+community/tests/trading/position-sizer/test_position_sizer.py  # upstream pytest module (needs conftest sys.path), run via community/tests/test_trading_skills.py
