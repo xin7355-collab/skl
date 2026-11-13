@@ -153,5 +153,15 @@
       "community/skills/short-drama-produce",
       "community/skills/short-drama-edit"
     ]
+  },
+  "trading": {
+    "desc": "交易研究與紀律（社群精選，tradermonty）：回測結果評分、策略是不是只是跟著大盤漲、策略草稿審查、交易紀錄流程檢討、依風險算部位",
+    "skills": [
+      "community/skills/backtest-expert",
+      "community/skills/residual-edge-analyzer",
+      "community/skills/edge-strategy-reviewer",
+      "community/skills/trade-performance-coach",
+      "community/skills/position-sizer"
+    ]
   }
 }
