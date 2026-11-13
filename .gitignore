@@ -92,3 +92,5 @@ web/e2e/test-results/
 web/e2e/playwright-report/
 web/e2e/e2e.log
 .claude/settings.local.json
+# 背景助手各自的 git worktree(工具自動建、做完會清掉;⛔ 進版控 —— 裡面是整份 repo 的工作副本)
+.claude/worktrees/
