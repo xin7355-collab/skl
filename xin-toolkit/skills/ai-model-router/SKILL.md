@@ -16,12 +16,16 @@ description: 讓 App 呼叫 AI 時自動挑模型、模型下架自動換、難�
 
 | 等級 | 什麼工作 | Groq | Gemini | Claude |
 |---|---|---|---|---|
-| `fast` | 翻譯、摘要、分類、抽欄位、判斷是不是垃圾、大量小工作 | 最新 8b | 最新 flash-lite／flash | 最新 Haiku |
-| `smart` | 分析、比較、推理、寫一段像樣的文字 | 最新 70b | 最新 flash | 最新 Sonnet |
-| `best` | 最難、最長、要寫程式或完整報告 | gpt-oss-120b／最新大模型 | 最新 pro | 最新 Opus |
+| `fast` | 翻譯、摘要、分類、抽欄位、判斷是不是垃圾、大量小工作 | gpt-oss-20b → qwen | 最新 flash-lite／flash | 最新 Haiku |
+| `smart` | 分析、比較、推理、寫一段像樣的文字 | qwen（中文好）→ gpt-oss-120b | 最新 flash | 最新 Sonnet |
+| `best` | 最難、最長、要寫程式或完整報告 | gpt-oss-120b → qwen | 最新 pro | 最新 Opus |
 | `auto` | 依內容自動判斷（翻譯→fast、分析→smart、程式→best、很長→升級） | | | |
 
 原則：**先用便宜的，不合格再升級**。呼叫時傳 `validate`（例如「要能解析成 JSON」），不合格會自動換更高一級重試。
+
+Groq 在 2026-08-16 停用 `llama-3.1-8b-instant`、`llama-3.3-70b-versatile` 之後，靠 gpt-oss 與 qwen 兩組各自的免費額度。
+qwen 用規則比對（不寫版號），新版上架會自動挑到，而且版本新的排在參數大的前面（qwen3.6-27b 先於 qwen3-32b）；
+smart 與 best 的第一個模型不同，回覆不合格升級時才是真的換一個模型。
 
 ## 怎麼接進 App
 
@@ -45,14 +49,29 @@ const text = await r.chat("auto", [{ role: "user", content: prompt }], { validat
 3. 金鑰放 repo Secrets／Worker 環境變數／使用者自己裝置，**只走 HTTP 標頭**（模組已處理），不放網址。
 4. 要暫時指定某個模型：Python 設環境變數 `MODEL_ROUTER_<供應商>_<等級>`（例如 `MODEL_ROUTER_GEMINI_FAST`），
    JS 傳 `{ override: { fast: "..." } }`。
-5. 跑 `python3 model_router.py selftest` 與 `node model_router.js selftest`；有金鑰時可跑
-   `python3 model_router.py list groq` 看現在各等級會挑到誰。
+5. 跑 `python3 model_router.py selftest` 與 `node model_router.js selftest`；兩邊共用的案例在
+   `assets/router_cases.json`（放在模組旁邊才會跑，沒放會提醒；skl 的 CI 加 `--strict`，少了就算失敗）。
+   有金鑰時可跑 `python3 model_router.py list groq` 看現在各等級會挑到誰。
 
 ## 它會自動處理的事
 
-- 官方 `/models` 清單每 6 小時重抓一次；非聊天模型（語音、嵌入、圖片）與預覽版會排在後面或濾掉。
-- 404／`model_decommissioned` → 清快取、避開那個模型、換下一個再打。
-- 429／5xx／網路斷線 → 指數退避 2、4、8 秒（尊重 Retry-After）；401／403 → 換下一把金鑰。
+- 官方 `/models` 清單每 6 小時重抓一次；非聊天模型（語音、嵌入、圖片、guard）與預覽版會排在後面或濾掉。
+- 回應**明確說**模型不存在（`model_not_found`、`decommissioned`、`models/… is not found`）→ 清快取、避開那個模型、換下一個。
+  **404 但沒這樣說** → 當成網址設定錯（API 路徑、中間的 Proxy／Worker），直接停下說明，不會把每個模型都標成下架。
+- 429 分三種（`classify()`）：
+  - **每分鐘限流** → 照對方給的時間等，再試同一個模型（Retry-After 秒數或日期、Gemini 的 `retryDelay`、
+    Groq 的 `5m`＝300 秒、`1m30s`、`2.5s`）；要等超過 60 秒就先換下一個模型。
+  - **每日／每月額度用完**（Groq 的 TPD／RPD、Gemini 的 quotaId 有 `PerDay` 或額度是 `limit: 0`、OpenRouter 的 free-models-per-day）
+    → 不重試、馬上換下一個模型，記住恢復時間（沒說就先避開 1 小時；說幾秒就好的至少避開 5 分鐘——
+    Gemini 每日額度的錯誤也會附幾秒的 retryDelay，Google 論壇有照著等還是 429 的實例）。
+  - **餘額／帳單不足**（402、insufficient balance／credits、credit balance is too low）→ 等多久都不會好：
+    停止這家供應商，中文提醒去後台看帳單；有多把金鑰時先換下一把（可能是別的帳號）。
+  - Gemini 的每分鐘限流也寫「You exceeded your current quota」，所以有 quotaId 就只看 quotaId，不看那句話。
+- **冷卻記在模型上**，不是整家供應商：同一個程式（Python）／頁面或 Worker（JS）裡共用，就算每次都新建 Router 也記得；
+  同一家的其他模型照用；不同金鑰（帳號）各自計算。全部都在冷卻、最快的 60 秒內恢復 → 等它一下再試。
+  確定額度已恢復想馬上重試：`reset_cooldowns()`／`resetCooldowns()`。
+- 5xx／網路斷線 → 指數退避 2、4、8 秒（尊重 Retry-After）；401／403 → 換下一把金鑰。
+- 推理模型（Groq 的 qwen 等）回覆開頭的 `<think>…</think>` 會拿掉，只留答案。
 - **付費供應商逾時不重送**：逾時或連線中斷時，對方可能已經處理完（也收費了）只是回應沒送到，
   重送等於付兩次錢。所以付費的（`PROVIDERS` 裡 `paid`：Claude 是；OpenRouter 看模型名稱，`:free` 結尾的免費）
   遇到逾時不重送同一請求、也不換金鑰重送，直接換下一個候選模型，全部不行就報錯。
@@ -60,6 +79,7 @@ const text = await r.chat("auto", [{ role: "user", content: prompt }], { validat
   開了付費帳單的 App 要宣告：Python `Router("gemini", paid=True)`、JS `new ModelRouter("gemini", { paid: true, ... })`。
 - **總呼叫次數上限**：一次 `chat()` 最多送出 12 次請求（含重試、換金鑰、換模型、升級），超過就丟中文錯誤。
   沒有上限時「3 個等級 × 5 個候選 × 多把金鑰 × 4 次重試」最壞會打上百次。
+  額度用完的模型只花 1 次、冷卻中的不花，同一個模型在好幾個等級出現時，這次失敗過的也不再試。
   調整：Python 環境變數 `MODEL_ROUTER_MAX_CALLS`（或 `Router(max_calls=...)`）、JS 選項 `{ maxCalls: 20 }`。
   只算送出的 AI 請求，抓模型清單不算。
 - 全部失敗 → 丟出中文錯誤，列出試過哪些模型、可以怎麼做；**絕不印出金鑰**。
