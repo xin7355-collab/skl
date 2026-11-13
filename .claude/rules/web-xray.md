@@ -66,3 +66,17 @@ paths:
   不猜路徑、不掃別人的網站。`maskUrl` 先遮金鑰（帳密、Slack／Discord webhook、Telegram bot、`key=` 等參數），遮過的不給連結、複製也是遮過的。
   分類 `classifyUrl`（`MINE_CATS`）：Release 下載要在 API 規則之前判（`/download/v1/` 的版本號會被當成 API）；CNAME 網域固定算線上成品。
   換專案時清掉（`S.mineTok` 擋舊結果）。E2E 假專案 `demo/url-app`；詳細頁原本就會連一次線上網址（`probeLive`），假網址列在 fixtures 的 `FAKE_LIVE`。
+- 2026-11-13 🌐 反推網站（使用者貼別人做好的網站網址，要知道是哪個 GitHub repo 做的）：`go()` 先問 `siteOf`——有 http(s):// 且不是 github.com 系列
+  （`GH_FAMILY`）才算；沒寫 https:// 的只認 `REV_PF` 的平台網域或 www.（「socket.io」「owner/repo」、GitHub 網址照舊掃描／搜尋）→ `siteLookup`／`revRun`。
+  ⛔ 不連那個網站（瀏覽器會被 CORS 擋，也違反「不探測網站」）、不用第三方代理，只打 api.github.com；一個查完才查下一個、一次最多 `REV_MAX`（10）次
+  （`revGet` 只算真的送出的，有快取不算）；限流／Token 失效／斷線／超過上限就停（`fatal`），先列查到的，`v.left` 列還沒查的。
+  順序（找到 ✅ 就停，`skipRest`）：① 網址決定 repo——`*.github.io`（`<帳號>.github.io` 一定來自 `<帳號>/<帳號>.github.io`、`/專案` 來自 `<帳號>/專案`）、
+  `REV_WRAP`（StackBlitz、CodeSandbox、github.dev、DeepWiki…）→ `/repos/` 確認；② `revPlan` 拆名字（Firebase 預覽 `網站--頻道`、Netlify `分支--網站`、
+  `revVercel` 的 `<帳號>s-projects`、`revRandom` 丟純數字和交錯 4 段以上的亂碼，covid19／web3 要留）當帳號 → `/users/{帳號}/repos`：
+  homepage 是這個網址 ✅（`revHomeHit`：好幾個 repo 都填同一個網域多半是官網 → 都只算 🟡）、名稱對得上 🟡（跟帳號同名的 profile README 不算）；
+  ③ `"網站代號或網址" in:…` repo 搜尋；④ 有 Token 才程式碼搜尋（`REV_CFG` 設定檔 → ✅）。
+  完整結果存 pc 快取 `xray-rev|`（有 Token 另一份；有一步失敗不存），404 記在記憶體 `REV_NF`（repo 的 404 有沒有 Token 分開記）。
+  網址 `?site=`、最近紀錄 🌐、`S.backTo==="rev"` →「← 回到反推結果」。GitLab Pages 這類 `away` 平台、本機網址不花額度。
+  畫面講到的 GitHub 規定附出處 `REV_SRC`（Pages 網址規則、程式碼搜尋要登入；2026-11-13 對過 github/docs 原始檔與官方 REST 描述檔，改了要重查）。
+  E2E：fixtures 的 `SITE_USERS`（`0xspeter` 是 2026-11-13 實查的 8 個公開 repo，沒有對得上的 → 要說「很可能是私人 repo」，不能硬湊）、`CODE_FILES`、
+  `/search/code` 沒 Token 回 401、搜尋 API 用自己的額度標頭；`stats.live` 證明反推沒連那個網站（掃描後的 `probeLive` 才會連）。

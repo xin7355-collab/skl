@@ -403,6 +403,36 @@ button.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--
 .results select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:3px;font-family:var(--mono);font-size:12px;padding:4px 6px}
 .toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--ink);font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:99px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
 .toast.show{opacity:.95}
+/* 🌐 反推網站：跟搜尋結果同一種框。網址、repo 名稱很長，overflow-wrap 讓它們在 390px 寬的手機上自己斷行，
+   不把整頁撐到可以左右滑；「掃描」和下方按鈕至少 44px 高（Apple 建議的好按範圍） */
+.rv{border:1px solid var(--line);border-radius:4px;background:var(--panel);margin-top:8px;padding:10px 12px 12px;overflow-wrap:anywhere}
+.rv-head{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.rv-head b{color:var(--text)}
+.rv-plat{font-size:13px;line-height:1.65;margin-top:6px}
+.rv-plat a{color:var(--cyan)}
+.rv-grp{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--muted);margin:14px 0 2px}
+.rv-c{display:flex;gap:10px;align-items:center;border-top:1px solid var(--panel-2);padding:9px 0}
+.rv-m{flex:1;min-width:0}
+.rv-m .rn{font-family:var(--mono);font-size:13px;color:var(--amber);font-weight:600}
+.rv-m .hb{margin-left:4px}
+.rv-why{font-size:13px;line-height:1.55;margin-top:3px}
+.rv-c.sure .rv-why{color:var(--cyan)}
+.rv-d{font-size:12px;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rv-go{flex:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:78px;padding:0 12px;border-radius:4px;
+  background:var(--amber);color:#12151B;font-family:var(--mono);font-size:13px;font-weight:700;text-decoration:none;touch-action:manipulation}
+.rv-none{font-size:14px;line-height:1.7;margin-top:12px}
+.rv-none ul{margin:4px 0 8px;padding-left:20px}
+.rv-stop{color:var(--amber);font-size:13px;line-height:1.65;margin-top:12px}
+.rv-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.rv-btn{display:inline-flex;align-items:center;min-height:44px;padding:6px 12px;border-radius:4px;background:var(--panel-2);color:var(--text);
+  border:1px solid var(--line);font-family:var(--mono);font-size:13px;font-weight:600;text-decoration:none;text-align:left;cursor:pointer}
+details.rv-chk{margin-top:10px;font-size:12px;color:var(--muted)}
+details.rv-chk summary{cursor:pointer;font-family:var(--mono);min-height:44px;display:flex;align-items:center;list-style:none}
+details.rv-chk summary::-webkit-details-marker{display:none}
+details.rv-chk summary::before{content:"▸ ";margin-right:4px}
+details.rv-chk[open] summary::before{content:"▾ "}
+details.rv-chk ul{margin:0;padding-left:4px;list-style:none}
+details.rv-chk li{margin:4px 0;line-height:1.55}
 footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line-height:1.9}
 
 @media(prefers-reduced-motion:reduce){
@@ -429,10 +459,10 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
 <div class="pane" data-pane="explore">
 <div class="bar">
   <input id="url" type="search" inputmode="search" enterkeyhint="go" autocomplete="off" spellcheck="false"
-         placeholder="貼 GitHub 網址／owner/repo，或輸入關鍵字搜尋">
+         placeholder="貼 GitHub 網址／owner/repo、網站網址，或輸入關鍵字">
   <button id="go">開始</button>
 </div>
-<div class="hint">貼網址 → 直接掃描；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。看過、下載過的專案會標 <span class="hb seen">👁 看過</span><span class="hb dl">⤓ 下載過</span>。</div>
+<div class="hint">貼 GitHub 網址 → 直接掃描；貼別人的網站網址（例如 xxx.web.app、xxx.vercel.app）→ 🌐 反推它是哪個 GitHub repo 做的（只查 GitHub，不會去連那個網站）；輸入關鍵字（例如：小說 下載器）→ 搜尋專案。按下「開始」才會查詢，不會邊打字邊耗額度。看過、下載過的專案會標 <span class="hb seen">👁 看過</span><span class="hb dl">⤓ 下載過</span>。</div>
 <label class="fz"><input type="checkbox" id="fuzzy"> 🌀 模糊搜尋：中文自動換英文同義詞、拼錯也找得到、依相關度排序（通常 1 次額度；好幾個詞「全部都要」太少才放寬再查 1 次）</label>
 <div class="hint">要排除某個字：前面加 <b>-</b>（例如 <code>小說 -漫畫</code>），會自動換成 GitHub 認得的 NOT。</div>
 <label class="fz"><input type="checkbox" id="zh"> 🈯 描述翻成繁體中文（Google 翻譯，免費；只送公開的專案描述）</label>
@@ -452,6 +482,7 @@ footer{margin-top:40px;font-family:var(--mono);font-size:10px;color:#4A5462;line
   <button class="ghost" id="back">← 回到搜尋結果</button>
 </div>
 <div class="results" id="results"></div>
+<div class="rv" id="rev" hidden aria-live="polite"></div>
 <div class="recent" id="recent"></div>
 <div class="recent" id="watches"></div>
 <div class="subbar">
@@ -1854,8 +1885,13 @@ async function run(target,fromHistory){
   S.outTab=S.tab; showOut();
   if(!fromHistory) pushView({v:"scan",repo:loc.owner+"/"+loc.repo});
   addRecent("repo",loc.owner+"/"+loc.repo);
+  // 從「🌐 反推網站」的候選點進來：返回鍵要回到那份反推結果，不是更早的搜尋清單
+  const fromRev=!$("rev").hidden && S.tab==="explore" && !!S.rev;   // 反推框在探索分頁；從別的分頁點進來的不算
+  hideRev();
   $("results").classList.remove("on");        // 掃描時收起搜尋結果（仍留在記憶體）
-  $("navrow").hidden = !(S.results && S.results.length);
+  S.backTo = fromRev ? "rev" : (S.results && S.results.length ? "results" : null);
+  $("navrow").hidden = !S.backTo;
+  $("back").textContent = S.backTo==="rev" ? "← 回到反推結果" : "← 回到搜尋結果";
 
   S.busy=true; $("go").disabled=true; $("out").classList.remove("on");
   $("scan").classList.add("on");
@@ -3003,6 +3039,7 @@ function fmtPerDay(v){ return v>=10 ? Math.round(v).toLocaleString() : v>=1 ? v.
 async function search(more,qArg,fromHistory){
   const q = more ? qLast : String(qArg!=null ? qArg : $("url").value).trim();
   S.outTab="explore"; if(S.tab!=="explore") setTab("explore"); else showOut();
+  if(!more) hideRev();                         // 還在跑的反推也停下來：它回來時不能把結果蓋在搜尋清單上
   if(q.length<2){ fail("關鍵字至少 2 個字。"); return; }
   const fuzzy=$("fuzzy").checked, extra=more?(S.extra||{qs:"",kw:""}):(S.forceExtra||searchExtra(q,fuzzy)), key=(fuzzy?"~":"")+q+"|"+extra.qs+"|"+extra.kw;
   if(!more){ if(!S.forceExtra){ S.watchViewKey=null; S.watchFresh=null; } S.forceExtra=null; }
@@ -3229,10 +3266,491 @@ function showTrend(id,fromHistory){
   S.view="trend"; S.results=l.items.slice(); S.total=l.items.length; S.trendTitle=l.title+(l.stale?"（舊資料）":"");
   S.trendId=id; S.sort="best"; S.filter=""; S.fzGroups=[]; S.qKey="";
   S.searchTok=(S.searchTok||0)+1;   // 還在跑的關鍵字搜尋作廢，回來時不會蓋掉這份清單
+  hideRev();
   markTrend(id);
   say("⭐ "+l.title+(l.desc?"："+l.desc:""),"✓");
   showResults();
   if(!fromHistory) pushView({v:"trend",id:id});
+}
+
+/* ══════════════════════════════════════════════════════════════
+   7b. 🌐 反推網站：貼別人做好的網站網址 → 找出它是哪個 GitHub repo 做的
+   ══════════════════════════════════════════════════════════════
+   ⛔ 不連那個網站：瀏覽器會被 CORS 擋，X-Ray 也說好「不探測任何網站」，也不用第三方代理；只問 api.github.com。
+   先用規則、再找證據，找到 ✅ 就停（省額度）：
+   ① 網址本身就決定 repo：xxx.github.io（GitHub Pages 的固定規則）、StackBlitz／github.dev 這種網址裡寫著 owner/repo
+   ② 從網址拆出名字（Firebase 網站代號、Vercel 專案名…；純數字、亂碼丟掉）當帳號查它的公開 repo：
+      網站欄位（homepage）就是這個網址 → ✅；名稱對得上 → 🟡（一個帳號 1 次 API）
+   ③ 搜尋名稱／描述／README 提到這個網址的 repo（1 次搜尋額度，不用 Token）
+   ④ 有 Token 才做：程式碼搜尋 .firebaserc、CNAME 這類設定檔（GitHub 規定要登入；只搜各 repo 的預設分支）
+   一個查完才查下一個（不一次送一堆請求），一次最多 REV_MAX 次；被限流、Token 失效、斷線就停下，
+   查到的先列出來，並說要等多久、可以怎麼做。 */
+const REV_MAX=10, REV_OWNERS=3, REV_API="https://api.github.com";
+// 畫面上講到 GitHub 的規定要附官方出處（2026-11-13 對過 GitHub 官方文件原始檔與 REST API 描述檔）
+const REV_SRC={pages:"https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages",
+  code:"https://docs.github.com/rest/search/search#search-code"};
+// github.com 系列（含 raw、gist、api）照舊：網址 → 掃描，其他 → 關鍵字搜尋
+const GH_FAMILY=/(^|\.)(github\.com|githubusercontent\.com|githubassets\.com)$/;
+/* 部署平台的預設網址怎麼組成（sfx＝網域後綴）：
+   first＝網站名稱在最左邊那段（workers.dev 是「程式.帳號.workers.dev」）；acct＝最右邊那段是帳號；
+   fb／nl＝Firebase 預覽頻道是「網站--頻道-亂碼」、Netlify 分支／預覽是「分支--網站」；vc＝Vercel 預覽網址另外拆；
+   cfg＝會寫著網站名稱的設定檔（程式碼搜尋用）；away＝程式放在別的平台、不在 GitHub；rand＝網址是隨機代號，拆不出名字 */
+const REV_PF=[
+  {sfx:"github.io",n:"GitHub Pages",gh:1},
+  {sfx:"web.app",n:"Firebase Hosting",fb:1,cfg:".firebaserc"},
+  {sfx:"firebaseapp.com",n:"Firebase Hosting",fb:1,cfg:".firebaserc"},
+  {sfx:"vercel.app",n:"Vercel",vc:1},
+  {sfx:"now.sh",n:"Vercel（舊網域）",vc:1},
+  {sfx:"netlify.app",n:"Netlify",nl:1},
+  {sfx:"netlify.com",n:"Netlify（舊網域）",nl:1},
+  {sfx:"pages.dev",n:"Cloudflare Pages",cfg:"wrangler.toml"},
+  {sfx:"workers.dev",n:"Cloudflare Workers",first:1,acct:1,cfg:"wrangler.toml"},
+  {sfx:"onrender.com",n:"Render",cfg:"render.yaml"},
+  {sfx:"herokuapp.com",n:"Heroku"},
+  {sfx:"fly.dev",n:"Fly.io",cfg:"fly.toml"},
+  {sfx:"up.railway.app",n:"Railway"},
+  {sfx:"surge.sh",n:"Surge"},
+  {sfx:"glitch.me",n:"Glitch"},
+  {sfx:"replit.app",n:"Replit"},
+  {sfx:"repl.co",n:"Replit（舊網域）",first:1,acct:1},
+  {sfx:"streamlit.app",n:"Streamlit Community Cloud"},
+  {sfx:"deno.dev",n:"Deno Deploy",cfg:"deno.json"},
+  {sfx:"hf.space",n:"Hugging Face Spaces",hf:1},
+  {sfx:"gitlab.io",n:"GitLab Pages",away:"GitLab",home:"https://gitlab.com/"},
+  {sfx:"codeberg.page",n:"Codeberg Pages",away:"Codeberg",home:"https://codeberg.org/"},
+  {sfx:"bitbucket.io",n:"Bitbucket",away:"Bitbucket",home:"https://bitbucket.org/",noSeg:1},
+  {sfx:"amplifyapp.com",n:"AWS Amplify",rand:1},
+  {sfx:"azurestaticapps.net",n:"Azure Static Web Apps",first:1,rand:1}
+];
+// 網址裡就寫著 owner/repo 的服務（X-Ray 自己也會連到 DeepWiki、GitDiagram，使用者可能把那些網址貼回來）
+const REV_WRAP=[
+  [/^(www\.)?stackblitz\.com$/,/^\/github\/([^\/]+)\/([^\/]+)/,"StackBlitz 的網址格式"],
+  [/^(www\.)?codesandbox\.io$/,/^\/[ps]\/github\/([^\/]+)\/([^\/]+)/,"CodeSandbox 的網址格式"],
+  [/^share\.streamlit\.io$/,/^\/([^\/]+)\/([^\/]+)/,"Streamlit 舊網址的格式"],
+  [/^github\.dev$/,/^\/([^\/]+)\/([^\/]+)/,"github.dev 的網址格式"],
+  [/^(www\.)?deepwiki\.com$/,/^\/([^\/]+)\/([^\/]+)/,"DeepWiki 的網址格式"],
+  [/^(www\.)?gitdiagram\.com$/,/^\/([^\/]+)\/([^\/]+)/,"GitDiagram 的網址格式"]
+];
+// 不拿來猜帳號的常見字（app、web、prod…）：GitHub 上真的有叫 app、web 的帳號，查下去只會白花額度、還可能對錯人
+const REV_STOP=new Set("www app apps web site sites my the prod production dev develop staging stage test testing preview demo beta alpha api admin home official project projects git main master page pages static live online cloud server frontend backend client dashboard portal com net org co gov edu ac idv io me info".split(" "));
+// 亂碼：純數字（名稱被用走時平台自動加的編號，例如 -5888），或字母數字交錯 4 段以上（a1b2c3、8h7tdx6pz）。
+// covid19、web3、mp3player 這種只交錯 2～3 段的是正常名字，不能丟
+function revRandom(t){ return /^\d+$/.test(t) || (String(t).match(/[a-z]+|\d+/g)||[]).length>=4; }
+function revTokens(name){ return String(name||"").toLowerCase().split(/[-_.]+/).filter(t=>t.length>1 && !revRandom(t)); }
+// GitHub 帳號：英數字和單一連字號，不能用連字號開頭或結尾，最長 39 字
+function revLogin(x){ return /^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/.test(String(x)); }
+function revHostKey(h){ return String(h||"").toLowerCase().replace(/^www\./,""); }
+// homepage 欄位可能有沒有 https://、結尾斜線、路徑：只比網域
+function revHome(u){
+  const s=String(u||"").trim().toLowerCase();
+  return s ? revHostKey(s.replace(/^[a-z][a-z0-9+.-]*:\/\//,"").split(/[\/?#]/)[0].replace(/:\d+$/,"")) : "";
+}
+function revPlatform(host){
+  for(const p of REV_PF){
+    const tail="."+p.sfx;
+    if(host.length>tail.length && host.slice(-tail.length)===tail) return {p:p,sub:host.slice(0,-tail.length)};
+  }
+  return null;
+}
+function revLocal(host){
+  return host.indexOf(".")<0 || host.indexOf(":")>-1 || /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || /\.(local|localhost|internal|lan|home\.arpa)$/.test(host);
+}
+/* 看起來是「別的網站」的網址才回傳 {host,path,url}：
+   - 有 http(s):// 而且不是 github.com 系列 → 是
+   - 沒寫 https:// 的只認部署平台網域（xxx.web.app）或 www. 開頭：「socket.io」「next.js」是搜尋關鍵字、
+     「owner/repo」是 GitHub 專案，不能被搶走 */
+function siteOf(input){
+  const s=String(input||"").trim();
+  if(!s || /\s/.test(s)) return null;
+  const sch=/^https?:\/\//i.test(s);
+  if(!sch){
+    const h=s.split(/[\/?#]/)[0].toLowerCase();
+    if(!/^www\.[a-z0-9-]+\.[a-z]/.test(h) && !revPlatform(h)) return null;
+  }
+  let u; try{ u=new URL(sch?s:"https://"+s); }catch(e){ return null; }
+  const host=u.hostname.toLowerCase().replace(/\.$/,"");
+  if(!host || GH_FAMILY.test(host)) return null;
+  const path=u.pathname.replace(/\/+$/,"");
+  // 帳號密碼（https://帳號:密碼@…）不留：網址會進紀錄、畫面和返回用的網址
+  return {host:host,path:path,url:u.protocol+"//"+host+(u.port?":"+u.port:"")+path};
+}
+/* Vercel：<專案>.vercel.app、預覽 <專案>-<亂碼>-<團隊>.vercel.app、分支 <專案>-git-<分支>-<團隊>.vercel.app。
+   個人帳號的團隊代號常是「<帳號>s-projects」（john-doe → john-does-projects）；分支和團隊的界線看不出來，只取最後面 */
+function revVercel(label){
+  const t=label.split("-");
+  let cut=t.indexOf("git");
+  if(cut<1) cut=t.findIndex((x,i)=>i>0 && revRandom(x));
+  if(cut<1) return {proj:label,owners:[]};
+  const sc=t.slice(cut+1), owners=[];
+  if(sc.length>=2 && sc[sc.length-1]==="projects"){
+    const a=sc[sc.length-2].replace(/s$/,"");
+    if(sc.length>=3) owners.push(sc[sc.length-3]+"-"+a);
+    owners.push(a);
+  }else if(sc.length) owners.push(sc[sc.length-1]);
+  return {proj:t.slice(0,cut).join("-"),owners:owners};
+}
+function revEmbedded(site){
+  for(const w of REV_WRAP){
+    if(!w[0].test(site.host)) continue;
+    const m=site.path.match(w[1]); if(!m) continue;
+    const o=m[1], r=m[2].replace(/\.git$/i,"");
+    if(revLogin(o.toLowerCase()) && /^[\w.-]+$/.test(r) && r!=="." && r!=="..") return {owner:o,repo:r,via:w[2]};
+  }
+  return null;
+}
+/* 從網址算出要查什麼（不打 API）：帳號候選、要對的 repo 名稱、網站代號 */
+function revPlan(site){
+  const host=site.host, P=revPlatform(host);
+  const pl={host:host,path:site.path,pf:P?P.p:null,siteId:"",tokens:[],spans:[],owners:[],fixed:null,gh:null,away:null,local:false,rand:false,distinct:false};
+  if(revLocal(host)){ pl.local=true; return pl; }
+  pl.fixed=revEmbedded(site);
+  if(pl.fixed) return pl;
+  const owners=[], addO=x=>{ x=String(x||"").toLowerCase(); if(revLogin(x) && !REV_STOP.has(x) && owners.indexOf(x)<0) owners.push(x); };
+  let name="", subs=[];
+  if(P){
+    const p=P.p, labels=P.sub.split(".");
+    let seg=site.path.split("/")[1]||""; try{ seg=decodeURIComponent(seg); }catch(e){}
+    if(p.gh){
+      // 第一段路徑是專案網站（xxx.github.io/專案）；像檔名的（about.html）是個人網站 repo 裡的檔案
+      pl.gh={user:labels[labels.length-1],seg:/^[\w.-]+$/.test(seg) && !/\.[a-z0-9]{1,5}$/i.test(seg) ? seg : ""};
+      return pl;
+    }
+    name=p.first?labels[0]:labels[labels.length-1];
+    if(p.acct && labels.length>1) addO(labels[labels.length-1]);
+    if(p.fb) name=name.split("--")[0];
+    if(p.nl) name=name.split("--").pop();
+    if(p.vc){ const r=revVercel(name); name=r.proj; r.owners.forEach(addO); }
+    if(p.away){
+      const ns=labels[labels.length-1], proj=seg && !p.noSeg && /^[\w.-]+$/.test(seg) ? seg : "";
+      // kw：有人會在 GitHub 放一份同步的副本，給「改用關鍵字搜」用（帳號＋專案名）
+      pl.away={n:p.away,url:p.home+ns+(proj?"/"+proj:""),kw:[ns,proj].filter(Boolean).join(" ")};
+    }
+    pl.rand=!!p.rand;
+  }else{
+    // 自訂網域：丟掉頂級網域（.dev、.tw）和 .com.tw 這種第二層，最右邊剩下的就是網域名稱；
+    // 個人網域常常就是 GitHub 帳號（johndoe.dev），子網域（blog.johndoe.dev 的 blog）拿來對 repo 名稱
+    const labels=host.replace(/^www\./,"").split(".");
+    labels.pop();
+    while(labels.length>1 && /^(com|co|org|net|gov|edu|ac|idv|or|ne|go)$/.test(labels[labels.length-1])) labels.pop();
+    name=labels.pop()||"";
+    subs=labels.filter(x=>!REV_STOP.has(x));
+    addO(name);
+  }
+  pl.siteId=name;
+  const tk=revTokens(name);
+  pl.tokens=tk;
+  // 帳號候選：第一個詞（0xspeter-radar → 0xspeter），再加前兩個詞（john-doe-blog → john-doe，帳號本身有連字號）
+  if(!pl.rand && !pl.away){ if(tk[0]) addO(tk[0]); if(tk.length>=2) addO(tk[0]+"-"+tk[1]); }
+  pl.owners=owners.slice(0,REV_OWNERS);
+  const sp=new Set();
+  for(let i=0;i<tk.length;i++) for(let j=i+1;j<=tk.length;j++) sp.add(tk.slice(i,j).join(""));
+  sp.add(compact(name)); subs.forEach(x=>sp.add(compact(x)));
+  pl.spans=[...sp].filter(x=>x.length>1);
+  // 夠特別的名字（夠長、或帶著平台加的編號）才拿整段去搜；「notes」這種常見字搜下去全是別人的
+  pl.distinct=name.length>=12 || name.split(/[-_]+/).some(revRandom);
+  return pl;
+}
+function revAbout(pl){
+  const p=pl.pf, id="「"+pl.siteId+"」";
+  if(pl.local) return "這是本機或內網網址（只有你自己的裝置連得到），GitHub 上不可能查到。";
+  if(pl.fixed) return "網址裡就寫著 GitHub 的 "+pl.fixed.owner+"/"+pl.fixed.repo+"（"+pl.fixed.via+"），只要確認 repo 在不在。";
+  if(!p) return "自訂網域，看不出用哪個平台；拿網域名稱"+id+"當線索（個人網域常常就是 GitHub 帳號）。";
+  if(p.gh) return "網址規則是固定的：xxx.github.io 來自 xxx/xxx.github.io 這個 repo，xxx.github.io/專案 來自 xxx/專案。";
+  if(p.away) return "這個網站放在 "+p.away+"，程式也在 "+p.away+"，不在 GitHub。";
+  if(p.rand) return "網址是平台隨機給的代號，拆不出專案名稱；只能搜有沒有 repo 寫到這個網址。";
+  if(p.fb) return "網址前半段"+id+"是 Firebase 的網站代號，通常就是 Firebase 專案名稱"+
+    (pl.siteId.split(/[-_]+/).some(revRandom)?"；後面的數字或亂碼常是名稱被用走時自動加的":"")+"。";
+  if(p.vc) return id+"是 Vercel 的專案名稱（預覽網址後面還會接亂碼和帳號／團隊名稱）。";
+  if(p.nl) return id+"是 Netlify 的網站名稱（可能是作者取的，也可能是 Netlify 隨機給的）。";
+  if(p.hf) return "Hugging Face 的程式通常就放在 Hugging Face 上，不一定有 GitHub repo；下面仍照名稱在 GitHub 找找看。";
+  if(p.acct) return id+"是程式名稱，後面那段是作者在 "+p.n+" 的帳號名稱。";
+  return id+"是在 "+p.n+" 上取的名稱，常常跟 repo 名稱一樣或很像。";
+}
+/* 一個 repo 可能有好幾條證據：合併成一列，最強的那條排第一；lv 2＝✅ 確定、1＝🟡 可能 */
+function revAdd(v,full,lv,why,r){
+  const k=String(full).toLowerCase();
+  let c=v.cands.find(x=>x.k===k);
+  if(!c){ c={k:k,full:full,lv:lv,why:[],d:"",st:null,fork:false,arch:false}; v.cands.push(c); }
+  if(c.why.indexOf(why)<0){ if(lv>c.lv) c.why.unshift(why); else c.why.push(why); }
+  if(lv>c.lv) c.lv=lv;
+  c.why=c.why.slice(0,3);
+  if(r){
+    if(!c.d && r.description) c.d=String(r.description).slice(0,200);
+    if(c.st==null && r.stargazers_count!=null) c.st=r.stargazers_count;
+    if(r.fork) c.fork=true;
+    if(r.archived) c.arch=true;
+  }
+}
+// /repos/ 拿到的是完整資料：先放進記憶體快取，按「掃描」時就不用再花 1 次 API
+function revSeed(r){ if(r && r.full_name && r.default_branch) S.cache.set(REV_API+"/repos/"+r.full_name,r); }
+function revWords(name){ return String(name||"").replace(/([a-z])([A-Z])/g,"$1 $2").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean); }
+function revOwned(v,full){ const o=String(full).split("/")[0].toLowerCase(); return v.owners.some(x=>x.n!=null && x.login.toLowerCase()===o); }
+/* 網站欄位（homepage）指到這個網址：只有一個 repo 這樣填才算 ✅。好幾個都這樣填多半是作者／公司的官網
+   （每個 repo 都連回去），說不出哪個才是這個網站的程式 → 都只算 🟡，並照實寫原因 */
+function revHomeHit(v,full,many,r){
+  if(many) revAdd(v,full,1,"網站欄位是這個網址，但好幾個 repo 都這樣填（可能是作者的官網），不一定是這個網站的程式",r);
+  else revAdd(v,full,2,"網站欄位（homepage）就是這個網址",r);
+}
+/* 帳號的公開 repo 一個一個對：homepage 就是這個網址 → ✅；名稱跟網址裡的詞一樣 → 🟡（只有名稱裡有某個詞的更弱，沒有完全一樣的才列） */
+function revMatchOwner(v,pl,login,list){
+  const hk=revHostKey(v.host), L=compact(login), full=pl.tokens.join("");
+  const many=list.filter(r=>r && revHome(r.homepage)===hk).length>1;
+  let hits=0, strong=false;
+  const exact=[], part=[];
+  for(const r of list){
+    if(!r || !r.full_name) continue;
+    if(revHome(r.homepage)===hk){ revHomeHit(v,r.full_name,many,r); hits++; continue; }
+    if(nz(r.description).indexOf(hk)>-1){ revAdd(v,r.full_name,2,"描述裡寫著這個網址",r); hits++; continue; }
+    const nm=compact(r.name);
+    if(nm===L) continue;                       // 跟帳號同名的 repo 是個人首頁說明（profile README），不是網站
+    if(pl.spans.indexOf(nm)>-1){ exact.push(r); if(L+nm===full || nm===full) strong=true; continue; }
+    const w=revWords(r.name).find(x=>x.length>=4 && x!==L && !REV_STOP.has(x) && pl.tokens.indexOf(x)>-1);
+    if(w) part.push([r,w]);
+  }
+  exact.forEach(r=>{ revAdd(v,r.full_name,1,"帳號 "+login+" 底下的 repo，名稱「"+r.name+"」跟網址對得上",r); hits++; });
+  if(!exact.length) part.slice(0,3).forEach(x=>{ revAdd(v,x[0].full_name,1,"帳號 "+login+" 底下的 repo，名稱裡有「"+x[1]+"」",x[0]); hits++; });
+  return {hits:hits,strong:strong};
+}
+function revAddFound(v,it,term,many){
+  if(!it || !it.full_name) return;
+  if(revHome(it.homepage)===revHostKey(v.host)){ revHomeHit(v,it.full_name,many,it); return; }
+  const own=revOwned(v,it.full_name);
+  const why=compact(it.name)===compact(term) ? "repo 名稱就是「"+term+"」"
+    : nz(it.description).indexOf(nz(term))>-1 ? "描述提到「"+term+"」"
+    : "README 提到「"+term+"」（GitHub 搜尋找到的）";
+  revAdd(v,it.full_name,own?2:1,why+(own?"，帳號名稱也跟網址對得上":""),it);
+}
+// 寫著網站名稱或網址的部署設定（CNAME 是 GitHub Pages 自訂網域、.firebaserc 是 Firebase 專案、workflows 裡的部署步驟…）
+const REV_CFG=/(^|\/)(\.firebaserc|firebase\.json|CNAME|vercel\.json|netlify\.toml|wrangler\.(toml|jsonc?)|fly\.toml|render\.ya?ml|deno\.jsonc?|app\.ya?ml|package\.json)$|(^|\/)\.github\/workflows\/[^\/]+\.ya?ml$/i;
+function revAddCode(v,it,term){
+  const rp=(it&&it.repository)||{};
+  if(!rp.full_name) return;
+  const path=String(it.path||it.name||""), cfg=REV_CFG.test(path), own=revOwned(v,rp.full_name);
+  revAdd(v,rp.full_name,cfg||own?2:1,cfg?path+" 寫著 "+term+"（部署設定檔）":path+" 提到 "+term+(own?"，帳號名稱也跟網址對得上":""),rp);
+}
+/* 一次反推只算真的送出去的請求（有快取的不算），超過 REV_MAX 就停。
+   getJSON 不快取失敗的回應：「沒有這個帳號」（404）另外記在記憶體（只到關掉這頁），
+   加了 Token 再按一次「開始」時不用重花額度去問同一個不存在的帳號。不寫進 getJSON 的快取，免得別的地方把它當成資料；
+   repo 有沒有 Token 分開記：私人 repo 沒 Token 是 404，有 Token 可能就看得到（帳號在不在跟 Token 無關） */
+const REV_NF=new Set();
+async function revGet(v,url){
+  const nf=(S.token && url.indexOf(REV_API+"/repos/")===0?"t|":"")+url;
+  if(REV_NF.has(nf)) throw new Fail("404","");
+  if(!(S.cache.has(url) || pcGet(url)!==undefined)){
+    if(v.calls>=REV_MAX) throw new Fail("CAP","這次已經查了 "+REV_MAX+" 次 GitHub API，先停在這裡（避免一次把額度用光）。");
+    v.calls++;
+  }
+  try{ return await getJSON(url); }
+  catch(e){ if(e && e.code==="404") REV_NF.add(nf); throw e; }
+}
+async function revRun(v,pl,tok){
+  const live=()=>tok===S.revTok, sure=()=>v.cands.some(c=>c.lv===2);
+  // 這幾種錯誤後面每一步都會一樣失敗（403 沒帶額度標頭多半是短時間查太多被暫時擋，再打只會擋更久）：停下來說清楚。
+  // 404（沒有這個帳號／repo）、422 只影響那一步
+  const fatal=e=>["RATE","401","403","NET","CAP"].indexOf(e&&e.code)>-1;
+  const done=label=>{ const i=v.left.indexOf(label); if(i>-1) v.left.splice(i,1); };
+  const step=msg=>{ if(live()){ say(msg,"🌐"); paintRev(); } };
+  const skipRest=()=>{ if(v.left.length){ v.checks.push(["skip","已經找到確定的，"+v.left.join("、")+" 就不查了（省額度）"]); v.left=[]; } };
+  if(pl.local || pl.away) return;               // 本機網址、程式在 GitLab 這類：GitHub 這邊不用查，不花額度
+  // ① 網址就決定 repo（寫著 owner/repo、GitHub Pages）：照規則對到，只確認它在不在
+  const fixed=pl.fixed ? [[pl.fixed.owner,pl.fixed.repo,"fixed"]]
+    : pl.gh ? (pl.gh.seg?[[pl.gh.user,pl.gh.seg,"proj"]]:[]).concat([[pl.gh.user,pl.gh.user+".github.io","user"]]) : null;
+  if(fixed){
+    v.left=fixed.map(f=>"確認 "+f[0]+"/"+f[1]);
+    for(const [o,r,kind] of fixed){
+      if(!live()) return;
+      const label="確認 "+o+"/"+r;
+      step("確認 "+o+"/"+r+" 這個 repo…");
+      try{
+        if(!revLogin(o.toLowerCase())) throw new Fail("404","");
+        const repo=await revGet(v,REV_API+"/repos/"+o+"/"+r);
+        revSeed(repo);
+        const full=repo.full_name||o+"/"+r;
+        if(kind==="fixed") revAdd(v,full,2,"網址裡就寫著 GitHub 的 "+o+"/"+r+"（"+pl.fixed.via+"）",repo);
+        else if(kind==="user") revAdd(v,full,pl.gh.seg?1:2,pl.gh.seg?"「"+pl.gh.seg+"」可能是這個個人網站 repo 裡的資料夾":"GitHub Pages 的網址規則："+v.host+" 一定來自這個 repo",repo);
+        else if(repo.has_pages) revAdd(v,full,2,"GitHub Pages 的網址規則："+v.host+"/"+pl.gh.seg+" 就是這個 repo，而且它有開 Pages",repo);
+        else revAdd(v,full,1,"有這個 repo，但它沒開 GitHub Pages：網址也可能是個人網站 repo 裡的資料夾",repo);
+        v.checks.push(["ok",full+"：有這個公開 repo"+(kind==="proj"?(repo.has_pages?"，有開 Pages":"，沒開 Pages"):"")]);
+      }catch(e){
+        if(fatal(e)) throw e;
+        if(e.code==="404") v.checks.push(["no",o+"/"+r+"：查不到（私人 repo，或已經刪除、改名）"]);
+        else{ v.failed++; v.checks.push(["err",o+"/"+r+"：查詢失敗（"+e.message+"）"]); }
+      }
+      done(label);
+      if(sure()){ skipRest(); return; }
+    }
+    if(!v.cands.length && !S.token) v.tokNeed=true;   // 可能是自己的私人 repo：有讀取權限的 Token 才看得到
+    return;
+  }
+  const hk=revHostKey(v.host), term=pl.distinct && pl.siteId ? pl.siteId : hk;
+  v.left=pl.owners.map(o=>"帳號「"+o+"」").concat(["搜尋名稱／描述／README"],S.token?["程式碼搜尋"]:[]);
+  // ② 網址拆出來的名字當帳號：1 次 API 同時確認帳號在不在、拿到它最近更新的 100 個公開 repo
+  for(const o of pl.owners){
+    if(!live()) return;
+    const label="帳號「"+o+"」";
+    if(v.left.indexOf(label)<0) continue;     // 前一個帳號的名稱已經完全對上，其他帳號不查了
+    step("查帳號「"+o+"」有沒有對得上的公開 repo…");
+    let list;
+    try{ list=await revGet(v,REV_API+"/users/"+o+"/repos?per_page=100&sort=pushed"); }
+    catch(e){
+      if(fatal(e)) throw e;
+      if(e.code==="404"){ v.owners.push({login:o,n:null}); v.checks.push(["no","帳號「"+o+"」：GitHub 上沒有這個帳號"]); }
+      else{ v.failed++; v.checks.push(["err","帳號「"+o+"」：查詢失敗（"+e.message+"）"]); }
+      done(label); continue;
+    }
+    done(label);
+    if(!Array.isArray(list)) list=[];
+    const login=(list[0] && list[0].owner && list[0].owner.login) || o;
+    v.owners.push({login:login,n:list.length});
+    const m=revMatchOwner(v,pl,login,list);
+    v.checks.push(["ok","帳號「"+login+"」：有 "+(list.length>=100?"100 個以上的":list.length+" 個")+"公開 repo"+
+      (list.length>=100?"（只看了最近更新的 100 個）":"")+(m.hits?"，其中 "+m.hits+" 個對得上":"，網站欄位和名稱都對不上")]);
+    if(sure()){ skipRest(); return; }
+    if(m.strong){
+      const rest=v.left.filter(x=>x.indexOf("帳號「")===0);
+      if(rest.length){ v.checks.push(["skip","名稱已經完全對上，"+rest.join("、")+" 就不查了"]); v.left=v.left.filter(x=>rest.indexOf(x)<0); }
+    }
+  }
+  // ③ 搜尋提到這個網址（或很特別的網站代號）的 repo：1 次搜尋額度，不用 Token
+  if(!live()) return;
+  step("搜尋名稱、描述、README 提到「"+term+"」的 repo…");
+  try{
+    const q='"'+term+'" in:'+(term===hk?"description,readme":"name,description,readme");
+    const r=await revGet(v,REV_API+"/search/repositories?q="+encodeURIComponent(q)+"&per_page=20");
+    const items=r.items||[], many=items.filter(it=>revHome(it.homepage)===hk).length>1;
+    items.forEach(it=>revAddFound(v,it,term,many));
+    v.checks.push(["ok","搜尋名稱／描述／README 提到「"+term+"」的 repo："+Number(r.total_count||0).toLocaleString()+" 個"]);
+  }catch(e){
+    if(fatal(e)) throw e;
+    v.failed++; v.checks.push(["err","搜尋提到「"+term+"」的 repo：失敗（"+e.message+"）"]);
+  }
+  done("搜尋名稱／描述／README");
+  if(sure()){ skipRest(); return; }
+  // ④ 程式碼搜尋：GitHub 規定要登入（Token）。部署設定檔寫著網站名稱是最直接的證據；
+  //    名字太普通（notes）就只搜那個平台的設定檔，不然結果全是別人的
+  if(!S.token){ v.tokNeed=true; v.checks.push(["lock","程式碼搜尋（找 .firebaserc、CNAME 這類設定檔）要 Token，這次沒做",REV_SRC.code]); return; }
+  const qs=[];
+  if(pl.siteId && pl.distinct) qs.push(['"'+pl.siteId+'"',pl.siteId]);
+  else{
+    if(pl.siteId && pl.pf && pl.pf.cfg) qs.push(['"'+pl.siteId+'" filename:'+pl.pf.cfg,pl.siteId]);
+    qs.push(['"'+hk+'"',hk]);
+  }
+  for(const [q,t] of qs){
+    if(!live()) return;
+    step("程式碼搜尋「"+q+"」…");
+    try{
+      const r=await revGet(v,REV_API+"/search/code?q="+encodeURIComponent(q)+"&per_page=20");
+      (r.items||[]).forEach(it=>revAddCode(v,it,t));
+      v.checks.push(["ok","程式碼搜尋「"+q+"」："+Number(r.total_count||0).toLocaleString()+" 個檔案"]);
+    }catch(e){
+      if(fatal(e)) throw e;
+      v.failed++; v.checks.push(["err","程式碼搜尋「"+q+"」：失敗（"+e.message+"）"]);
+    }
+    if(sure()) break;
+  }
+  done("程式碼搜尋");
+}
+const REV_MEM=new Map();
+async function siteLookup(input,fromHistory){
+  const site=siteOf(input);
+  if(!site){ fail("看不出這是網站網址：要像 https://xxx.web.app 這樣。"); return; }
+  S.outTab="explore"; if(S.tab!=="explore") setTab("explore"); else showOut();
+  S.searchTok=(S.searchTok||0)+1;              // 還在跑的關鍵字搜尋作廢：回來時不能把清單蓋在反推結果上
+  if(!fromHistory) pushView({v:"site",u:site.url});
+  addRecent("site",site.url);
+  const key=(S.token?"t|":"")+site.url, tok=S.revTok=(S.revTok||0)+1;
+  let v=REV_MEM.get(key)||pcGet("xray-rev|"+key);
+  // 查完的、或從返回鍵回到被限流停下的那份：直接顯示，不再花額度。
+  // 查到一半被中斷的就重查（已經查過的 API 有快取，不會重花）
+  if(v && (v.done || (fromHistory && v.stopped))){ REV_MEM.set(key,v); S.rev=v; showRev(); revSay(v,true); return; }
+  const pl=revPlan(site);
+  // rule：網址規則已經決定 repo（GitHub Pages、網址寫著 owner/repo）——查不到時要說「照規則一定在這裡，但看不到」
+  const rule=pl.fixed ? pl.fixed.owner+"/"+pl.fixed.repo
+    : pl.gh ? pl.gh.user+"/"+(pl.gh.seg ? pl.gh.seg+"（或 "+pl.gh.user+"/"+pl.gh.user+".github.io）" : pl.gh.user+".github.io") : "";
+  v={url:site.url,host:site.host,path:site.path,pf:pl.pf?pl.pf.n:(pl.local||pl.fixed?"":"自訂網域"),about:revAbout(pl),rule:rule,src:pl.gh?REV_SRC.pages:"",
+     away:pl.away,local:pl.local,kw:pl.away?pl.away.kw:pl.tokens.join(" "),cands:[],checks:[],owners:[],left:[],calls:0,failed:0,tokNeed:false,stopped:"",done:false};
+  REV_MEM.set(key,v); S.rev=v; showRev();
+  $("scan").classList.add("on");
+  try{ await revRun(v,pl,tok); }
+  catch(e){
+    v.stopped = e && e.code==="403" ? "GitHub 拒絕了這次請求（多半是短時間查太多次，被暫時擋下）：等幾分鐘再按一次「開始」"+(S.token?"。":"，或加一組 Token。")
+      : (e&&e.message)||"發生未預期的錯誤。";
+  }
+  if(tok!==S.revTok) return;                   // 已經換去看別的：不畫、不存
+  $("scan").classList.remove("on");
+  v.done=!v.stopped;
+  if(v.done && !v.failed) pcSet("xray-rev|"+key,v);   // 有一步失敗的不存：下次按「開始」要重查那一步
+  paintRev(); revSay(v);
+}
+function revSay(v,cached){
+  if(v.stopped){ fail(v.stopped); return; }
+  if(!v.done) return;
+  const s=v.cands.filter(c=>c.lv===2).length, m=v.cands.length-s;
+  if(v.local || v.away){ say("反推完成："+(v.local?"本機或內網網址":"程式在 "+v.away.n)+"，不用查 GitHub（沒花額度）","✓"); return; }
+  say("反推完成："+(v.cands.length?[s?"✅ "+s+" 個確定":"",m?"🟡 "+m+" 個可能":""].filter(Boolean).join("・"):"沒找到對得上的公開 repo")+
+    (cached?"・這次從快取顯示，沒花額度":"・用了 "+v.calls+" 次 GitHub API")+
+    (v.failed?"・有 "+v.failed+" 步失敗（看「查了哪些」）":""),"✓");
+}
+function showRev(){
+  $("rev").hidden=false;
+  $("results").classList.remove("on"); $("out").classList.remove("on"); $("navrow").hidden=true;
+  paintRev();
+}
+function hideRev(){
+  $("rev").hidden=true;
+  S.revTok=(S.revTok||0)+1;                    // 還在跑的反推停下來，不再多花額度
+  if(!S.busy) $("scan").classList.remove("on");
+}
+function revNoneHtml(v){
+  if(v.local) return "";                       // 上面的說明已經講了：本機網址 GitHub 查不到
+  if(v.away) return '<div class="rv-none"><b>GitHub 這邊不用查</b>：上面的連結就是程式所在的地方。有人會在 GitHub 放一份同步的副本，想找的話按下面的關鍵字搜尋。</div>';
+  if(v.rule) return '<div class="rv-none"><b>照網址的規則，程式在 '+esc(v.rule)+'，但查不到這個公開 repo → 很可能設成私人，或已經刪除、改名。</b>'+
+    '<div>GitHub 不會讓別人查到私人 repo；如果是你自己的，加上有讀取權限的 Token 再查一次。</div></div>';
+  const o=v.owners.find(x=>x.n!=null);
+  const head=o ? "找到帳號 "+o.login+"，但公開 repo 都對不上這個網站 → 很可能是私人 repo（或程式沒放在 GitHub）。"
+    : "GitHub 上找不到對得上的公開 repo。";
+  const why=["repo 設成私人：GitHub 不會讓別人查到私人 repo",
+    "程式根本沒放 GitHub：很多人直接從電腦用指令上傳（例如 firebase deploy）",
+    "repo 名稱跟網址不一樣，或後來改過名"].concat(S.token?[]:["還沒加 Token：不能用程式碼搜尋找 .firebaserc、CNAME 這類設定檔"]);
+  const can=["打開那個網站，看頁尾或「關於」有沒有 GitHub 連結（X-Ray 不會自己去連那個網站）","直接問作者是用哪個 repo 做的"];
+  return '<div class="rv-none"><b>'+esc(head)+'</b>'+
+    (why.length?'<div>可能的原因：</div><ul>'+why.map(w=>'<li>'+esc(w)+'</li>').join("")+'</ul>':'')+
+    '<div>你可以：</div><ul>'+can.map(w=>'<li>'+esc(w)+'</li>').join("")+'</ul></div>';
+}
+function paintRev(){
+  const v=S.rev, box=$("rev");
+  if(!v){ box.innerHTML=""; return; }
+  const all=v.cands.slice().sort((a,b)=>b.lv-a.lv||(b.st||0)-(a.st||0));
+  const sure=all.filter(c=>c.lv===2), maybe=all.filter(c=>c.lv<2), busy=!v.done && !v.stopped;
+  const row=c=>'<div class="rv-c'+(c.lv===2?' sure':'')+'"><div class="rv-m"><span class="rn">'+esc(c.full)+'</span>'+
+    (c.st!=null?'<span class="hb">★ '+fmtStars(c.st)+'</span>':'')+(c.fork?'<span class="hb">fork</span>':'')+(c.arch?'<span class="hb">已封存</span>':'')+
+    c.why.map(w=>'<div class="rv-why">'+(c.lv===2?'📌 ':'🔎 ')+esc(w)+'</div>').join("")+
+    (c.d?'<div class="rv-d">'+esc(c.d)+'</div>':'')+'</div>'+
+    // 真的連結（長按可開新分頁）；一般點擊在本頁掃描，返回鍵回到這份結果
+    '<a class="rv-go" href="xray.html?repo='+encodeURIComponent(c.full)+'" data-scan="'+esc(c.full)+'" aria-label="用 X-Ray 掃描 '+esc(c.full)+'">🔬 掃描</a></div>';
+  let h='<div class="rv-head">🌐 反推網站 <b>'+esc(v.host+v.path)+'</b></div>';
+  const src=u=>u?' <a href="'+esc(u)+'" target="_blank" rel="noopener">官方說明 ↗</a>':'';
+  if(v.about) h+='<div class="rv-plat">'+(v.pf?'<b>'+esc(v.pf)+'</b>：':'')+esc(v.about)+src(v.src)+'</div>';
+  if(v.away && v.away.url) h+='<div class="rv-plat">↗ <a href="'+esc(v.away.url)+'" target="_blank" rel="noopener">到 '+esc(v.away.n)+' 看程式（外部網站）</a></div>';
+  if(busy) h+='<div class="hint">查詢中…一次只查一個，不會同時送一堆請求。</div>';
+  if(sure.length) h+='<div class="rv-grp">✅ 確定（'+sure.length+'）</div>'+sure.map(row).join("");
+  if(maybe.length) h+='<div class="rv-grp">🟡 可能（'+maybe.length+'）</div>'+maybe.slice(0,8).map(row).join("")+
+    (maybe.length>8?'<div class="hint">還有 '+(maybe.length-8)+' 個可能的沒列出（證據比較弱）</div>':'');
+  if(v.stopped) h+='<div class="rv-stop">⏸ '+esc(v.stopped)+(v.left.length?'<br>還沒查：'+esc(v.left.join("、"))+'。':'')+
+    '<br>查過的部分有快取，等時間到再按一次「開始」會接著查，大多不用重花額度。</div>';
+  if(v.done && !all.length) h+=revNoneHtml(v);
+  if(v.checks.length) h+='<details class="rv-chk"'+(v.done && !all.length?' open':'')+'><summary>查了哪些・用了 '+v.calls+' 次 GitHub API（上限 '+REV_MAX+'，有快取的不算）</summary><ul>'+
+    v.checks.map(c=>'<li>'+({ok:"✔",no:"✖",err:"⚠️",lock:"🔒",skip:"⏭"}[c[0]]||"・")+' '+esc(c[1])+src(c[2])+'</li>').join("")+'</ul></details>';
+  const o=v.owners.find(x=>x.n!=null), acts=[];
+  if(!busy){
+    if((v.tokNeed || v.stopped) && !S.token) acts.push('<button type="button" class="rv-btn" data-revtok>🔑 加 Token 再查一次（可以搜程式碼、額度變 5000/hr）</button>');
+    if(o && !sure.length) acts.push('<a class="rv-btn" href="https://github.com/'+encodeURIComponent(o.login)+'" target="_blank" rel="noopener">👤 開 '+esc(o.login)+' 的 GitHub 頁面</a>',
+      '<button type="button" class="rv-btn" data-revkw="user:'+esc(o.login)+'">📂 列出 '+esc(o.login)+' 的公開 repo（1 次搜尋額度）</button>');
+    // 被限流停下時不給：重點是等一下或加 Token，多一顆按鈕只會分心
+    else if(v.done && v.kw && !all.length && !v.local) acts.push('<button type="button" class="rv-btn" data-revkw="'+esc(v.kw)+'">🔍 改用關鍵字搜「'+esc(v.kw)+'」（1 次搜尋額度）</button>');
+  }
+  if(acts.length) h+='<div class="rv-acts">'+acts.join("")+'</div>';
+  box.innerHTML=h;
 }
 
 /* ── 合併搜尋器：看起來像 repo 就掃描，否則當關鍵字搜尋 ── */
@@ -3243,7 +3761,9 @@ function looksLikeRepo(s){
 }
 function go(){
   const v=$("url").value.trim();
-  if(!v){ fail("先輸入 GitHub 網址或關鍵字。"); return; }
+  if(!v){ fail("先輸入 GitHub 網址、網站網址或關鍵字。"); return; }
+  // 別的網站的網址先攔下來反推；github.com 系列、owner/repo、關鍵字照舊
+  if(siteOf(v)){ siteLookup(v); return; }
   if(looksLikeRepo(v)) run(v); else search(false,v);
 }
 
@@ -3251,6 +3771,7 @@ function go(){
 function pushView(st){
   if(S.restoring) return;
   const qs = st.v==="scan" ? "?repo="+encodeURIComponent(st.repo)
+    : st.v==="site" ? "?site="+encodeURIComponent(st.u)
     : st.v==="trend" ? "?t="+encodeURIComponent(st.id)
     : st.v==="fleet" ? "?fleet"
     : st.v==="home" ? "?tab="+encodeURIComponent(S.tab) : "?q="+encodeURIComponent(st.q);
@@ -3275,7 +3796,8 @@ function restore(st){
       p=run(st.repo,true);
     }
     else if(st.v==="trend"){ showTrend(st.id,true); }
-    else{ $("results").classList.remove("on"); $("out").classList.remove("on"); $("status").textContent=""; }   // 首頁或健檢清單
+    else if(st.v==="site"){ $("url").value=st.u; p=siteLookup(st.u,true); }   // 反推結果從記憶體／快取拿，不重查
+    else{ hideRev(); $("results").classList.remove("on"); $("out").classList.remove("on"); $("status").textContent=""; }   // 首頁或健檢清單
   }finally{ S.restoring=false; }
   // 等畫面排好（下一個 frame）再捲，否則頁面還沒長回來就捲不到原位
   if(st.y!=null) Promise.resolve(p).then(()=>requestAnimationFrame(()=>window.scrollTo(0,st.y)));
@@ -3360,7 +3882,7 @@ function openWatch(i){
 function paintRecent(){
   const r=loadRecent();
   $("recent").innerHTML = r.length ? '最近：'+r.map((x,i)=>'<a data-r="'+i+'" title="'+esc(x.v)+'"><i>'+
-    (x.t==="q"?"🔍":"▤")+'</i> '+esc(x.v)+'</a>').join("")+
+    (x.t==="q"?"🔍":x.t==="site"?"🌐":"▤")+'</i> '+esc(x.t==="site"?String(x.v).replace(/^https?:\/\//,""):x.v)+'</a>').join("")+
     ' <a id="clear-recent" style="border:0;color:var(--muted)">清除</a>' : "";
 }
 
@@ -3764,14 +4286,31 @@ $("results").addEventListener("click",e=>{
   if(S.view==="search") S.cache.set("https://api.github.com/repos/"+it.full_name,it);
   run(it.html_url);                           // 輸入框保留原本的關鍵字
 });
-$("back").addEventListener("click",()=>{ showResults(); pushView(S.view==="trend"?{v:"trend",id:S.trendId}:{v:"search",q:qLast}); window.scrollTo(0,0); });
+$("back").addEventListener("click",()=>{
+  // 從反推結果點進來的：回到那份反推結果（在記憶體裡，不重查）
+  if(S.backTo==="rev" && S.rev){ showRev(); revSay(S.rev,true); pushView({v:"site",u:S.rev.url}); window.scrollTo(0,0); return; }
+  showResults(); pushView(S.view==="trend"?{v:"trend",id:S.trendId}:{v:"search",q:qLast}); window.scrollTo(0,0);
+});
+$("rev").addEventListener("click",e=>{
+  const a=e.target.closest("[data-scan]");
+  if(a){ e.preventDefault(); rememberScroll(); run(a.dataset.scan); return; }   // 輸入框保留原本的網站網址
+  const k=e.target.closest("[data-revkw]");
+  if(k){ $("url").value=k.dataset.revkw; search(false,k.dataset.revkw); return; }
+  if(e.target.closest("[data-revtok]")){
+    // 打開下方的 Token 區、游標放進輸入框：貼好按「套用」，再按一次「開始」
+    const d=$("toksum").closest("details"); d.open=true;
+    d.scrollIntoView({block:"center"});
+    try{ $("tok").focus({preventScroll:true}); }catch(err){ $("tok").focus(); }
+    toast("貼上 Token 按「套用」，再按一次「開始」");
+  }
+});
 $("watches").addEventListener("click",e=>{ const a=e.target.closest("a[data-w]"); if(a) openWatch(+a.dataset.w); });
 $("recent").addEventListener("click",e=>{
   if(e.target.closest("#clear-recent")){ try{ localStorage.removeItem("xray-recent"); }catch(err){} paintRecent(); return; }
   const a=e.target.closest("a[data-r]"); if(!a) return;
   const x=loadRecent()[+a.dataset.r]; if(!x) return;
   $("url").value=x.v;
-  if(x.t==="q") search(false,x.v); else run(x.v);
+  if(x.t==="q") search(false,x.v); else if(x.t==="site") siteLookup(x.v); else run(x.v);
 });
 $("v-tr").addEventListener("click",translateDoc);
 $("mine-go").addEventListener("click",runMine);
@@ -4039,14 +4578,14 @@ try{ $("fuzzy").checked=localStorage.getItem("xray-fuzzy")==="1"; }catch(e){}
 // 中文翻譯預設開；使用者關過就記住
 try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").checked=true; }
 (async function(){
-  const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q"), t=p.get("t");
+  const p=new URLSearchParams(location.search), r=p.get("repo"), q=p.get("q"), t=p.get("t"), sv=p.get("site");
   if(p.get("fz")==="1") $("fuzzy").checked=true;   // 超強搜尋帶過來的中文查詢：這次用模糊搜尋，不寫回 xray-fuzzy
   // 分頁：網址決定優先（分享出去的連結、返回），沒有就回到上次停留的分頁
   let tab="explore"; try{ tab=localStorage.getItem(TAB_KEY)||"explore"; }catch(e){}
   if(p.get("tab")) tab=p.get("tab");
-  if(p.has("fleet")) tab="mine"; else if(t||q) tab="explore"; else if(r) tab=isMine(r)?"mine":(tab==="log"?"log":"explore");
+  if(p.has("fleet")) tab="mine"; else if(t||q||sv) tab="explore"; else if(r) tab=isMine(r)?"mine":(tab==="log"?"log":"explore");
   setTab(tab);
-  if(!r&&!q&&!t) try{ history.replaceState({v:p.has("fleet")?"fleet":"home",tab:tab},"",location.search); }catch(e){}
+  if(!r&&!q&&!t&&!sv) try{ history.replaceState({v:p.has("fleet")?"fleet":"home",tab:tab},"",location.search); }catch(e){}
   await loadTrend();
   checkWatches();                                  // 不等它：查完會自己更新「🔔 追蹤」那一列
   // 我的 App：部署時自動找帳號底下的 repo 寫成 apps.json（ops/discover_apps.py）；點一下就掃描並看 App 顧問
@@ -4070,6 +4609,7 @@ try{ $("zh").checked=localStorage.getItem("xray-zh")!=="0"; }catch(e){ $("zh").c
   });
   if(t && S.trend){ history.replaceState({v:"trend",id:t,tab:"explore"},"",location.search); showTrend(t,true); }
   else if(r){ history.replaceState({v:"scan",repo:r,tab:tab},"",location.search); $("url").value=r; foldFor(tab); run(r,true); }
+  else if(sv){ history.replaceState({v:"site",u:sv,tab:"explore"},"",location.search); $("url").value=sv; siteLookup(sv,true); }
   else if(q){ history.replaceState({v:"search",q:q,tab:"explore"},"",location.search); $("url").value=q; search(false,q,true); }
 })();
 

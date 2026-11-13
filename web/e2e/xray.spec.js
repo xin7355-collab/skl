@@ -772,3 +772,293 @@ test.describe('網址挖礦', () => {
     await expect(page.locator('#mine-go')).toBeEnabled();
   });
 });
+
+// ── 2026-11-13：🌐 反推網站（貼別人的網站網址 → 找它是哪個 GitHub repo 做的）──
+// ⛔ 不連那個網站（fixtures 沒列的網站一連就判失敗）；只問 api.github.com，一個一個排隊查、找到確定的就停
+test.describe('🌐 反推網站', () => {
+  test.beforeEach(async ({ page }) => { await page.setViewportSize({ width: 390, height: 844 }); });
+  // 反推用到的 API（掃描讀檔案樹那些不算）
+  const lookups = (net) => net.api.filter((p) => p.startsWith('/users/') || p.startsWith('/search/') || /^\/repos\/[^/]+\/[^/]+$/.test(p));
+  async function lookup(page, url) {
+    await page.locator('#url').fill(url);
+    await page.locator('#go').click();
+    await expect(page.locator('#rev')).toBeVisible();
+    await expect(page.locator('#status')).toContainText(/反推完成|限流/);
+  }
+  async function bigEnough(loc) {
+    const n = await loc.count();
+    expect(n, '至少要有一顆按鈕').toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) {
+      const b = await loc.nth(i).boundingBox();
+      expect(b.height, (await loc.nth(i).innerText()) + ' 要至少 44px 高').toBeGreaterThanOrEqual(44);
+    }
+  }
+
+  test('網址判斷規則：別人的網站才反推；GitHub 網址、owner/repo、關鍵字照舊；平台網址拆得出名字', async ({ page }) => {
+    await page.goto('/xray.html');
+    const r = await page.evaluate(() => {
+      const plan = (u) => { const s = siteOf(u); if (!s) return null; const p = revPlan(s);
+        return { host: s.host, pf: p.pf && p.pf.n, id: p.siteId, tokens: p.tokens, owners: p.owners, gh: p.gh, fixed: p.fixed && p.fixed.owner + '/' + p.fixed.repo,
+          away: p.away && p.away.url, local: p.local, rand: p.rand, distinct: p.distinct }; };
+      const notSite = ['stock app', 'socket.io', 'next.js', 'demo/pwa-app', 'vercel/next.js', 'https://github.com/demo/pwa-app',
+        'github.com/demo/pwa-app', 'https://raw.githubusercontent.com/a/b/main/c.md', 'https://gist.github.com/a/123', 'https://github.com', ''];
+      return {
+        notSite: notSite.filter((x) => siteOf(x) !== null),
+        fb: plan('https://0xspeter-radar-5888.web.app/'),
+        bare: plan('0xspeter-radar-5888.web.app'),
+        upper: plan('HTTPS://Lumen-Notes.Netlify.App/x'),
+        fbPreview: plan('https://myproj--pr12-ab12cd34.web.app'),
+        nlPreview: plan('https://deploy-preview-42--lumen-notes.netlify.app'),
+        vcPreview: plan('https://tidy-8h7tdx6pz-john-does-projects.vercel.app'),
+        cfPreview: plan('https://a1b2c3d4.lumen.pages.dev'),
+        worker: plan('https://watchlist-app.xinapp.workers.dev'),
+        ghProj: plan('https://octo-site.github.io/handbook/intro'),
+        ghFile: plan('https://octo-site.github.io/about.html'),
+        wrap: plan('https://stackblitz.com/github/demo/pwa-app'),
+        gitlab: plan('https://group.gitlab.io/proj/'),
+        local: plan('http://192.168.1.20:8080/'),
+        custom: plan('https://blog.john-doe.dev/'),
+        twDomain: plan('https://shop.example.com.tw'),
+        azure: plan('https://gentle-sky-0a1b2c3d4.azurestaticapps.net'),
+        keep: revTokens('covid19-web3-mp3player-5888-a1b2c3'),
+        // 網站欄位：只有一個 repo 這樣填 → ✅；好幾個都填同一個網域（官網）→ 都只算 🟡
+        home: [[{ full_name: 'acme/site', name: 'site', homepage: 'https://www.acme.dev/' }],
+          [{ full_name: 'acme/a', name: 'a', homepage: 'https://acme.dev' }, { full_name: 'acme/b', name: 'b', homepage: 'acme.dev/docs' }]]
+          .map((list) => { const s = siteOf('https://acme.dev'); const v = { host: s.host, cands: [], owners: [] };
+            revMatchOwner(v, revPlan(s), 'acme', list); return v.cands.map((c) => c.lv); }),
+      };
+    });
+    expect(r.notSite, '這些要照舊（掃描或關鍵字搜尋），不能被反推搶走').toEqual([]);
+    expect(r.fb).toMatchObject({ host: '0xspeter-radar-5888.web.app', pf: 'Firebase Hosting', id: '0xspeter-radar-5888',
+      tokens: ['0xspeter', 'radar'], owners: ['0xspeter', '0xspeter-radar'], distinct: true });
+    expect(r.bare.host).toBe('0xspeter-radar-5888.web.app');           // 沒寫 https:// 的平台網域也認得
+    expect(r.upper).toMatchObject({ host: 'lumen-notes.netlify.app', id: 'lumen-notes' });
+    expect(r.fbPreview.id).toBe('myproj');                              // Firebase 預覽頻道：網站--頻道-亂碼
+    expect(r.nlPreview.id).toBe('lumen-notes');                         // Netlify：分支／預覽--網站
+    expect(r.vcPreview).toMatchObject({ id: 'tidy', owners: ['john-doe', 'doe', 'tidy'] });   // <專案>-<亂碼>-<帳號>s-projects
+    expect(r.cfPreview.id).toBe('lumen');                               // Cloudflare Pages 預覽：<亂碼>.<專案>.pages.dev
+    expect(r.worker).toMatchObject({ id: 'watchlist-app', owners: ['xinapp', 'watchlist', 'watchlist-app'] });
+    expect(r.ghProj.gh).toEqual({ user: 'octo-site', seg: 'handbook' });
+    expect(r.ghFile.gh).toEqual({ user: 'octo-site', seg: '' });
+    expect(r.wrap.fixed).toBe('demo/pwa-app');
+    expect(r.gitlab.away).toBe('https://gitlab.com/group/proj');
+    expect(r.local.local).toBe(true);
+    expect(r.custom).toMatchObject({ pf: null, id: 'john-doe', owners: ['john-doe', 'john'] });
+    expect(r.twDomain.id).toBe('example');
+    expect(r.azure).toMatchObject({ rand: true, owners: [] });
+    expect(r.keep).toEqual(['covid19', 'web3', 'mp3player']);         // 正常名字留著；純數字、亂碼丟掉
+    expect(r.home).toEqual([[2], [1, 1]]);
+  });
+
+  test('0xspeter-radar-5888.web.app（實查資料）：找到帳號但公開 repo 都對不上 → 照實說很可能是私人 repo，不硬湊', async ({ page, net }) => {
+    await page.goto('/xray.html');
+    await lookup(page, 'https://0xspeter-radar-5888.web.app/');
+    const box = page.locator('#rev');
+    await expect(box.locator('.rv-c')).toHaveCount(0);                 // 沒有對得上的就不列候選
+    await expect(box).toContainText('找到帳號 0xspeter，但公開 repo 都對不上這個網站 → 很可能是私人 repo');
+    await expect(box).toContainText('Firebase Hosting');
+    const checks = box.locator('details.rv-chk');
+    await expect(checks).toHaveAttribute('open', '');
+    await expect(checks).toContainText('帳號「0xspeter」：有 8 個公開 repo，網站欄位和名稱都對不上');
+    await expect(checks).toContainText('帳號「0xspeter-radar」：GitHub 上沒有這個帳號');
+    await expect(checks).toContainText('提到「0xspeter-radar-5888」的 repo：0 個');
+    await expect(checks).toContainText('程式碼搜尋（找 .firebaserc、CNAME 這類設定檔）要 Token');
+    // 講到 GitHub 的規定要附官方出處（CLAUDE.md）
+    await expect(checks.locator('a[href="https://docs.github.com/rest/search/search#search-code"]')).toHaveAttribute('target', '_blank');
+    await expect(page.locator('#status')).toContainText('沒找到對得上的公開 repo・用了 3 次 GitHub API');
+    // 一個一個查、總共 3 次；沒 Token 不打程式碼搜尋
+    expect(lookups(net)).toEqual(['/users/0xspeter/repos', '/users/0xspeter-radar/repos', '/search/repositories']);
+    expect(net.searchQ).toEqual(['"0xspeter-radar-5888" in:name,description,readme']);
+    expect(net.codeQ).toEqual([]);
+    await expect(page).toHaveURL(/\?site=https%3A%2F%2F0xspeter-radar-5888\.web\.app$/);
+    await expect(page.locator('#recent')).toContainText('0xspeter-radar-5888.web.app');
+    // 手機：不能左右滑；新按鈕（加 Token、開帳號頁、列出 repo、查了哪些）都至少 44px 高
+    await expectNoHorizontalScroll(page);
+    await bigEnough(box.locator('.rv-btn'));
+    await bigEnough(box.locator('details.rv-chk summary'));
+    await expect(box.locator('a.rv-btn[href="https://github.com/0xspeter"]')).toHaveAttribute('target', '_blank');
+    // 「加 Token」打開 Token 區、游標放進去
+    await box.locator('[data-revtok]').click();
+    await expect(page.locator('#tok')).toBeFocused();
+    // 重新整理（?site= 連結）：查完的結果存在手機，不再花額度
+    const before = net.api.length;
+    await page.reload();
+    await expect(box).toContainText('找到帳號 0xspeter');
+    await expect(page.locator('#status')).toContainText('這次從快取顯示，沒花額度');
+    expect(net.api.length).toBe(before);
+    // 「列出公開 repo」交給一般搜尋（user:0xspeter），8 個都列出來可以點進去看
+    await box.locator('[data-revkw="user:0xspeter"]').click();
+    await expect(page.locator('#rrows button[data-i]')).toHaveCount(8);
+    await expect(box).toBeHidden();
+  });
+
+  test('homepage 欄位就是這個網址 → ✅；同帳號名稱對得上 → 🟡；找到確定的就不再搜；點掃描再返回不重查', async ({ page, net }) => {
+    await page.goto('/xray.html');
+    await lookup(page, 'https://lumen-notes.netlify.app/');
+    const box = page.locator('#rev');
+    const sure = box.locator('.rv-c.sure');
+    await expect(sure).toHaveCount(1);
+    await expect(sure).toContainText('lumen/notes-pwa');
+    await expect(sure).toContainText('網站欄位（homepage）就是這個網址');
+    const maybe = box.locator('.rv-c:not(.sure)');
+    await expect(maybe).toHaveCount(1);
+    await expect(maybe).toContainText('lumen/notes');
+    await expect(maybe).toContainText('名稱「notes」跟網址對得上');
+    await expect(box).not.toContainText('lumen/lumen');                 // 跟帳號同名的是個人首頁說明，不是網站
+    await expect(box).not.toContainText('dotfiles');
+    await expect(box.locator('details.rv-chk')).toContainText('就不查了（省額度）');
+    expect(lookups(net)).toEqual(['/users/lumen/repos']);               // 1 次就確定：不再搜尋、不再查第二個帳號
+    expect(net.live, '反推只問 GitHub，⛔ 不連那個網站').toEqual([]);
+    await expect(page.locator('#status')).toContainText('✅ 1 個確定・🟡 1 個可能・用了 1 次 GitHub API');
+    await expectNoHorizontalScroll(page);
+    await bigEnough(box.locator('.rv-go'));
+    await expect(sure.locator('.rv-go')).toHaveAttribute('href', 'xray.html?repo=lumen%2Fnotes-pwa');
+    // 點「掃描」：在本頁用 X-Ray 正常掃描，返回鍵寫「回到反推結果」
+    await sure.locator('.rv-go').click();
+    await expect(page.locator('#out')).toHaveClass(/\bon\b/);
+    await expect(page.locator('#v-title')).not.toHaveText('—');
+    await expect(page).toHaveURL(/\?repo=lumen%2Fnotes-pwa$/);
+    await expect(page.locator('#back')).toHaveText('← 回到反推結果');
+    await expect(box).toBeHidden();
+    // iPhone 左滑返回（瀏覽器上一頁）：反推結果還在，不重查
+    const before = lookups(net).length;
+    await page.goBack();
+    await expect(box.locator('.rv-c.sure')).toContainText('lumen/notes-pwa');
+    await expect(page.locator('#out')).not.toHaveClass(/\bon\b/);
+    // 再點一次掃描（有快取），這次按畫面上的返回鍵
+    await box.locator('.rv-c.sure .rv-go').click();
+    await expect(page.locator('#out')).toHaveClass(/\bon\b/);
+    await page.locator('#back').click();
+    await expect(box.locator('.rv-c.sure')).toContainText('lumen/notes-pwa');
+    await expect(page).toHaveURL(/\?site=https%3A%2F%2Flumen-notes\.netlify\.app$/);
+    expect(lookups(net).length - before).toBe(0);
+  });
+
+  test('GitHub Pages：照網址規則直接對到 repo（?site= 連結也能開）；確認過的 repo 點掃描不再多花 1 次', async ({ page, net }) => {
+    await page.goto('/xray.html?site=' + encodeURIComponent('https://octo-site.github.io/handbook/intro'));
+    const box = page.locator('#rev');
+    await expect(box.locator('.rv-c.sure')).toContainText('octo-site/handbook');
+    await expect(box.locator('.rv-c.sure')).toContainText('GitHub Pages 的網址規則：octo-site.github.io/handbook 就是這個 repo，而且它有開 Pages');
+    expect(lookups(net)).toEqual(['/repos/octo-site/handbook']);
+    expect(net.live, '反推只問 GitHub，⛔ 不連那個網站').toEqual([]);
+    await expect(box.locator('.rv-plat a[href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages"]')).toBeVisible();
+    // 沒寫 https:// 也認得；個人／組織網站 xxx.github.io 一定來自 xxx/xxx.github.io
+    await lookup(page, 'octo-site.github.io');
+    await expect(box.locator('.rv-c.sure')).toContainText('octo-site/octo-site.github.io');
+    await box.locator('.rv-c.sure .rv-go').click();
+    await expect(page.locator('#v-title')).not.toHaveText('—');
+    expect(net.api.filter((p) => p === '/repos/octo-site/octo-site.github.io')).toHaveLength(1);
+    await expectNoHorizontalScroll(page);
+    // 規則決定的 repo 查不到（私人或刪掉）：照實說「照規則在這裡、但看不到」，給加 Token 的按鈕；不去亂猜別的
+    await lookup(page, 'https://ghost-user.github.io/');
+    await expect(box.locator('.rv-c')).toHaveCount(0);
+    await expect(box).toContainText('照網址的規則，程式在 ghost-user/ghost-user.github.io，但查不到這個公開 repo → 很可能設成私人');
+    await expect(box.locator('[data-revtok]')).toBeVisible();
+    expect(net.api.filter((p) => p.startsWith('/repos/ghost-user/'))).toEqual(['/repos/ghost-user/ghost-user.github.io']);
+    expect(net.api.filter((p) => p.startsWith('/users/') || p.startsWith('/search/'))).toEqual([]);
+  });
+
+  test('程式不在 GitHub 的平台（GitLab Pages）、本機網址：直接說清楚，不花 GitHub 額度', async ({ page, net }) => {
+    await page.goto('/xray.html');
+    await lookup(page, 'https://group.gitlab.io/proj/');
+    const box = page.locator('#rev');
+    await expect(box).toContainText('這個網站放在 GitLab，程式也在 GitLab，不在 GitHub');
+    await expect(box.locator('a[href="https://gitlab.com/group/proj"]')).toHaveAttribute('target', '_blank');
+    await expect(box.locator('[data-revkw="group proj"]')).toBeVisible();   // 有人會在 GitHub 放同步副本：給關鍵字搜的按鈕
+    await expect(page.locator('#status')).toContainText('程式在 GitLab，不用查 GitHub（沒花額度）');
+    await lookup(page, 'http://192.168.1.20:8080/');
+    await expect(box).toContainText('本機或內網網址');
+    await expect(page.locator('#status')).toContainText('本機或內網網址，不用查 GitHub（沒花額度）');
+    await expect(box.locator('[data-revkw]')).toHaveCount(0);
+    expect(lookups(net)).toEqual([]);
+    expect(net.blocked).toEqual([]);                                    // 也沒有去連那兩個網站
+  });
+
+  test('程式碼搜尋要 Token：沒 Token 照實說、不打；加了 Token 再查 → .firebaserc 寫著網站代號 → ✅（同 repo 的證據合併）', async ({ page, net }) => {
+    await page.goto('/xray.html');
+    await lookup(page, 'https://pricewatch-7f3a1.web.app/');
+    const box = page.locator('#rev');
+    await expect(box.locator('.rv-c')).toHaveCount(0);
+    await expect(box).toContainText('GitHub 上找不到對得上的公開 repo');
+    await expect(box).toContainText('還沒加 Token：不能用程式碼搜尋');
+    await expect(box.locator('[data-revkw="pricewatch"]')).toBeVisible();   // 帳號也找不到：給改用關鍵字搜的按鈕
+    expect(net.codeQ).toEqual([]);
+    expect(lookups(net)).toEqual(['/users/pricewatch/repos', '/search/repositories']);
+    // 照畫面的按鈕加 Token，再按一次「開始」
+    await box.locator('[data-revtok]').click();
+    await page.locator('#tok').fill('ghp_' + 'x'.repeat(36));
+    await page.locator('#savetok').click();
+    await page.locator('#go').click();
+    const sure = box.locator('.rv-c.sure');
+    await expect(sure).toHaveCount(1);
+    await expect(sure).toContainText('harbor-lab/price-watch');
+    await expect(sure.locator('.rv-why').first()).toHaveText('📌 .firebaserc 寫著 pricewatch-7f3a1（部署設定檔）');
+    await expect(sure).toContainText('.github/workflows/deploy.yml 寫著 pricewatch-7f3a1');
+    // 不存在的帳號、已經搜過的不重花：第二次只多打 1 次程式碼搜尋
+    expect(net.codeQ).toEqual(['"pricewatch-7f3a1"']);
+    expect(lookups(net)).toEqual(['/users/pricewatch/repos', '/search/repositories', '/search/code']);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test('被 GitHub 限流（403、剩餘 0）：停下來不再打、用中文說要等幾分鐘或加 Token、列出還沒查的；時間到再按會接著查', async ({ page, net }) => {
+    net.apiOverride = (u) => (u.pathname === '/users/0xspeter/repos' ? {
+      status: 403, contentType: 'application/json',
+      headers: Object.assign({}, RATE, { 'x-ratelimit-remaining': '0', 'x-ratelimit-used': '60', 'x-ratelimit-resource': 'core',
+        'x-ratelimit-reset': String(Math.floor(Date.now() / 1000) + 600) }),
+      body: JSON.stringify({ message: "API rate limit exceeded for 203.0.113.7. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)",
+        documentation_url: 'https://docs.github.com/rest/overview/rate-limits-for-the-rest-api' }),
+    } : undefined);
+    await page.goto('/xray.html');
+    await lookup(page, 'https://0xspeter-radar-5888.web.app/');
+    await expect(page.locator('#status')).toContainText(/GitHub 限流，約 (599|600) 秒後再試（約 10 分鐘）/);
+    await expect(page.locator('#status')).toContainText('加一組 Token');
+    const stop = page.locator('#rev .rv-stop');
+    await expect(stop).toContainText('還沒查：帳號「0xspeter」、帳號「0xspeter-radar」、搜尋名稱／描述／README');
+    await expect(stop).toContainText('再按一次「開始」');
+    await expect(page.locator('#rev [data-revtok]')).toBeVisible();
+    await expect(page.locator('#rev [data-revkw]')).toHaveCount(0);   // 重點是等一下或加 Token：不多給一顆會分心的按鈕
+    expect(lookups(net)).toEqual(['/users/0xspeter/repos']);           // 被擋就停：不再打後面的
+    await expectNoHorizontalScroll(page);
+    // 額度恢復後再按「開始」：接著查完
+    net.apiOverride = null;
+    await page.locator('#go').click();
+    await expect(page.locator('#rev')).toContainText('找到帳號 0xspeter');
+    await expect(page.locator('#rev .rv-stop')).toHaveCount(0);
+  });
+
+  test('其中一步失敗（搜尋回 422）：其他步照做、說出幾步失敗哪一步，結果不存（下次重查那一步）', async ({ page, net }) => {
+    net.apiOverride = (u) => (u.pathname === '/search/repositories' ? { status: 422, headers: RATE, contentType: 'application/json',
+      body: JSON.stringify({ message: 'Validation Failed', errors: [{ resource: 'Search', field: 'q', code: 'invalid' }], documentation_url: 'https://docs.github.com/v3/search/' }) } : undefined);
+    await page.goto('/xray.html');
+    await lookup(page, 'https://0xspeter-radar-5888.web.app/');
+    await expect(page.locator('#status')).toContainText('有 1 步失敗（看「查了哪些」）');
+    await expect(page.locator('#rev details.rv-chk')).toContainText('搜尋提到「0xspeter-radar-5888」的 repo：失敗（GitHub 回了 422。）');
+    await expect(page.locator('#rev')).toContainText('找到帳號 0xspeter');   // 帳號那步照常做完
+    net.apiOverride = null;
+    const n = net.searchQ.length;
+    await page.reload();                                                // ?site= 連結：沒存快取 → 失敗的那步重查
+    await expect(page.locator('#status')).toContainText('反推完成');
+    await expect(page.locator('#status')).not.toContainText('失敗');
+    expect(net.searchQ.length).toBe(n + 1);
+  });
+
+  test('照舊：GitHub 網址直接掃描、關鍵字（含 socket.io 這種像網址的字）搜尋、owner/repo 掃描，都不跑反推', async ({ page, net }) => {
+    await page.goto('/xray.html');
+    await page.locator('#url').fill('https://github.com/demo/pwa-app');
+    await page.locator('#go').click();
+    await expect(page.locator('#out')).toHaveClass(/\bon\b/);
+    await expect(page.locator('#v-title')).not.toHaveText('—');
+    await expect(page).toHaveURL(/\?repo=demo%2Fpwa-app$/);
+    for (const kw of ['stock app', 'socket.io']) {
+      await page.locator('#url').fill(kw);
+      await page.locator('#go').click();
+      await expect(page.locator('#rrows button[data-i]')).toHaveCount(3);
+      expect(net.searchQ[net.searchQ.length - 1]).toBe(kw);
+    }
+    await page.locator('#url').fill('demo/pypkg');
+    await page.locator('#go').click();
+    await expect(page.locator('#v-type')).toContainText('函式庫');
+    await expect(page.locator('#rev')).toBeHidden();
+    expect(net.api.filter((p) => p.startsWith('/users/') || p === '/search/code')).toEqual([]);
+  });
+});

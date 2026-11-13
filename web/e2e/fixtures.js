@@ -130,8 +130,51 @@ const URL_FILES = {
   'package-lock.json': '{"resolved": "https://lockfile-only.urlapp.dev/x.tgz"}\n',
 };
 
+// ── 🌐 反推網站用的假資料（照 GitHub 真的回應格式）──
+// 帳號物件：list repos、code search 的 repository.owner 都長這樣
+const OWNER = (login, id, type = 'User') => ({
+  login, id, node_id: 'MDQ6VXNlcj' + id, avatar_url: `https://avatars.githubusercontent.com/u/${id}?v=4`, gravatar_id: '',
+  url: 'https://api.github.com/users/' + login, html_url: 'https://github.com/' + login, type, site_admin: false,
+});
+// GET /users/{username}/repos 回的是 minimal-repository：比 /repos/{owner}/{repo} 少一些欄位，但有 homepage、has_pages、fork、archived
+const minimalRepo = (owner, name, extra = {}) => meta(owner.login + '/' + name, Object.assign({
+  owner, fork: false, archived: false, disabled: false, visibility: 'public', is_template: false,
+  description: null, stargazers_count: 0, language: null, homepage: null, has_pages: false,
+}, extra));
+// 0xspeter：2026-11-13 實查（search/repositories?q=user:0xspeter）有 8 個公開 repo，沒有一個叫 radar、homepage 全是 null。
+// 描述、語言、星數沒查，照實給 null／0，不編造。
+const SPETER = OWNER('0xspeter', 91000001);
+const LUMEN = OWNER('lumen', 91000002);
+const SITE_USERS = {
+  '0xspeter': ['SpaceTrial', 'BitcoinvsGold', 'DEJA', 'DEJAB', 'hualien-locksmith-typing', 'agent-coordinator', 'RONIN', 'yijibang']
+    .map((n, i) => minimalRepo(SPETER, n, { pushed_at: iso(3 + i * 11) })),
+  // 網站欄位（homepage）就填著線上網址的那種：反推要 ✅；同帳號另一個叫 notes 的只是名稱對得上 → 🟡
+  lumen: [
+    minimalRepo(LUMEN, 'notes-pwa', { homepage: 'https://lumen-notes.netlify.app', description: 'Offline notes PWA', stargazers_count: 42, language: 'JavaScript', pushed_at: iso(1) }),
+    minimalRepo(LUMEN, 'notes', { description: 'Old notes prototype', stargazers_count: 3, pushed_at: iso(200) }),
+    minimalRepo(LUMEN, 'lumen', { description: 'Profile README', pushed_at: iso(30) }),   // 個人首頁說明，不是網站
+    minimalRepo(LUMEN, 'dotfiles', { pushed_at: iso(60) }),
+  ],
+};
+const HARBOR = OWNER('harbor-lab', 91000003, 'Organization');
+// 程式碼搜尋的語料：只有登入（帶 Token）才查得到。同一個 repo 兩個檔都寫著 Firebase 專案代號
+const CODE_FILES = [
+  { repo: 'harbor-lab/price-watch', path: '.firebaserc', text: '{\n  "projects": {\n    "default": "pricewatch-7f3a1"\n  }\n}\n' },
+  { repo: 'harbor-lab/price-watch', path: '.github/workflows/deploy.yml', text: 'jobs:\n  deploy:\n    steps:\n      - uses: FirebaseExtended/action-hosting-deploy@v0\n        with:\n          projectId: pricewatch-7f3a1\n' },
+];
+
 const REPOS = {
   'demo/pwa-app': { meta: meta('demo/pwa-app'), files: PWA_FILES, commits: { n: 57, firstDays: 1500 } },
+  // 反推網站找到之後點「掃描」要掃得起來
+  'lumen/notes-pwa': { meta: meta('lumen/notes-pwa', { owner: LUMEN, homepage: 'https://lumen-notes.netlify.app', description: 'Offline notes PWA', stargazers_count: 42 }),
+    files: { 'README.md': '# Notes PWA\n\nLive: https://lumen-notes.netlify.app\n', 'index.html': '<!doctype html><title>notes</title>', 'netlify.toml': '[build]\n  publish = "."\n' } },
+  'octo-site/handbook': { meta: meta('octo-site/handbook', { owner: OWNER('octo-site', 91000004, 'Organization'), has_pages: true, homepage: null, description: 'Team handbook' }),
+    files: { 'README.md': '# Handbook\n', 'index.md': '# Welcome\n', '_config.yml': 'title: Handbook\n' } },
+  'octo-site/octo-site.github.io': { meta: meta('octo-site/octo-site.github.io', { owner: OWNER('octo-site', 91000004, 'Organization'), has_pages: true, description: 'Org homepage' }),
+    files: { 'README.md': '# octo-site.github.io\n', 'index.html': '<!doctype html><title>octo</title>' } },
+  'harbor-lab/price-watch': { meta: meta('harbor-lab/price-watch', { owner: HARBOR, description: 'Grocery price tracker' }),
+    files: Object.assign({ 'README.md': '# Price watch\n\nTrack grocery prices.\n', 'index.html': '<!doctype html><title>price</title>' },
+      Object.fromEntries(CODE_FILES.map((f) => [f.path, f.text]))) },
   'demo/private-app': { meta: meta('demo/private-app', { private: true }), files: PWA_FILES },
   'demo/pypkg': { meta: meta('demo/pypkg', { language: 'Python' }), files: PY_FILES },
   'demo/skillpack': { meta: meta('demo/skillpack', { language: null }), files: SKILL_FILES, commits: { n: 1, firstDays: 10 } },
@@ -182,10 +225,75 @@ const RATE = {
   'access-control-expose-headers': 'ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset',
 };
 const json = (body, status = 200, extra = {}) => ({ status, headers: Object.assign({}, RATE, extra), contentType: 'application/json', body: JSON.stringify(body) });
+// 搜尋 API 的額度另外算：未登入每分鐘 10 次、登入 30 次；程式碼搜尋一定要登入、每分鐘 10 次（GitHub REST 文件）
+const searchRate = (resource, limit) => ({
+  'x-ratelimit-limit': String(limit), 'x-ratelimit-remaining': String(limit - 1), 'x-ratelimit-used': '1',
+  'x-ratelimit-reset': String(Math.floor(Date.now() / 1000) + 60), 'x-ratelimit-resource': resource,
+});
 
-function apiResponse(url) {
+// 反推網站的搜尋（有引號片語＋in: 條件）：在假資料裡照欄位找片語；對不上就是 0 筆，不能亂回 SEARCH_ITEMS
+// （不然「找不到」的情況永遠測不到）。user:帳號 → 那個帳號的 repo，帳號不存在時跟 GitHub 一樣回 422
+function searchRepos(q, rate) {
+  const um = q.match(/(?:^|\s)user:([\w-]+)/);
+  if (um) {
+    const list = SITE_USERS[um[1].toLowerCase()];
+    if (!list) return json({ message: 'Validation Failed', errors: [{ message: 'The listed users and repositories cannot be searched either because the resources do not exist or you do not have permission to view them.', resource: 'Search', field: 'q', code: 'invalid' }], documentation_url: 'https://docs.github.com/v3/search/' }, 422, rate);
+    return json({ total_count: list.length, incomplete_results: false, items: list.map((r) => Object.assign({ score: 1 }, r)) }, 200, rate);
+  }
+  const phrases = [...q.matchAll(/"([^"]+)"/g)].map((m) => m[1].toLowerCase());
+  const inq = (q.match(/\bin:([\w,]+)/) || [])[1];
+  if (!phrases.length || !inq) return json({ total_count: SEARCH_ITEMS.length, incomplete_results: false, items: SEARCH_ITEMS }, 200, rate);
+  const fields = inq.split(','), seen = new Set();
+  const corpus = Object.values(REPOS).map((r) => Object.assign({}, r.meta, { _readme: r.files['README.md'] || '' }))
+    .concat(...Object.values(SITE_USERS));
+  const items = corpus.filter((r) => {
+    if (seen.has(r.full_name)) return false;
+    const hay = fields.map((f) => String((f === 'readme' ? r._readme : r[f]) || '')).join('\n').toLowerCase();
+    if (!phrases.some((ph) => hay.includes(ph))) return false;
+    seen.add(r.full_name); return true;
+  }).map(({ _readme, ...r }) => Object.assign({ score: 1 }, r));
+  return json({ total_count: items.length, incomplete_results: false, items }, 200, rate);
+}
+
+// 程式碼搜尋：沒帶 Token 跟 GitHub 一樣回 401；有就在 CODE_FILES 找（片語、filename: 條件）
+function searchCode(url, auth) {
+  const rate = searchRate('code_search', 10);
+  if (!auth) return json({ message: 'Requires authentication', errors: [{ message: 'Must be authenticated to access the code search API', resource: 'Search', field: 'q', code: 'invalid' }], documentation_url: 'https://docs.github.com/v3/search/#search-code', status: '401' }, 401, rate);
+  const q = url.searchParams.get('q') || '';
+  const fname = (q.match(/\bfilename:(\S+)/) || [])[1];
+  const phrase = ((q.match(/"([^"]+)"/) || [])[1] || q.replace(/\S+:\S+/g, '').trim()).toLowerCase();
+  const items = CODE_FILES.filter((f) => f.text.toLowerCase().includes(phrase) && (!fname || f.path.split('/').pop() === fname)).map((f) => {
+    const repo = REPOS[f.repo].meta;
+    const commit = (repo.id.toString(16) + 'c0de').padEnd(40, '0');
+    const blob = (repo.id.toString(16) + Buffer.from(f.path).toString('hex')).slice(0, 40).padEnd(40, 'b');
+    return {
+      name: f.path.split('/').pop(), path: f.path, sha: blob,
+      url: `https://api.github.com/repositories/${repo.id}/contents/${f.path}?ref=${commit}`,
+      git_url: `https://api.github.com/repositories/${repo.id}/git/blobs/${blob}`,
+      html_url: `https://github.com/${f.repo}/blob/${commit}/${f.path}`,
+      // 程式碼搜尋附的 repository 是精簡版：沒有星數、homepage
+      repository: { id: repo.id, node_id: 'MDEwOlJlcG9zaXRvcnk' + repo.id, name: repo.name, full_name: repo.full_name, owner: repo.owner,
+        private: false, html_url: repo.html_url, description: repo.description, fork: false, url: 'https://api.github.com/repos/' + repo.full_name },
+      score: 1,
+    };
+  });
+  return json({ total_count: items.length, incomplete_results: false, items }, 200, rate);
+}
+
+function apiResponse(url, req) {
   const p = url.pathname;
-  if (p === '/search/repositories') return json({ total_count: SEARCH_ITEMS.length, incomplete_results: false, items: SEARCH_ITEMS });
+  const auth = req ? req.headers()['authorization'] : '';
+  if (p === '/search/repositories') return searchRepos(url.searchParams.get('q') || '', searchRate('search', auth ? 30 : 10));
+  if (p === '/search/code') return searchCode(url, auth);
+  const um = p.match(/^\/users\/([^/]+)\/repos$/);
+  if (um) {
+    const list = SITE_USERS[decodeURIComponent(um[1]).toLowerCase()];
+    if (!list) return json({ message: 'Not Found', documentation_url: 'https://docs.github.com/rest/repos/repos#list-repositories-for-a-user', status: '404' }, 404);
+    const per = Math.min(100, Number(url.searchParams.get('per_page')) || 30);
+    const sorted = list.slice().sort((a, b) => (url.searchParams.get('sort') === 'pushed'
+      ? String(b.pushed_at).localeCompare(String(a.pushed_at)) : a.full_name.localeCompare(b.full_name)));
+    return json(sorted.slice(0, per));
+  }
   const m = p.match(/^\/repos\/([^/]+\/[^/]+)(\/.*)?$/);
   const repo = m && REPOS[m[1]];
   if (!repo) return json({ message: 'Not Found' }, 404);
@@ -222,12 +330,13 @@ function rawResponse(url) {
 // 假翻譯：每一行前面加「中：」，看得出哪些字有送去翻、哪些沒送
 const zhLines = (q) => q.split('\n').map((l) => '中：' + l).join('\n');
 // 翻成英文（X-Ray 模糊搜尋把字典沒有的中文詞換成英文）：像真的 Google 一樣，認得的回英文、不認得的原樣回來
-const FAKE_LIVE = ['url-app.vercel.app', 'app.urlapp.dev'];
+// 反推網站找到的 repo 點「掃描」後，詳細頁也會連一次它的網址；反推本身 ⛔ 不連（測試看 stats.live 確認）
+const FAKE_LIVE = ['url-app.vercel.app', 'app.urlapp.dev', 'lumen-notes.netlify.app', 'octo-site.github.io'];
 const EN_DICT = { '選舉': 'election', '週報': 'weekly report', '漫畫': 'comics' };
 
 async function mockNetwork(context, opts) {
   // apiOverride：個別測試可以塞一個 (url) => 回應｜undefined，用來模擬限流等狀況；回 undefined 就照平常回應
-  const stats = { api: [], searchQ: [], raw: 0, translate: 0, blocked: [], apiOverride: null };
+  const stats = { api: [], searchQ: [], codeQ: [], raw: 0, translate: 0, live: [], blocked: [], apiOverride: null };
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') {
@@ -251,9 +360,10 @@ async function mockNetwork(context, opts) {
     if (url.hostname === 'api.github.com') {
       stats.api.push(url.pathname);
       if (url.pathname === '/search/repositories') stats.searchQ.push(url.searchParams.get('q'));
+      if (url.pathname === '/search/code') stats.codeQ.push(url.searchParams.get('q'));
       // 可以回傳 Promise：用來模擬「這個請求比較慢回來」
       const o = stats.apiOverride && await stats.apiOverride(url);
-      return route.fulfill(o || apiResponse(url));
+      return route.fulfill(o || apiResponse(url, route.request()));
     }
     if (url.hostname === 'raw.githubusercontent.com') { stats.raw++; return route.fulfill(rawResponse(url)); }
     if (url.hostname === 'translate.googleapis.com') {
@@ -264,7 +374,7 @@ async function mockNetwork(context, opts) {
     }
     if (url.hostname.endsWith('.workers.dev')) return route.fulfill({ status: 200, body: 'ok' });
     // 假專案的線上網址：詳細頁會實際連一次看活著沒（probeLive），回 ok 就好
-    if (FAKE_LIVE.includes(url.hostname)) return route.fulfill({ status: 200, body: 'ok' });
+    if (FAKE_LIVE.includes(url.hostname)) { stats.live.push(url.hostname); return route.fulfill({ status: 200, body: 'ok' }); }
     stats.blocked.push(url.href);
     return route.abort();
   });
@@ -318,4 +428,4 @@ async function runWizard(page, answers = {}) {
   await expect(page.locator('#wizard h2')).toHaveText('結果：照下面做');
 }
 
-module.exports = { test, expect, REPOS, SEARCH_ITEMS, RATE, commitsOf, expectNoHorizontalScroll, runWizard };
+module.exports = { test, expect, REPOS, SEARCH_ITEMS, SITE_USERS, RATE, commitsOf, expectNoHorizontalScroll, runWizard };
