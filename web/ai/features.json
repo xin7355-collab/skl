@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-09",
+ "checked_at": "2026-11-16",
  "products": [
   {
    "product": "Claude Code",
@@ -206,7 +206,7 @@
     {
      "name": "Fast mode（快速模式）",
      "icon": "🏎️",
-     "zh": "用同一個模型但回得更快（最多約 2.5 倍），費用較高；Opus 5.5 的快速模式 2026-10-15 起在 API 正式提供，Claude Code 裡仍標研究預覽。Opus 4.8 的快速模式 2026-10-30 起停用、11-30 移除，之後要快速模式請改用 Opus 5.5（官方 changelog 2.1.316）。",
+     "zh": "用同一個模型但回得更快（最多約 2.5 倍），費用較高；Opus 5.5 的快速模式 2026-10-15 起在 API 正式提供，Claude Code 裡仍標研究預覽。Opus 4.8 的快速模式 2026-10-30 起停用、11-30 移除，之後要快速模式請改用 Opus 5.5（官方 changelog 2.1.316）。 Fable 5.2 也有快速模式（$16 / $80 每百萬 tokens，2026-11-09 起；官方公告）。",
      "how": "電腦版輸入 /fast 切換。",
      "when": "趕時間、互動很多的時候",
      "level": "進階",
@@ -301,6 +301,39 @@
      "mobile": true,
      "new": true,
      "url": "https://code.claude.com/docs/en/changelog"
+    },
+    {
+     "name": "Claude Fable 5.2（新的預設 Fable）",
+     "icon": "🧠",
+     "zh": "Claude Code 2.1.321（2026-11-09）起，Fable 換成 Fable 5.2：比 Fable 5.1 快最多 30%、價格降兩成；原本選 Fable 5.1 的會自動換過來（Pro、Max 立即生效，Team、Enterprise 要等組織允許）。官方仍建議日常先用 Opus 5.5，不夠再升級到 Fable。",
+     "how": "在輸入框旁的模型選單選 Fable（現在就是 Fable 5.2）。要換回舊版，輸入 /model claude-fable-5-1。",
+     "when": "最難、最長的任務，Opus 5.5 調高 effort 還做不好時",
+     "level": "入門",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/changelog"
+    },
+    {
+     "name": "排程任務跑技能前會先問",
+     "icon": "⏸️",
+     "zh": "Claude Code 2.1.325（2026-11-13）起：排程任務和 /loop 要用到「宣告了 allowed-tools 或 hooks 的技能」時，會先停下來問你，不再自動跑。2.1.323 起：雲端排程任務因為沙箱設定開不了時會通知你失敗；刪除雲端工作階段前，也會提醒裡面的排程任務會跟著暫停。",
+     "how": "排程任務停在等你核准時，打開那個工作階段按允許。想讓它以後不用問：請 Claude 在 repo 的 .claude/settings.json 的 permissions.allow 加上 Skill(技能名稱)。",
+     "when": "設了自動定時跑的排程任務，卻發現它卡住沒做完時",
+     "level": "進階",
+     "mobile": true,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/changelog"
+    },
+    {
+     "name": "Code Mode（實驗）",
+     "icon": "🧪",
+     "zh": "Claude Code 2.1.323（2026-11-12）的實驗功能：Claude 改成寫一小段 JavaScript，一次做完好幾個工具動作（例如找檔、改檔、跑測試一起來），適合同一種修改要改很多檔的工作。預設關閉，之後可能改掉或拿掉。",
+     "how": "只能在電腦終端機的 claude 互動模式用；雲端工作階段、手機、電腦版 App 都不能用。開法照官方 Code Mode 說明頁。",
+     "when": "在電腦上做大量重複修改、想少等幾輪時",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://code.claude.com/docs/en/code-mode"
     }
    ]
   },
@@ -648,6 +681,17 @@
      "mobile": false,
      "new": true,
      "url": "https://github.com/openai/codex/releases/tag/rust-v0.167.0"
+    },
+    {
+     "name": "終端機接手雲端對話＋側邊對話分頁",
+     "icon": "🗂️",
+     "zh": "Codex CLI 0.169.0（2026-11-13）：在 macOS、Linux 的終端機連到 Codex 雲端對話時，可以傳圖片、選模型和推理強度、封存或還原雲端對話；選用的終端機工作區可以開好幾個側邊對話分頁，重開 Codex 後還在；全螢幕對話紀錄可以把做完的步驟收起來（官方發行說明經搜尋摘要轉述，已和 openai/codex 的提交紀錄核對）。",
+     "how": "電腦終端機（Codex CLI）的功能，手機上沒有；更新到 0.169.0 以上。",
+     "when": "在電腦上同時處理好幾件事，或想從終端機接手雲端對話時",
+     "level": "進階",
+     "mobile": false,
+     "new": true,
+     "url": "https://github.com/openai/codex/releases/tag/rust-v0.169.0"
     }
    ]
   },
@@ -810,6 +854,28 @@
      "when": "電腦版出問題、想重設 App 時",
      "level": "進階",
      "mobile": false,
+     "new": true,
+     "url": "https://claude.com/docs/cowork/changelog"
+    },
+    {
+     "name": "排程任務顯示執行狀態",
+     "icon": "🚦",
+     "zh": "Claude 電腦版 2026-11-10 起：在你電腦上跑的排程任務（Cowork 與 Code），卡片會顯示「上次失敗」「上次失敗、會再試」「需要你回覆」「沒有跑」，或還沒開始的原因（例如在等上一次跑完）；通知也會分清楚「要你核准但沒人在、跳過了一步」和「安全檢查擋下一步」。",
+     "how": "電腦版 Claude App 的功能；卡片顯示「需要你回覆」時，打開那個任務回答。",
+     "when": "設了在電腦上定時跑的任務，想確認有沒有真的跑完時",
+     "level": "入門",
+     "mobile": false,
+     "new": true,
+     "url": "https://claude.com/docs/cowork/changelog"
+    },
+    {
+     "name": "受限網路的任務不能 git push",
+     "icon": "🔒",
+     "zh": "Claude 電腦版 2026-11-12 的發行說明（Cowork 部分）：網路設成受限的任務，GitHub 只能下載（clone、fetch），git push、Git LFS 和 SSH 連線都不能用。手機上的雲端任務是否同樣限制，官方沒有寫清楚。",
+     "how": "要把程式推上 GitHub，改用 Claude Code（claude.ai/code 或手機 App 的 Code）。",
+     "when": "請 Cowork 改程式、想直接推上 GitHub 卻失敗時",
+     "level": "進階",
+     "mobile": null,
      "new": true,
      "url": "https://claude.com/docs/cowork/changelog"
     }

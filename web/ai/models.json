@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-11-09",
+ "checked_at": "2026-11-16",
  "vendors": [
   {
    "vendor": "Anthropic",
@@ -22,7 +22,7 @@
      "strengths": [
       "官方建議大多數工作先用它",
       "長時間代理式寫程式與知識工作",
-      "價格約 Fable 5.1 的四成，多項代理基準反超 Fable 5.1",
+      "價格是 Fable 5.2 的一半，多項代理基準反超 Fable 5.1",
       "預設 effort 為 medium，思考無法關閉"
      ],
      "benchmarks": [
@@ -91,27 +91,134 @@
        "score": "59.6%",
        "source": "https://artificialanalysis.ai/articles/claude-opus-5-5",
        "kind": "第三方"
+      },
+      {
+       "name": "FrontierCode 2.0（Fable 5.2 公告對照）",
+       "score": "45.5%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "FrontierSWE v2（Fable 5.2 公告對照）",
+       "score": "62.3%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
       }
      ]
     },
     {
-     "name": "Claude Fable 5.1",
+     "name": "Claude Fable 5.2",
+     "id": "claude-fable-5-2",
+     "released": "2026-11-09",
+     "context": "1M tokens（最大輸出 128K）",
+     "price": "$8 / $40 每百萬 tokens（Fable 5.1 是 $10 / $50）；cache read $0.20；fast mode $16 / $80（官方定價頁）",
+     "tier": "hardest",
+     "legacy": false,
+     "best_for": [
+      "Opus 5.5 調高 effort 仍不夠時再升級（官方建議日常先用 Opus 5.5）",
+      "最有挑戰、開放式的技術工作：大型遷移、長時程代理任務",
+      "當顧問（advisor）或總指揮，把簡單子任務分給小模型",
+      "科學研究、硬體設計、電腦操作"
+     ],
+     "strengths": [
+      "官方定位：高難度推理與長時程代理工作；幾乎所有測驗都比 Opus 5.5 高一級",
+      "產出速度比 Fable 5.1 快最多 30%，價格降兩成",
+      "思考恆開；API 預設 effort 為 high，Claude App 與 Claude Code 預設 medium",
+      "Claude Code 2.1.321 起成為預設的 Fable 模型（原本選 Fable 5.1 的會自動換過來）"
+     ],
+     "benchmarks": [
+      {
+       "name": "FrontierCode 2.0",
+       "score": "49.1%（Xhigh effort）",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "FrontierSWE v2",
+       "score": "69.9%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "AutomationBench",
+       "score": "51.4%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "Terminal-Bench-Science 0.1",
+       "score": "74.6%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "WANDR（relaxed score）",
+       "score": "82.1%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "OSWorld 2.1（offline set, partial）",
+       "score": "89.3%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "RoboDojo Sim",
+       "score": "64.9%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "AA-Briefcase v1.1",
+       "score": "1785 (Elo)",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "Remote Labor Index（RLI）",
+       "score": "41.3%（High effort）",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "Humanity's Last Exam（with tools）",
+       "score": "74.2%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "Chartography（no tools）",
+       "score": "73.4%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "BenchCAD 2.1（with tools）",
+       "score": "83.5（滿分 100，Max effort）",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      }
+     ]
+    },
+    {
+     "name": "Claude Fable 5.1（舊款）",
      "id": "claude-fable-5-1",
      "released": "2026-09-01",
      "context": "1M tokens（最大輸出 128K）",
      "price": "$10 / $50 每百萬 tokens；cache read $0.25",
-     "tier": "hardest",
-     "legacy": false,
+     "tier": "legacy",
+     "legacy": true,
      "best_for": [
-      "Opus 5.5 高 effort 仍不夠時再升級",
+      "已固定用 Fable 5.1 的流程，過渡用",
       "長時程多步驟研究",
       "文件、試算表、簡報產出",
       "科學計算、法務與財務分析"
      ],
      "strengths": [
-      "廣泛開放模型中能力最強（官方定位）",
+      "官方最新模型表已換成 Fable 5.2（Fable 5.1 仍可用，退役承諾日期不早於 2027-09-01）；Fable 5.2 更快、更便宜，建議改用",
+      "Claude Code 2.1.321 起，原本選 Fable 5.1 的會自動換成 Fable 5.2；要換回輸入 /model claude-fable-5-1",
       "高難度推理與長時程代理任務",
-      "科學研究類代理任務大幅進步",
       "思考恆開，延遲較慢"
      ],
      "benchmarks": [
@@ -167,6 +274,18 @@
        "name": "CursorBench 3.2.0",
        "score": "73.4%",
        "source": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+       "kind": "官方"
+      },
+      {
+       "name": "FrontierCode 2.0（Fable 5.2 公告對照）",
+       "score": "32.4%（Xhigh effort）",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "官方"
+      },
+      {
+       "name": "FrontierSWE v2（Fable 5.2 公告對照）",
+       "score": "56.3%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
        "kind": "官方"
       }
      ]
@@ -469,6 +588,18 @@
        "score": "96.0%",
        "source": "https://www.mindstudio.ai/blog/gpt-6-astra-benchmarks-analysis",
        "kind": "第三方"
+      },
+      {
+       "name": "FrontierCode 2.0",
+       "score": "42.8%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "Anthropic 對照表"
+      },
+      {
+       "name": "FrontierSWE v2",
+       "score": "65.5%",
+       "source": "https://www.anthropic.com/claude-fable-and-mythos-5-2",
+       "kind": "Anthropic 對照表"
       }
      ]
     },
@@ -673,9 +804,9 @@
   {
    "need": "最難、最長的任務",
    "icon": "🧠",
-   "claude": "Claude Fable 5.1",
+   "claude": "Claude Fable 5.2",
    "codex": "GPT-6 Astra",
-   "why": "各家最強旗艦，慢、貴，主力不夠時再升級"
+   "why": "各家最強旗艦，慢、貴，主力不夠時再升級（Fable 5.2 比 5.1 快最多 30%、便宜兩成）"
   },
   {
    "need": "又快又便宜、大量簡單工作",
@@ -710,7 +841,7 @@
      57.9
     ],
     [
-     "Claude Fable 5.1",
+     "Claude Fable 5.1（舊款）",
      "Anthropic",
      55.8
     ],
@@ -737,30 +868,58 @@
    ]
   },
   {
+   "title": "FrontierCode 2.0：改的程式會不會被開源專案合併",
+   "unit": "%",
+   "higher_better": true,
+   "note": "同一張表：Fable 5.2 官方公告（Fable 5.2 與 5.1 為 Xhigh effort，其餘為各模型最高 effort；GPT-6 Astra 分數由 Anthropic 測得）。Opus 5.5 公告用的是 1.1 版，題目不同，不混放。",
+   "rows": [
+    [
+     "Claude Fable 5.2",
+     "Anthropic",
+     49.1
+    ],
+    [
+     "Claude Opus 5.5",
+     "Anthropic",
+     45.5
+    ],
+    [
+     "GPT-6 Astra",
+     "OpenAI",
+     42.8
+    ],
+    [
+     "Claude Fable 5.1（舊款）",
+     "Anthropic",
+     32.4
+    ]
+   ]
+  },
+  {
    "title": "AutomationBench：商務流程自動化",
    "unit": "%",
    "higher_better": true,
-   "note": "Anthropic 公告對照表；Fable 5.1 來自其官方公告。",
+   "note": "同一張表：Fable 5.2 官方公告（2026-11-09，各模型用最高 effort；GPT-6 Astra 分數由 Anthropic 測得）。Opus 5.5 在自己的公告（2026-09-22）是 40.0%，與這張表的 42.5% 測的時間不同；舊款 GPT-5.6 Sol 的 28.8% 出自另一張表，不混放。",
    "rows": [
+    [
+     "Claude Fable 5.2",
+     "Anthropic",
+     51.4
+    ],
+    [
+     "Claude Opus 5.5",
+     "Anthropic",
+     42.5
+    ],
     [
      "GPT-6 Astra",
      "OpenAI",
      41.4
     ],
     [
-     "Claude Opus 5.5",
-     "Anthropic",
-     40.0
-    ],
-    [
-     "Claude Fable 5.1",
+     "Claude Fable 5.1（舊款）",
      "Anthropic",
      31.4
-    ],
-    [
-     "GPT-5.6 Sol（舊款）",
-     "OpenAI",
-     28.8
     ]
    ]
   },
@@ -820,6 +979,7 @@
   "2026-10-19 檢查：Anthropic 沒有新模型或退役（官方模型總覽與退役頁），Claude Haiku 4.5 仍為 Active；OpenAI 沒有新模型（Codex 開源模型目錄未變），GPT-5.5 於 2026-10-14 自 ChatGPT 登入的 Codex 退役（第三方報導，OpenAI 網站在本環境連不到，未讀到原文）。",
   "2026-10-26 週檢：兩家都沒有新模型、退役或價格變動（platform.claude.com 模型總覽、退役頁；openai/codex 的 models.json 自 10-18 起未變）。Anthropic 10-21 推出 API 版本 2026-10-21：temperature、top_p、top_k 改為回 400 錯誤，新版 SDK 改用 Apache 2.0 授權；10-22 推出 Claude Models on Google Cloud（Anthropic 代管，含 Opus 5.5 快速模式）。Claude Sonnet 4.5 退役日 2026-11-30（9-30 公告，本表未列）。",
   "2026-11-02 週檢：OpenAI 10-26 推出 GPT-6.1 Terra（中階、主打電腦操作，$1/$5，Codex CLI 0.165.0 起加入模型清單；openai/codex 的 models.json 列 500K context），「速度和能力平衡」的 Codex 建議改為 Terra。Terra 的 Terminal-Bench 4.0 50.3% 是 OpenAI 公布、媒體轉述（openai.com 讀不到），測法與 Anthropic 對照表不同，未放進對照圖；OSWorld 2.1 各家說的子集不一致，未收錄。Anthropic 沒有新模型或退役（platform.claude.com 模型總覽、退役頁；Haiku 4.5、Sonnet 5、Opus 4.8 仍列 Active）；Haiku 4.5 10-29 起從 claude.ai Free／Pro／Max 的模型選單移除（Claude Code、Team／Enterprise、API 不受影響，support.claude.com 官方說明）；Claude Code 2.1.316 宣布 Opus 4.8 的快速模式 10-30 起停用、11-30 移除。",
-  "2026-11-09 週檢：兩家都沒有新模型、退役或價格變動（platform.claude.com 模型總覽與退役頁；openai/codex 的 models.json 與上週相同，共 12 項）。官方退役頁另列 claude-mythos-5／claude-mythos-5-1 為 Active，但模型總覽的比較表沒有、也沒有公開價格，本站不列入；claude-sonnet-4-5-20250929 將於 2026-11-30 退役（官方退役頁，本站原本就沒列）。Codex CLI 0.167.0（11-05／06）只有功能更新、沒有新模型（第三方整理發行說明，GitHub 發行頁在本環境讀不到）。"
+  "2026-11-09 週檢：兩家都沒有新模型、退役或價格變動（platform.claude.com 模型總覽與退役頁；openai/codex 的 models.json 與上週相同，共 12 項）。官方退役頁另列 claude-mythos-5／claude-mythos-5-1 為 Active，但模型總覽的比較表沒有、也沒有公開價格，本站不列入；claude-sonnet-4-5-20250929 將於 2026-11-30 退役（官方退役頁，本站原本就沒列）。Codex CLI 0.167.0（11-05／06）只有功能更新、沒有新模型（第三方整理發行說明，GitHub 發行頁在本環境讀不到）。",
+  "2026-11-16 週檢：Anthropic 11-09 推出 Claude Fable 5.2（claude-fable-5-2；$8/$40、cache read $0.20、fast mode $16/$80、1M context、最大輸出 128K；官方模型總覽、定價頁、平台 release notes 與公告），Fable 5.1 改列舊款（官方退役頁仍為 Active，不早於 2027-09-01）。同日的 Claude Mythos 5.2 只開放給通過驗證計畫的組織，本站不列。Fable 5.2 的跑分全部取自官方公告表格；那張表沒有 Terminal-Bench 4.0 與 GDPval-AA，所以那兩張圖沒有 Fable 5.2。同一份公告裡 Opus 5.5 的 AutomationBench 是 42.5%（它自己的公告是 40.0%）、GPT-6 Astra 的 Terminal-Bench-Science 0.1 是 68.1%（Opus 5.5 公告對照表是 64.6%），測的時間不同，卡片保留原出處的數字、圖表只用同一張表。OpenAI 本週沒有新模型或退役（openai/codex 的 models.json 仍是 12 項，與上週相同）；Codex CLI 0.167.1、0.167.2、0.168.0（11-12）、0.169.0（11-13）只有功能更新（日期取自 GitHub 標籤；0.169.0 的內容來自搜尋摘要轉述的官方發行說明，並與 openai/codex 的提交紀錄核對；0.168.0 的發行說明在本環境讀不到）。"
  ]
 }
